@@ -1,3 +1,4 @@
+// components/common/Button.js
 import React from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import * as Theme from '../../constants/Theme';
@@ -28,8 +29,39 @@ const Button = ({
   leftIcon,
   rightIcon,
 }) => {
-  // Get current theme (could be dark or light)
-  const theme = Theme.createTheme(false); // Pass true for dark mode
+  // Use try-catch in case Theme functions are undefined
+  let theme;
+  try {
+    theme = Theme.createTheme(false); // Pass true for dark mode
+  } catch (error) {
+    console.error('Error creating theme:', error);
+    // Fallback theme in case theme creation fails
+    theme = {
+      colors: {
+        primary: '#4361FF',
+        text: '#000000',
+        background: '#FFFFFF'
+      },
+      spacing: {
+        xs: 4,
+        sm: 8,
+        md: 16,
+        lg: 24,
+        xl: 32
+      },
+      borderRadius: {
+        sm: 8,
+        md: 12,
+        lg: 16
+      },
+      fontSize: {
+        xs: 12,
+        sm: 14,
+        md: 16,
+        lg: 18
+      }
+    };
+  }
   
   // Define base styles based on size
   const sizeStyles = {

@@ -1,89 +1,57 @@
+// app/_tabs/_layout.js
+import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
-import Theme from '../../constants/Theme';
-
-// Simple tab icons
-const TabIcon = ({ name, focused }) => {
-  // Function to determine icon content based on tab name
-  const getIconContent = () => {
-    switch (name) {
-      case 'courses':
-        return '📘';
-      case 'quizzes':
-        return '📝';
-      case 'profile':
-        return '👤';
-      default:
-        return '•';
-    }
-  };
-
-  return (
-    <View style={styles.iconContainer}>
-      <Text style={styles.iconText}>{getIconContent()}</Text>
-    </View>
-  );
-};
+import * as Theme from '../../constants/Theme';
 
 export default function TabsLayout() {
+  const theme = Theme.createTheme(false); // Pass true for dark mode
+
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Theme.colors.primary,
-        tabBarInactiveTintColor: Theme.colors.textLight,
-        tabBarStyle: styles.tabBar,
+        tabBarActiveTintColor: theme.colors.primary,
+        tabBarInactiveTintColor: theme.colors.text + '70',
+        tabBarStyle: {
+          backgroundColor: theme.colors.background,
+          borderTopColor: theme.colors.border,
+          height: 60,
+          paddingBottom: 8,
+          paddingTop: 8,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '500',
+        },
         headerShown: false,
       }}
     >
       <Tabs.Screen
-        name="courses"
+        name="courses/index"
         options={{
           title: 'Courses',
-          tabBarIcon: ({ focused }) => <TabIcon name="courses" focused={focused} />,
-          tabBarLabelStyle: styles.tabBarLabel,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="book-outline" size={size} color={color} />
+          ),
         }}
       />
-      
       <Tabs.Screen
-        name="quizzes"
+        name="quizzes/index"
         options={{
           title: 'Quizzes',
-          tabBarIcon: ({ focused }) => <TabIcon name="quizzes" focused={focused} />,
-          tabBarLabelStyle: styles.tabBarLabel,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="clipboard-outline" size={size} color={color} />
+          ),
         }}
       />
-      
       <Tabs.Screen
-        name="profile"
+        name="profile/index"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ focused }) => <TabIcon name="profile" focused={focused} />,
-          tabBarLabelStyle: styles.tabBarLabel,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="person-outline" size={size} color={color} />
+          ),
         }}
       />
     </Tabs>
   );
 }
-
-const styles = StyleSheet.create({
-  tabBar: {
-    backgroundColor: Theme.colors.backgroundPrimary,
-    borderTopColor: Theme.colors.border,
-    height: 60,
-    paddingBottom: 6,
-    paddingTop: 6,
-  },
-  tabBarLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  iconContainer: {
-    width: 24,
-    height: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  iconText: {
-    fontSize: 18,
-  },
-});

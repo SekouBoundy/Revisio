@@ -1,226 +1,190 @@
-/**
- * File: app/_tabs/profile/edit.js
- * Edit profile screen for updating user information
- */
-
-import { useRouter } from 'expo-router';
+// app/_tabs/profile/edit.js
+import { Stack, useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
-import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+    Alert,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View
+} from 'react-native';
 import Button from '../../../components/common/Button';
 import Header from '../../../components/common/Header';
 import Input from '../../../components/common/Input';
-import Theme from '../../../constants/Theme';
+import * as Theme from '../../../constants/Theme';
 
-export default function EditProfileScreen() {
+export default function ProfileEditScreen() {
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    bio: '',
+    studentType: ''
+  });
+  
+  const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
+  
   const router = useRouter();
-  const [userData, setUserData] = useState(null);
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [learningType, setLearningType] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
+  const theme = Theme.createTheme(false); // Pass true for dark mode
 
+  // Load user profile data
   useEffect(() => {
-    const loadUserData = async () => {
+    async function loadUserProfile() {
       try {
-        const storedUserData = await SecureStore.getItemAsync('user_data');
-        
-        if (storedUserData) {
-          const data = JSON.parse(storedUserData);
-          setUserData(data);
-          setName(data.name || '');
-          setEmail(data.email || '');
-          setLearningType(data.learningType || '');
+        const storedProfile = await SecureStore.getItemAsync('userProfile');
+        if (storedProfile) {
+          const profile = JSON.parse(storedProfile);
+          setFormData({
+            fullName: profile.fullName || '',
+            email: profile.email || '',
+            bio: profile.bio || '',
+            studentType: profile.studentType || ''
+          });
         }
       } catch (error) {
-        console.error('Error loading user data:', error);
+        console.error('Error loading profile:', error);
       } finally {
-        setIsLoading(false);
+        setIsFetching(false);
       }
-    };
+    }
 
-    loadUserData();
+    loadUserProfile();
   }, []);
 
+  // Handle input changes
+  const handleChange = (field, value) => {
+    setFormData({
+      ...formData,
+      [field]: value
+    });
+  };
+
+  // Handle form submission
   const handleSave = async () => {
-    // Validate input
-    if (!name.trim()) {
-      Alert.alert('Invalid Input', 'Please enter your name');
+    // Validate form
+    if (!formData.fullName.trim()) {
+      Alert.alert('Error', 'Please enter your name');
       return;
     }
-
-    if (!email.trim()) {
-      Alert.alert('Invalid Input', 'Please enter your email');
+    
+    if (!formData.email.trim() || !formData.email.includes('@')) {
+      Alert.alert('Error', 'Please enter a valid email address');
       return;
     }
-
-    if (!learningType) {
-      Alert.alert('Invalid Input', 'Please select a learning track');
-      return;
-    }
-
+    
+    setIsLoading(true);
+    
     try {
-      setIsSaving(true);
-
-      // Update user data
-      const updatedUserData = {
-        ...userData,
-        name,
-        email,
-        learningType,
-      };
-
-      // Save updated user data
-      await SecureStore.setItemAsync('user_data', JSON.stringify(updatedUserData));
+      // Save profile data to secure storage
+      await SecureStore.setItemAsync('userProfile', JSON.stringify(formData));
       
-      // Show success message
+      // Show success message and navigate back
       Alert.alert(
-        'Profile Updated',
-        'Your profile has been updated successfully',
-        [{ text: 'OK', onPress: () => router.back() }]
+        'Success',
+        'Your profile has been updated successfully.',
+        [
+          { text: 'OK', onPress: () => router.back() }
+        ]
       );
     } catch (error) {
-      console.error('Error saving user data:', error);
-      Alert.alert('Error', 'Failed to update profile. Please try again.');
+      console.error('Error saving profile:', error);
+      Alert.alert('Error', 'Failed to save profile. Please try again.');
     } finally {
-      setIsSaving(false);
+      setIsLoading(false);
     }
   };
 
-  const getLearningTypeColor = (type) => {
-    switch (type) {
-      case 'bac':
-        return Theme.colors.bac;
-      case 'def':
-        return Theme.colors.def;
-      case 'languages':
-        return Theme.colors.languages;
-      default:
-        return Theme.colors.primary;
-    }
-  };
-
-  if (isLoading) {
+  if (isFetching) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text>Loading profile data...</Text>
-      </View>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <Header title="Edit Profile" onBackPress={() => router.back()} />
+        <View style={styles.centerContent}>
+          <Text style={{ color: theme.colors.text }}>Loading profile data...</Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <StatusBar style="auto" />
-      <Header
-        title="Edit Profile"
-        showBack={true}
-      />
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <Stack.Screen options={{ 
+        headerShown: false
+      }} />
       
-      <ScrollView
+      <Header title="Edit Profile" onBackPress={() => router.back()} />
+      
+      <ScrollView 
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.sectionTitle}>Personal Information</Text>
-        
         <Input
           label="Full Name"
-          value={name}
-          onChangeText={setName}
+          value={formData.fullName}
+          onChangeText={(text) => handleChange('fullName', text)}
           placeholder="Enter your full name"
+          autoCapitalize="words"
         />
         
         <Input
-          label="Email"
-          value={email}
-          onChangeText={setEmail}
+          label="Email Address"
+          value={formData.email}
+          onChangeText={(text) => handleChange('email', text)}
           placeholder="Enter your email"
           keyboardType="email-address"
           autoCapitalize="none"
+          disabled={true} // Make email non-editable
+          hint="Email cannot be changed"
         />
         
-        <Text style={styles.sectionTitle}>Learning Preferences</Text>
-        <Text style={styles.sectionSubtitle}>
-          Choose your primary learning track
-        </Text>
+        <Input
+          label="Bio"
+          value={formData.bio}
+          onChangeText={(text) => handleChange('bio', text)}
+          placeholder="Tell us about yourself"
+          multiline
+          style={styles.bioInput}
+        />
         
-        <View style={styles.learningTypesContainer}>
-          <LearningTypeButton
-            title="BAC Prep"
-            value="bac"
-            selected={learningType === 'bac'}
-            color={Theme.colors.bac}
-            onPress={() => setLearningType('bac')}
-          />
-          
-          <LearningTypeButton
-            title="DEF Prep"
-            value="def"
-            selected={learningType === 'def'}
-            color={Theme.colors.def}
-            onPress={() => setLearningType('def')}
-          />
-          
-          <LearningTypeButton
-            title="Languages"
-            value="languages"
-            selected={learningType === 'languages'}
-            color={Theme.colors.languages}
-            onPress={() => setLearningType('languages')}
+        <View style={styles.studentTypeContainer}>
+          <Input
+            label="Student Type"
+            value={
+              formData.studentType === 'BAC' ? 'BAC Student' : 
+              formData.studentType === 'DEF' ? 'DEF Student' : 
+              formData.studentType === 'LANGUAGE' ? 'Language Student' : 
+              'Student'
+            }
+            disabled={true} // Make student type non-editable
+            hint="Student type cannot be changed"
           />
         </View>
         
-        <View style={styles.buttonContainer}>
-          <Button
-            onPress={handleSave}
-            loading={isSaving}
-            fullWidth
-          >
-            Save Changes
-          </Button>
-          
-          <Button
-            variant="outline"
-            onPress={() => router.back()}
-            fullWidth
-            style={styles.cancelButton}
-          >
-            Cancel
-          </Button>
-        </View>
+        <Button
+          label="Save Changes"
+          onPress={handleSave}
+          isLoading={isLoading}
+          style={styles.saveButton}
+        />
+        
+        <Button
+          label="Cancel"
+          variant="outline"
+          onPress={() => router.back()}
+          style={styles.cancelButton}
+        />
       </ScrollView>
-    </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
-
-// Learning type button component
-const LearningTypeButton = ({ title, value, selected, color, onPress }) => (
-  <Button
-    variant={selected ? 'primary' : 'outline'}
-    style={[
-      styles.learningTypeButton,
-      selected && { backgroundColor: color },
-      !selected && { borderColor: color }
-    ]}
-    textStyle={[
-      !selected && { color: color }
-    ]}
-    onPress={onPress}
-  >
-    {title}
-  </Button>
-);
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Theme.colors.backgroundPrimary,
   },
-  loadingContainer: {
+  centerContent: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
@@ -229,31 +193,19 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: Theme.layout.spacing.lg,
-    paddingBottom: Theme.layout.spacing.xxl,
+    padding: 16,
+    paddingBottom: 32,
   },
-  sectionTitle: {
-    fontSize: Theme.layout.fontSize.lg,
-    fontWeight: '600',
-    color: Theme.colors.textPrimary,
-    marginTop: Theme.layout.spacing.lg,
-    marginBottom: Theme.layout.spacing.md,
+  bioInput: {
+    height: 120,
   },
-  sectionSubtitle: {
-    fontSize: Theme.layout.fontSize.sm,
-    color: Theme.colors.textSecondary,
-    marginBottom: Theme.layout.spacing.md,
+  studentTypeContainer: {
+    marginBottom: 24,
   },
-  learningTypesContainer: {
-    marginBottom: Theme.layout.spacing.xl,
-  },
-  learningTypeButton: {
-    marginBottom: Theme.layout.spacing.md,
-  },
-  buttonContainer: {
-    marginTop: Theme.layout.spacing.lg,
+  saveButton: {
+    marginBottom: 12,
   },
   cancelButton: {
-    marginTop: Theme.layout.spacing.md,
+    marginBottom: 24,
   },
 });

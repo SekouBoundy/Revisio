@@ -1,523 +1,361 @@
-/**
- * File: app/_tabs/quizzes/[quizId].js
- * Quiz detail screen with quiz information, questions, and results
- */
-
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
+// app/_tabs/profile/index.js
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 import { useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import Button from '../../../components/common/Button';
+import {
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
+} from 'react-native';
 import Card from '../../../components/common/Card';
-import Header from '../../../components/common/Header';
-import Theme from '../../../constants/Theme';
+import * as Theme from '../../../constants/Theme';
 
-// Mock data for quizzes
-const QUIZZES = {
-  '1': {
-    id: '1',
-    title: 'Mathematics: Calculus',
-    courseId: '1',
-    category: 'bac',
-    description: 'Test your knowledge of derivatives and integrals',
-    instructions: 'Select the correct answer for each question. You have 15 minutes to complete this quiz.',
-    questions: 10,
-    timeLimit: 15, // in minutes
-    completed: false,
-    locked: false,
-    questionsList: [
-      {
-        id: 'q1',
-        question: 'What is the derivative of f(x) = x²?',
-        options: [
-          { id: 'a', text: 'f\'(x) = x' },
-          { id: 'b', text: 'f\'(x) = 2x' },
-          { id: 'c', text: 'f\'(x) = 2' },
-          { id: 'd', text: 'f\'(x) = x²' },
-        ],
-        correctAnswer: 'b',
-      },
-      {
-        id: 'q2',
-        question: 'What is ∫ 2x dx?',
-        options: [
-          { id: 'a', text: 'x² + C' },
-          { id: 'b', text: '2x² + C' },
-          { id: 'c', text: 'x² + 2 + C' },
-          { id: 'd', text: '2 ln|x| + C' },
-        ],
-        correctAnswer: 'a',
-      },
-      {
-        id: 'q3',
-        question: 'The derivative of sin(x) is:',
-        options: [
-          { id: 'a', text: 'cos(x)' },
-          { id: 'b', text: '-sin(x)' },
-          { id: 'c', text: 'tan(x)' },
-          { id: 'd', text: '-cos(x)' },
-        ],
-        correctAnswer: 'a',
-      },
-    ],
-  },
-  '2': {
-    id: '2',
-    title: 'Physics: Mechanics',
-    courseId: '2',
-    category: 'bac',
-    description: 'Test your understanding of forces and motion',
-    instructions: 'Select the correct answer for each question. You have 12 minutes to complete this quiz.',
-    questions: 8,
-    timeLimit: 12,
-    completed: true,
-    score: 85,
-    locked: false,
-    questionsList: [
-      // Questions would be here
-    ],
-  },
-};
-
-// Question component
-const Question = ({ question, selectedAnswer, onSelectAnswer, showResult }) => {
-  return (
-    <View style={styles.questionContainer}>
-      <Text style={styles.questionText}>{question.question}</Text>
-      
-      <View style={styles.optionsContainer}>
-        {question.options.map((option) => {
-          const isSelected = selectedAnswer === option.id;
-          const isCorrect = showResult && option.id === question.correctAnswer;
-          const isIncorrect = showResult && isSelected && option.id !== question.correctAnswer;
-          
-          return (
-            <TouchableOpacity
-              key={option.id}
-              style={[
-                styles.optionButton,
-                isSelected && styles.selectedOption,
-                isCorrect && styles.correctOption,
-                isIncorrect && styles.incorrectOption,
-              ]}
-              onPress={() => onSelectAnswer(option.id)}
-              disabled={showResult}
-            >
-              <Text style={styles.optionLetter}>{option.id.toUpperCase()}</Text>
-              <Text
-                style={[
-                  styles.optionText,
-                  isSelected && styles.selectedOptionText,
-                  isCorrect && styles.correctOptionText,
-                  isIncorrect && styles.incorrectOptionText,
-                ]}
-              >
-                {option.text}
-              </Text>
-              
-              {showResult && isCorrect && (
-                <Text style={styles.resultIcon}>✓</Text>
-              )}
-              
-              {showResult && isIncorrect && (
-                <Text style={styles.resultIcon}>✗</Text>
-              )}
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-    </View>
-  );
-};
-
-// Quiz states
-const QUIZ_STATE = {
-  INFO: 'info',
-  IN_PROGRESS: 'in_progress',
-  RESULTS: 'results',
-};
-
-export default function QuizScreen() {
+export default function ProfileScreen() {
+  const [userProfile, setUserProfile] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  
   const router = useRouter();
-  const { quizId } = useLocalSearchParams();
-  const [quiz, setQuiz] = useState(null);
-  const [quizState, setQuizState] = useState(QUIZ_STATE.INFO);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState({});
-  const [score, setScore] = useState(0);
-  const [remainingTime, setRemainingTime] = useState(0);
-  const [timer, setTimer] = useState(null);
+  const theme = Theme.createTheme(false); // Pass true for dark mode
 
+  // Dummy achievements data
+  const achievements = [
+    {
+      id: 'achievement-1',
+      title: 'First Step',
+      description: 'Complete your first lesson',
+      icon: 'star-outline',
+      completed: true,
+      progress: 1,
+      total: 1
+    },
+    {
+      id: 'achievement-2',
+      title: 'Quiz Master',
+      description: 'Score 90% or higher on 5 quizzes',
+      icon: 'ribbon-outline',
+      completed: false,
+      progress: 3,
+      total: 5
+    },
+    {
+      id: 'achievement-3',
+      title: 'Learning Streak',
+      description: 'Study for 7 consecutive days',
+      icon: 'flame-outline',
+      completed: false,
+      progress: 4,
+      total: 7
+    }
+  ];
+
+  // Dummy stats data
+  const stats = {
+    coursesCompleted: 2,
+    quizzesTaken: 15,
+    averageScore: 87,
+    totalStudyTime: 32, // hours
+    streak: 4 // days
+  };
+
+  // Load user profile on mount
   useEffect(() => {
-    // Fetch quiz data (in a real app, this would be an API call)
-    const fetchedQuiz = QUIZZES[quizId];
-    
-    if (fetchedQuiz) {
-      setQuiz(fetchedQuiz);
-      setRemainingTime(fetchedQuiz.timeLimit * 60); // Convert to seconds
-    }
-
-    // Clean up timer on unmount
-    return () => {
-      if (timer) clearInterval(timer);
-    };
-  }, [quizId]);
-
-  const startQuiz = () => {
-    setQuizState(QUIZ_STATE.IN_PROGRESS);
-    setCurrentQuestionIndex(0);
-    setAnswers({});
-    
-    // Start timer
-    const intervalId = setInterval(() => {
-      setRemainingTime(prev => {
-        if (prev <= 1) {
-          clearInterval(intervalId);
-          finishQuiz();
-          return 0;
+    async function loadUserProfile() {
+      try {
+        const storedProfile = await SecureStore.getItemAsync('userProfile');
+        if (storedProfile) {
+          setUserProfile(JSON.parse(storedProfile));
+        } else {
+          // Fallback profile if none exists
+          setUserProfile({
+            fullName: 'Student User',
+            email: 'student@example.com',
+            studentType: 'BAC'
+          });
         }
-        return prev - 1;
-      });
-    }, 1000);
-    
-    setTimer(intervalId);
-  };
-
-  const handleSelectAnswer = (answerId) => {
-    setAnswers(prev => ({
-      ...prev,
-      [quiz.questionsList[currentQuestionIndex].id]: answerId,
-    }));
-  };
-
-  const goToNextQuestion = () => {
-    if (currentQuestionIndex < quiz.questionsList.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
-    } else {
-      finishQuiz();
-    }
-  };
-
-  const goToPreviousQuestion = () => {
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(currentQuestionIndex - 1);
-    }
-  };
-
-  const finishQuiz = () => {
-    // Clear timer
-    if (timer) clearInterval(timer);
-    
-    // Calculate score
-    let correctCount = 0;
-    quiz.questionsList.forEach(question => {
-      if (answers[question.id] === question.correctAnswer) {
-        correctCount++;
+      } catch (error) {
+        console.error('Error loading profile:', error);
+        // Fallback profile
+        setUserProfile({
+          fullName: 'Student User',
+          email: 'student@example.com',
+          studentType: 'BAC'
+        });
+      } finally {
+        setIsLoading(false);
       }
-    });
-    
-    const finalScore = Math.round((correctCount / quiz.questionsList.length) * 100);
-    setScore(finalScore);
-    
-    // Show results
-    setQuizState(QUIZ_STATE.RESULTS);
-  };
+    }
 
-  const confirmFinishQuiz = () => {
-    // Count answered questions
-    const answeredCount = Object.keys(answers).length;
-    
-    if (answeredCount < quiz.questionsList.length) {
-      Alert.alert(
-        "Finish Quiz?",
-        `You've only answered ${answeredCount} out of ${quiz.questionsList.length} questions. Are you sure you want to finish?`,
-        [
-          {
-            text: "Continue Quiz",
-            style: "cancel"
-          },
-          { 
-            text: "Finish Quiz", 
-            onPress: finishQuiz 
-          }
-        ]
-      );
-    } else {
-      finishQuiz();
+    loadUserProfile();
+  }, []);
+
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await SecureStore.deleteItemAsync('userToken');
+      // Navigate to login
+      router.replace('/_auth/login');
+    } catch (error) {
+      console.error('Error logging out:', error);
     }
   };
 
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  if (!quiz) {
+  if (isLoading || !userProfile) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text>Loading quiz...</Text>
-      </View>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <View style={styles.centerContent}>
+          <Text style={{ color: theme.colors.text }}>Loading profile...</Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
-  // Get color based on quiz category
-  const getCategoryColor = () => {
-    switch (quiz.category) {
-      case 'bac':
-        return Theme.colors.bac;
-      case 'def':
-        return Theme.colors.def;
-      case 'languages':
-        return Theme.colors.languages;
-      default:
-        return Theme.colors.primary;
-    }
-  };
-
-  // Render quiz info screen
-  if (quizState === QUIZ_STATE.INFO) {
-    return (
-      <View style={styles.container}>
-        <StatusBar style="auto" />
-        <Header
-          title="Quiz Details"
-          showBack={true}
-        />
-        
-        <ScrollView style={styles.scrollView}>
-          <View style={styles.quizInfoContainer}>
-            <Text style={styles.quizTitle}>{quiz.title}</Text>
-            <Text style={styles.quizDescription}>{quiz.description}</Text>
-            
-            <Card
-              variant="flat"
-              style={styles.infoCard}
+  return (
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.header}>
+          <View style={styles.profileInfo}>
+            <View 
+              style={[
+                styles.avatarContainer, 
+                { backgroundColor: theme.colors.primary + '20' }
+              ]}
             >
-              <View style={styles.infoItem}>
-                <Text style={styles.infoLabel}>Questions:</Text>
-                <Text style={styles.infoValue}>{quiz.questions}</Text>
+              <Text style={[styles.avatarText, { color: theme.colors.primary }]}>
+                {userProfile.fullName.split(' ').map(name => name[0]).join('').toUpperCase()}
+              </Text>
+            </View>
+            <View style={styles.userInfo}>
+              <Text style={[styles.userName, { color: theme.colors.text }]}>
+                {userProfile.fullName}
+              </Text>
+              <Text style={[styles.userEmail, { color: theme.colors.text + '80' }]}>
+                {userProfile.email}
+              </Text>
+              <View style={styles.userTypeContainer}>
+                <Text style={[styles.userType, { color: theme.colors.primary }]}>
+                  {userProfile.studentType === 'BAC' ? 'BAC Student' : 
+                   userProfile.studentType === 'DEF' ? 'DEF Student' : 'Language Student'}
+                </Text>
               </View>
-              
-              <View style={styles.infoItem}>
-                <Text style={styles.infoLabel}>Time Limit:</Text>
-                <Text style={styles.infoValue}>{quiz.timeLimit} minutes</Text>
-              </View>
-              
-              <View style={styles.infoItem}>
-                <Text style={styles.infoLabel}>Category:</Text>
-                <View style={[styles.categoryBadge, { backgroundColor: getCategoryColor() }]}>
-                  <Text style={styles.categoryText}>
-                    {quiz.category === 'bac' ? 'BAC Prep' : 
-                     quiz.category === 'def' ? 'DEF Prep' : 'Languages'}
-                  </Text>
+            </View>
+          </View>
+          
+          <TouchableOpacity
+            style={[styles.editButton, { borderColor: theme.colors.border }]}
+            onPress={() => router.push('/_tabs/profile/edit')}
+          >
+            <Ionicons name="pencil-outline" size={16} color={theme.colors.text} />
+            <Text style={[styles.editButtonText, { color: theme.colors.text }]}>
+              Edit Profile
+            </Text>
+          </TouchableOpacity>
+        </View>
+        
+        {/* Stats Cards */}
+        <View style={styles.statsContainer}>
+          <View style={styles.statsRow}>
+            <View 
+              style={[
+                styles.statCard, 
+                { 
+                  backgroundColor: theme.colors.card,
+                  borderColor: theme.colors.border
+                }
+              ]}
+            >
+              <Ionicons name="book-outline" size={24} color={theme.colors.primary} />
+              <Text style={[styles.statValue, { color: theme.colors.text }]}>
+                {stats.coursesCompleted}
+              </Text>
+              <Text style={[styles.statLabel, { color: theme.colors.text + '80' }]}>
+                Courses
+              </Text>
+            </View>
+            
+            <View 
+              style={[
+                styles.statCard, 
+                { 
+                  backgroundColor: theme.colors.card,
+                  borderColor: theme.colors.border
+                }
+              ]}
+            >
+              <Ionicons name="clipboard-outline" size={24} color={theme.colors.primary} />
+              <Text style={[styles.statValue, { color: theme.colors.text }]}>
+                {stats.quizzesTaken}
+              </Text>
+              <Text style={[styles.statLabel, { color: theme.colors.text + '80' }]}>
+                Quizzes
+              </Text>
+            </View>
+          </View>
+          
+          <View style={styles.statsRow}>
+            <View 
+              style={[
+                styles.statCard, 
+                { 
+                  backgroundColor: theme.colors.card,
+                  borderColor: theme.colors.border
+                }
+              ]}
+            >
+              <Ionicons name="analytics-outline" size={24} color={theme.colors.primary} />
+              <Text style={[styles.statValue, { color: theme.colors.text }]}>
+                {stats.averageScore}%
+              </Text>
+              <Text style={[styles.statLabel, { color: theme.colors.text + '80' }]}>
+                Avg. Score
+              </Text>
+            </View>
+            
+            <View 
+              style={[
+                styles.statCard, 
+                { 
+                  backgroundColor: theme.colors.card,
+                  borderColor: theme.colors.border
+                }
+              ]}
+            >
+              <Ionicons name="flame-outline" size={24} color={theme.colors.primary} />
+              <Text style={[styles.statValue, { color: theme.colors.text }]}>
+                {stats.streak}
+              </Text>
+              <Text style={[styles.statLabel, { color: theme.colors.text + '80' }]}>
+                Day Streak
+              </Text>
+            </View>
+          </View>
+        </View>
+        
+        {/* Achievements Section */}
+        <View style={styles.sectionContainer}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+              Achievements
+            </Text>
+            <TouchableOpacity onPress={() => router.push('/_tabs/profile/achievements')}>
+              <Text style={[styles.seeAllText, { color: theme.colors.primary }]}>
+                See All
+              </Text>
+            </TouchableOpacity>
+          </View>
+          
+          {achievements.map(achievement => (
+            <Card
+              key={achievement.id}
+              style={[
+                styles.achievementCard, 
+                { opacity: achievement.completed ? 1 : 0.7 }
+              ]}
+            >
+              <View style={styles.achievementContent}>
+                <View 
+                  style={[
+                    styles.achievementIconContainer,
+                    { backgroundColor: theme.colors.primary + '20' }
+                  ]}
+                >
+                  <Ionicons 
+                    name={achievement.icon} 
+                    size={24} 
+                    color={theme.colors.primary} 
+                  />
                 </View>
+                
+                <View style={styles.achievementInfo}>
+                  <Text style={[styles.achievementTitle, { color: theme.colors.text }]}>
+                    {achievement.title}
+                  </Text>
+                  <Text style={[styles.achievementDesc, { color: theme.colors.text + '80' }]}>
+                    {achievement.description}
+                  </Text>
+                  
+                  {!achievement.completed && (
+                    <View style={styles.progressContainer}>
+                      <View 
+                        style={[
+                          styles.progressBar,
+                          {
+                            width: `${(achievement.progress / achievement.total) * 100}%`,
+                            backgroundColor: theme.colors.primary
+                          }
+                        ]}
+                      />
+                      <Text style={[styles.progressText, { color: theme.colors.text + '80' }]}>
+                        {achievement.progress}/{achievement.total}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+                
+                {achievement.completed && (
+                  <View 
+                    style={[
+                      styles.completedBadge,
+                      { backgroundColor: theme.colors.primary }
+                    ]}
+                  >
+                    <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                  </View>
+                )}
               </View>
             </Card>
-            
-            <View style={styles.instructionsContainer}>
-              <Text style={styles.instructionsTitle}>Instructions</Text>
-              <Text style={styles.instructionsText}>{quiz.instructions}</Text>
-            </View>
-            
-            <Button
-              onPress={startQuiz}
-              fullWidth
-              style={styles.startButton}
-            >
-              Start Quiz
-            </Button>
-          </View>
-        </ScrollView>
-      </View>
-    );
-  }
-
-  // Render quiz in progress
-  if (quizState === QUIZ_STATE.IN_PROGRESS) {
-    const currentQuestion = quiz.questionsList[currentQuestionIndex];
-    const selectedAnswer = answers[currentQuestion.id];
-    const questionNumber = currentQuestionIndex + 1;
-    const totalQuestions = quiz.questionsList.length;
-    const progress = (questionNumber / totalQuestions) * 100;
-    
-    return (
-      <View style={styles.container}>
-        <StatusBar style="auto" />
+          ))}
+        </View>
         
-        <View style={styles.quizHeader}>
+        {/* Settings and Logout */}
+        <View style={styles.actionsContainer}>
           <TouchableOpacity
-            style={styles.closeButton}
+            style={[
+              styles.actionButton,
+              { backgroundColor: theme.colors.card }
+            ]}
             onPress={() => {
-              Alert.alert(
-                "Exit Quiz?",
-                "Your progress will be lost. Are you sure?",
-                [
-                  {
-                    text: "Continue Quiz",
-                    style: "cancel"
-                  },
-                  { 
-                    text: "Exit Quiz", 
-                    onPress: () => router.back() 
-                  }
-                ]
-              );
+              // Handle settings navigation
             }}
           >
-            <Text style={styles.closeButtonText}>✕</Text>
+            <Ionicons name="settings-outline" size={20} color={theme.colors.text} />
+            <Text style={[styles.actionButtonText, { color: theme.colors.text }]}>
+              Settings
+            </Text>
+            <Ionicons name="chevron-forward" size={16} color={theme.colors.text + '60'} />
           </TouchableOpacity>
           
-          <View style={styles.timerContainer}>
-            <Text style={[
-              styles.timerText,
-              remainingTime < 60 && styles.timerWarning
-            ]}>
-              {formatTime(remainingTime)}
-            </Text>
-          </View>
-          
-          <Text style={styles.questionCounter}>
-            {questionNumber}/{totalQuestions}
-          </Text>
-        </View>
-        
-        <View style={styles.progressBarContainer}>
-          <View style={styles.progressBar}>
-            <View
-              style={[
-                styles.progressFill,
-                { width: `${progress}%`, backgroundColor: getCategoryColor() }
-              ]}
-            />
-          </View>
-        </View>
-        
-        <ScrollView style={styles.scrollView}>
-          <Question
-            question={currentQuestion}
-            selectedAnswer={selectedAnswer}
-            onSelectAnswer={handleSelectAnswer}
-            showResult={false}
-          />
-        </ScrollView>
-        
-        <View style={styles.navigationButtons}>
-          <Button
-            variant="outline"
-            onPress={goToPreviousQuestion}
-            disabled={currentQuestionIndex === 0}
+          <TouchableOpacity
             style={[
-              styles.navButton,
-              currentQuestionIndex === 0 && styles.disabledButton
+              styles.actionButton,
+              { backgroundColor: theme.colors.card }
             ]}
+            onPress={handleLogout}
           >
-            Previous
-          </Button>
-          
-          {currentQuestionIndex < totalQuestions - 1 ? (
-            <Button
-              onPress={goToNextQuestion}
-              disabled={!selectedAnswer}
-              style={[
-                styles.navButton,
-                !selectedAnswer && styles.disabledButton
-              ]}
-            >
-              Next
-            </Button>
-          ) : (
-            <Button
-              onPress={confirmFinishQuiz}
-              style={styles.navButton}
-            >
-              Finish
-            </Button>
-          )}
+            <Ionicons name="log-out-outline" size={20} color="#EF4444" />
+            <Text style={[styles.actionButtonText, { color: "#EF4444" }]}>
+              Logout
+            </Text>
+            <Ionicons name="chevron-forward" size={16} color={theme.colors.text + '60'} />
+          </TouchableOpacity>
         </View>
-      </View>
-    );
-  }
-
-  // Render quiz results
-  if (quizState === QUIZ_STATE.RESULTS) {
-    return (
-      <View style={styles.container}>
-        <StatusBar style="auto" />
-        <Header
-          title="Quiz Results"
-          showBack={true}
-          onBackPress={() => router.replace('/quizzes')}
-        />
-        
-        <ScrollView style={styles.scrollView}>
-          <View style={styles.resultsContainer}>
-            <Text style={styles.quizTitle}>{quiz.title}</Text>
-            
-            <View style={styles.scoreContainer}>
-              <Text style={styles.scoreLabel}>Your Score</Text>
-              <Text style={[
-                styles.scoreValue,
-                score >= 70 ? styles.scoreHigh : 
-                score >= 40 ? styles.scoreMedium : 
-                styles.scoreLow
-              ]}>
-                {score}%
-              </Text>
-              
-              <Text style={styles.scoreMessage}>
-                {score >= 70 ? 'Excellent work!' : 
-                 score >= 40 ? 'Good effort, keep practicing!' : 
-                 'Keep studying, you\'ll improve!'}
-              </Text>
-            </View>
-            
-            <Text style={styles.reviewTitle}>Question Review</Text>
-            
-            {quiz.questionsList.map((question, index) => (
-              <View key={question.id} style={styles.reviewItem}>
-                <Text style={styles.reviewNumber}>Question {index + 1}</Text>
-                <Question
-                  question={question}
-                  selectedAnswer={answers[question.id] || null}
-                  onSelectAnswer={() => {}}
-                  showResult={true}
-                />
-              </View>
-            ))}
-            
-            <View style={styles.actionButtons}>
-              <Button
-                variant="outline"
-                onPress={() => router.back()}
-                style={styles.actionButton}
-              >
-                Back to Quizzes
-              </Button>
-              
-              <Button
-                onPress={() => {
-                  // In a real app, you might want to navigate to related course material
-                  router.push(`/courses/${quiz.courseId}`);
-                }}
-                style={styles.actionButton}
-              >
-                Review Course Material
-              </Button>
-            </View>
-          </View>
-        </ScrollView>
-      </View>
-    );
-  }
+      </ScrollView>
+    </SafeAreaView>
+  );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Theme.colors.backgroundPrimary,
   },
-  loadingContainer: {
+  centerContent: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
@@ -525,254 +363,170 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
-  quizInfoContainer: {
-    padding: Theme.layout.spacing.lg,
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 32,
   },
-  quizTitle: {
-    fontSize: Theme.layout.fontSize.xl,
-    fontWeight: 'bold',
-    color: Theme.colors.textPrimary,
-    marginBottom: Theme.layout.spacing.md,
+  header: {
+    marginBottom: 24,
   },
-  quizDescription: {
-    fontSize: Theme.layout.fontSize.md,
-    color: Theme.colors.textSecondary,
-    marginBottom: Theme.layout.spacing.lg,
-  },
-  infoCard: {
-    marginBottom: Theme.layout.spacing.lg,
-  },
-  infoItem: {
+  profileInfo: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Theme.layout.spacing.sm,
+    marginBottom: 16,
   },
-  infoLabel: {
-    fontSize: Theme.layout.fontSize.md,
-    fontWeight: '500',
-    color: Theme.colors.textPrimary,
-  },
-  infoValue: {
-    fontSize: Theme.layout.fontSize.md,
-    color: Theme.colors.textSecondary,
-  },
-  categoryBadge: {
-    paddingHorizontal: Theme.layout.spacing.sm,
-    paddingVertical: 4,
-    borderRadius: Theme.layout.borderRadius.small,
-  },
-  categoryText: {
-    color: Theme.colors.white,
-    fontSize: Theme.layout.fontSize.xs,
-    fontWeight: '600',
-  },
-  instructionsContainer: {
-    marginBottom: Theme.layout.spacing.lg,
-  },
-  instructionsTitle: {
-    fontSize: Theme.layout.fontSize.lg,
-    fontWeight: '600',
-    color: Theme.colors.textPrimary,
-    marginBottom: Theme.layout.spacing.sm,
-  },
-  instructionsText: {
-    fontSize: Theme.layout.fontSize.md,
-    color: Theme.colors.textSecondary,
-    lineHeight: 22,
-  },
-  startButton: {
-    marginTop: Theme.layout.spacing.md,
-  },
-  quizHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  avatarContainer: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     alignItems: 'center',
-    paddingHorizontal: Theme.layout.spacing.lg,
-    paddingTop: 60,
-    paddingBottom: Theme.layout.spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Theme.colors.border,
-  },
-  closeButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Theme.colors.backgroundSecondary,
     justifyContent: 'center',
+    marginRight: 16,
+  },
+  avatarText: {
+    fontSize: 22,
+    fontWeight: 'bold',
+  },
+  userInfo: {
+    flex: 1,
+  },
+  userName: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  userEmail: {
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  userTypeContainer: {
+    alignSelf: 'flex-start',
+  },
+  userType: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  editButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  editButtonText: {
+    fontSize: 14,
+    marginLeft: 6,
+  },
+  statsContainer: {
+    marginBottom: 24,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  statCard: {
+    flex: 1,
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 4,
+    borderWidth: 1,
+  },
+  statValue: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 12,
+  },
+  sectionContainer: {
+    marginBottom: 24,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  seeAllText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  achievementCard: {
+    marginBottom: 12,
+    paddingVertical: 8,
+  },
+  achievementContent: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
-  closeButtonText: {
-    fontSize: Theme.layout.fontSize.lg,
-    color: Theme.colors.textPrimary,
+  achievementIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
   },
-  timerContainer: {
-    paddingHorizontal: Theme.layout.spacing.md,
-    paddingVertical: Theme.layout.spacing.xs,
-    borderRadius: Theme.layout.borderRadius.medium,
-    backgroundColor: Theme.colors.backgroundSecondary,
+  achievementInfo: {
+    flex: 1,
+    marginRight: 8,
   },
-  timerText: {
-    fontSize: Theme.layout.fontSize.md,
+  achievementTitle: {
+    fontSize: 16,
     fontWeight: '600',
-    color: Theme.colors.textPrimary,
+    marginBottom: 4,
   },
-  timerWarning: {
-    color: Theme.colors.error,
+  achievementDesc: {
+    fontSize: 14,
+    marginBottom: 8,
   },
-  questionCounter: {
-    fontSize: Theme.layout.fontSize.md,
-    fontWeight: '600',
-    color: Theme.colors.textSecondary,
-  },
-  progressBarContainer: {
-    paddingHorizontal: Theme.layout.spacing.lg,
-    paddingVertical: Theme.layout.spacing.sm,
+  progressContainer: {
+    height: 6,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 3,
+    overflow: 'hidden',
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   progressBar: {
-    height: 4,
-    backgroundColor: Theme.colors.border,
-    borderRadius: 2,
-  },
-  progressFill: {
     height: '100%',
-    borderRadius: 2,
+    borderRadius: 3,
   },
-  questionContainer: {
-    padding: Theme.layout.spacing.lg,
+  progressText: {
+    fontSize: 10,
+    marginLeft: 8,
   },
-  questionText: {
-    fontSize: Theme.layout.fontSize.lg,
-    fontWeight: '600',
-    color: Theme.colors.textPrimary,
-    marginBottom: Theme.layout.spacing.lg,
-    lineHeight: 24,
-  },
-  optionsContainer: {
-    marginBottom: Theme.layout.spacing.lg,
-  },
-  optionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: Theme.layout.spacing.md,
-    borderWidth: 1,
-    borderColor: Theme.colors.border,
-    borderRadius: Theme.layout.borderRadius.medium,
-    marginBottom: Theme.layout.spacing.md,
-    backgroundColor: Theme.colors.backgroundPrimary,
-  },
-  selectedOption: {
-    borderColor: Theme.colors.primary,
-    backgroundColor: Theme.colors.primary + '10', // 10% opacity
-  },
-  correctOption: {
-    borderColor: Theme.colors.success,
-    backgroundColor: Theme.colors.success + '10', // 10% opacity
-  },
-  incorrectOption: {
-    borderColor: Theme.colors.error,
-    backgroundColor: Theme.colors.error + '10', // 10% opacity
-  },
-  optionLetter: {
+  completedBadge: {
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: Theme.colors.backgroundSecondary,
-    textAlign: 'center',
-    lineHeight: 24,
-    fontSize: Theme.layout.fontSize.sm,
-    fontWeight: '600',
-    color: Theme.colors.textSecondary,
-    marginRight: Theme.layout.spacing.md,
-  },
-  optionText: {
-    flex: 1,
-    fontSize: Theme.layout.fontSize.md,
-    color: Theme.colors.textPrimary,
-  },
-  selectedOptionText: {
-    fontWeight: '500',
-  },
-  correctOptionText: {
-    fontWeight: '500',
-  },
-  incorrectOptionText: {
-    textDecorationLine: 'line-through',
-  },
-  resultIcon: {
-    fontSize: Theme.layout.fontSize.md,
-    marginLeft: Theme.layout.spacing.sm,
-  },
-  navigationButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: Theme.layout.spacing.lg,
-    borderTopWidth: 1,
-    borderTopColor: Theme.colors.border,
-  },
-  navButton: {
-    flex: 1,
-    marginHorizontal: Theme.layout.spacing.xs,
-  },
-  disabledButton: {
-    opacity: 0.5,
-  },
-  resultsContainer: {
-    padding: Theme.layout.spacing.lg,
-    paddingBottom: Theme.layout.spacing.xxl,
-  },
-  scoreContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    padding: Theme.layout.spacing.lg,
-    marginBottom: Theme.layout.spacing.xl,
-    backgroundColor: Theme.colors.backgroundSecondary,
-    borderRadius: Theme.layout.borderRadius.medium,
   },
-  scoreLabel: {
-    fontSize: Theme.layout.fontSize.lg,
-    fontWeight: '600',
-    color: Theme.colors.textPrimary,
-    marginBottom: Theme.layout.spacing.md,
-  },
-  scoreValue: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    marginBottom: Theme.layout.spacing.md,
-  },
-  scoreHigh: {
-    color: Theme.colors.success,
-  },
-  scoreMedium: {
-    color: Theme.colors.warning,
-  },
-  scoreLow: {
-    color: Theme.colors.error,
-  },
-  scoreMessage: {
-    fontSize: Theme.layout.fontSize.md,
-    color: Theme.colors.textSecondary,
-    textAlign: 'center',
-  },
-  reviewTitle: {
-    fontSize: Theme.layout.fontSize.lg,
-    fontWeight: '600',
-    color: Theme.colors.textPrimary,
-    marginBottom: Theme.layout.spacing.lg,
-  },
-  reviewItem: {
-    marginBottom: Theme.layout.spacing.xl,
-  },
-  reviewNumber: {
-    fontSize: Theme.layout.fontSize.md,
-    fontWeight: '600',
-    color: Theme.colors.textSecondary,
-    marginBottom: Theme.layout.spacing.sm,
-  },
-  actionButtons: {
-    marginTop: Theme.layout.spacing.xl,
+  actionsContainer: {
+    marginBottom: 16,
   },
   actionButton: {
-    marginBottom: Theme.layout.spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  actionButtonText: {
+    flex: 1,
+    fontSize: 16,
+    marginLeft: 12,
   },
 });

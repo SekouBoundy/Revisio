@@ -1,17 +1,17 @@
 // constants/Theme.ts
-// Try importing with default imports
-import Colors from './Colors';
-import Layout from './Layout';
+import * as Colors from './Colors';
+import * as Layout from './Layout';
 
 // Helper to get the current theme colors
-const getThemeColors = (isDarkMode = false) => {
+export const getThemeColors = (isDarkMode = false) => {
   return isDarkMode ? Colors.dark : Colors.light;
 };
 
 // Create a theme that uses the current color scheme
-const createTheme = (isDarkMode = false) => {
+export const createTheme = (isDarkMode = false) => {
   const currentColors = getThemeColors(isDarkMode);
 
+  // Make sure we're actually returning a theme object with all required properties
   return {
     colors: {
       primary: '#4361FF',      // Main brand color
@@ -29,5 +29,10 @@ const createTheme = (isDarkMode = false) => {
   };
 };
 
-export { createTheme, getThemeColors };
+// Also export a default theme
+const Theme = {
+  createTheme,
+  getThemeColors
+};
 
+export default Theme;

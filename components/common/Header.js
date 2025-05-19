@@ -26,7 +26,24 @@ const Header = ({
   titleStyle = {},
 }) => {
   const router = useRouter();
-  const theme = Theme.createTheme(false); // Pass true for dark mode
+  
+  // Use try-catch in case Theme functions are undefined
+  let themeColors;
+  try {
+    const theme = Theme.createTheme(false); // Pass true for dark mode
+    themeColors = theme.colors;
+  } catch (error) {
+    console.error('Error creating theme:', error);
+    // Fallback colors in case theme creation fails
+    themeColors = {
+      background: '#FFFFFF',
+      text: '#000000',
+      primary: '#4361FF',
+      card: '#F5F5F5',
+      border: '#E0E0E0',
+      notification: '#FF3B30'
+    };
+  }
 
   // Handle back button press
   const handleBackPress = () => {
@@ -38,16 +55,16 @@ const Header = ({
   };
 
   return (
-    <SafeAreaView style={{ backgroundColor: transparent ? 'transparent' : theme.colors.background }}>
+    <SafeAreaView style={{ backgroundColor: transparent ? 'transparent' : themeColors.background }}>
       <StatusBar
         barStyle={transparent ? 'light-content' : 'dark-content'}
-        backgroundColor={transparent ? 'transparent' : theme.colors.background}
+        backgroundColor={transparent ? 'transparent' : themeColors.background}
         translucent={transparent}
       />
       <View 
         style={[
           styles.header, 
-          { backgroundColor: transparent ? 'transparent' : theme.colors.background },
+          { backgroundColor: transparent ? 'transparent' : themeColors.background },
           style
         ]}
       >
@@ -61,7 +78,7 @@ const Header = ({
               <Ionicons 
                 name="chevron-back" 
                 size={24} 
-                color={transparent ? '#FFFFFF' : theme.colors.text} 
+                color={transparent ? '#FFFFFF' : themeColors.text} 
               />
             </TouchableOpacity>
           )}
@@ -70,7 +87,7 @@ const Header = ({
         <Text 
           style={[
             styles.title, 
-            { color: transparent ? '#FFFFFF' : theme.colors.text },
+            { color: transparent ? '#FFFFFF' : themeColors.text },
             titleStyle
           ]}
           numberOfLines={1}

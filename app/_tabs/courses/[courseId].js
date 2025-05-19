@@ -1,292 +1,263 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
+// app/_tabs/courses/[courseId].js
+import { Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
+} from 'react-native';
 import Button from '../../../components/common/Button';
 import Card from '../../../components/common/Card';
 import Header from '../../../components/common/Header';
-import Theme from '../../../constants/Theme';
+import * as Theme from '../../../constants/Theme';
 
-// Mock data for course details
+// Dummy course data - in a real app, this would come from an API or local database
 const COURSES = {
-  '1': {
-    id: '1',
-    title: 'Mathematics for BAC',
-    category: 'bac',
-    description: 'Master key mathematical concepts and problem-solving techniques essential for success in the BAC examination. This comprehensive course covers algebra, calculus, geometry, and more.',
-    lessons: [
+  'bac-math': {
+    id: 'bac-math',
+    title: 'BAC Mathematics',
+    description: 'Advanced mathematics course for BAC preparation covering algebra, calculus, and geometry.',
+    level: 'Advanced',
+    duration: '12 weeks',
+    modules: [
       {
-        id: '1-1',
-        title: 'Introduction to Functions',
-        duration: '45 min',
-        completed: true,
+        id: 'module-1',
+        title: 'Algebra Fundamentals',
+        lessons: [
+          { id: 'lesson-1', title: 'Polynomials', duration: '30 min', completed: false },
+          { id: 'lesson-2', title: 'Equations', duration: '45 min', completed: false },
+          { id: 'lesson-3', title: 'Inequalities', duration: '35 min', completed: false }
+        ]
       },
       {
-        id: '1-2',
-        title: 'Limits and Continuity',
-        duration: '60 min',
-        completed: true,
-      },
-      {
-        id: '1-3',
-        title: 'Differentiation Rules',
-        duration: '50 min',
-        completed: true,
-      },
-      {
-        id: '1-4',
-        title: 'Applications of Derivatives',
-        duration: '55 min',
-        completed: false,
-      },
-      {
-        id: '1-5',
-        title: 'Integration Techniques',
-        duration: '65 min',
-        completed: false,
-      },
-      {
-        id: '1-6',
-        title: 'Numerical Integration',
-        duration: '45 min',
-        completed: false,
-      },
-      {
-        id: '1-7',
-        title: 'Vector Calculus',
-        duration: '50 min',
-        completed: false,
-      },
-    ],
-    instructor: 'Dr. Ahmed Benali',
-    totalQuizzes: 4,
+        id: 'module-2',
+        title: 'Calculus',
+        lessons: [
+          { id: 'lesson-4', title: 'Limits', duration: '40 min', completed: false },
+          { id: 'lesson-5', title: 'Derivatives', duration: '50 min', completed: false },
+          { id: 'lesson-6', title: 'Integrals', duration: '55 min', completed: false }
+        ]
+      }
+    ]
   },
-  '2': {
-    id: '2',
-    title: 'Physics & Chemistry',
-    category: 'bac',
-    description: 'A comprehensive review of physics and chemistry topics for BAC preparation, covering mechanics, electricity, thermodynamics, organic chemistry, and more.',
-    lessons: [
+  'def-science': {
+    id: 'def-science',
+    title: 'DEF Science',
+    description: 'Comprehensive science course for DEF preparation covering physics, chemistry, and biology.',
+    level: 'Intermediate',
+    duration: '10 weeks',
+    modules: [
       {
-        id: '2-1',
-        title: 'Mechanics: Forces and Motion',
-        duration: '55 min',
-        completed: true,
+        id: 'module-1',
+        title: 'Physics Basics',
+        lessons: [
+          { id: 'lesson-1', title: 'Mechanics', duration: '35 min', completed: false },
+          { id: 'lesson-2', title: 'Electricity', duration: '40 min', completed: false }
+        ]
       },
       {
-        id: '2-2',
-        title: 'Electricity and Magnetism',
-        duration: '60 min',
-        completed: true,
-      },
-      {
-        id: '2-3',
-        title: 'Thermodynamics',
-        duration: '50 min',
-        completed: false,
-      },
-      {
-        id: '2-4',
-        title: 'Wave Properties',
-        duration: '45 min',
-        completed: false,
-      },
-      {
-        id: '2-5',
-        title: 'Atomic Structure',
-        duration: '55 min',
-        completed: false,
-      },
-    ],
-    instructor: 'Prof. Fatima Zouhri',
-    totalQuizzes: 3,
+        id: 'module-2',
+        title: 'Chemistry',
+        lessons: [
+          { id: 'lesson-3', title: 'Elements', duration: '30 min', completed: false },
+          { id: 'lesson-4', title: 'Reactions', duration: '45 min', completed: false }
+        ]
+      }
+    ]
   },
+  'english-beginner': {
+    id: 'english-beginner',
+    title: 'English for Beginners',
+    description: 'Foundational English language course covering vocabulary, grammar, and conversation.',
+    level: 'Beginner',
+    duration: '8 weeks',
+    modules: [
+      {
+        id: 'module-1',
+        title: 'Basic Vocabulary',
+        lessons: [
+          { id: 'lesson-1', title: 'Greetings', duration: '20 min', completed: false },
+          { id: 'lesson-2', title: 'Numbers', duration: '25 min', completed: false }
+        ]
+      },
+      {
+        id: 'module-2',
+        title: 'Grammar',
+        lessons: [
+          { id: 'lesson-3', title: 'Present Tense', duration: '30 min', completed: false },
+          { id: 'lesson-4', title: 'Past Tense', duration: '35 min', completed: false }
+        ]
+      }
+    ]
+  }
 };
 
-// Lesson item component
-const LessonItem = ({ lesson, onPress }) => (
-  <TouchableOpacity
-    style={[
-      styles.lessonItem,
-      lesson.completed && styles.lessonItemCompleted
-    ]}
-    onPress={onPress}
-  >
-    <View style={styles.lessonContent}>
-      <View style={styles.lessonStatusContainer}>
-        <View style={[
-          styles.lessonStatusIndicator,
-          lesson.completed && styles.lessonStatusCompleted
-        ]} />
-      </View>
-      
-      <View style={styles.lessonInfo}>
-        <Text style={styles.lessonTitle}>{lesson.title}</Text>
-        <Text style={styles.lessonDuration}>{lesson.duration}</Text>
-      </View>
-    </View>
-  </TouchableOpacity>
-);
-
 export default function CourseDetailScreen() {
-  const router = useRouter();
   const { courseId } = useLocalSearchParams();
   const [course, setCourse] = useState(null);
-  const [completedCount, setCompletedCount] = useState(0);
-  const [progressPercentage, setProgressPercentage] = useState(0);
+  const [expandedModules, setExpandedModules] = useState({});
+  
+  const theme = Theme.createTheme(false); // Pass true for dark mode
 
   useEffect(() => {
-    // Fetch course data (in a real app, this would be an API call)
-    const fetchedCourse = COURSES[courseId];
+    // In a real app, you would fetch the course data from an API
+    // For now, we're using the dummy data
+    setCourse(COURSES[courseId]);
     
-    if (fetchedCourse) {
-      setCourse(fetchedCourse);
-      
-      // Calculate completion stats
-      const completed = fetchedCourse.lessons.filter(lesson => lesson.completed).length;
-      setCompletedCount(completed);
-      setProgressPercentage(Math.round((completed / fetchedCourse.lessons.length) * 100));
+    // Initialize all modules as expanded
+    if (COURSES[courseId]) {
+      const modules = COURSES[courseId].modules;
+      const initialExpanded = {};
+      modules.forEach(module => {
+        initialExpanded[module.id] = true; // Set all modules to expanded initially
+      });
+      setExpandedModules(initialExpanded);
     }
   }, [courseId]);
 
-  // Get color based on course category
-  const getCategoryColor = () => {
-    if (!course) return Theme.colors.primary;
-    
-    switch (course.category) {
-      case 'bac':
-        return Theme.colors.bac;
-      case 'def':
-        return Theme.colors.def;
-      case 'languages':
-        return Theme.colors.languages;
-      default:
-        return Theme.colors.primary;
-    }
-  };
-
-  // Get category label
-  const getCategoryLabel = () => {
-    if (!course) return '';
-    
-    switch (course.category) {
-      case 'bac':
-        return 'BAC Prep';
-      case 'def':
-        return 'DEF Prep';
-      case 'languages':
-        return 'Languages';
-      default:
-        return course.category;
-    }
+  // Toggle module expansion
+  const toggleModule = (moduleId) => {
+    setExpandedModules(prev => ({
+      ...prev,
+      [moduleId]: !prev[moduleId]
+    }));
   };
 
   if (!course) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text>Loading course...</Text>
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <Header title="Course Details" />
+        <View style={styles.centerContent}>
+          <Text style={{ color: theme.colors.text }}>Loading course...</Text>
+        </View>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="auto" />
-      <Header
-        title={course.title}
-        showBack={true}
-      />
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <Stack.Screen options={{ 
+        headerShown: false
+      }} />
       
-      <ScrollView style={styles.scrollView}>
-        {/* Course header */}
-        <View style={styles.courseHeader}>
-          <View style={[
-            styles.categoryBadge,
-            { backgroundColor: getCategoryColor() }
-          ]}>
-            <Text style={styles.categoryText}>{getCategoryLabel()}</Text>
-          </View>
-          
-          <Text style={styles.courseTitle}>{course.title}</Text>
-          
-          <Text style={styles.instructorName}>
-            Instructor: {course.instructor}
+      <Header title={course.title} />
+      
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <Card
+          elevated
+          style={styles.courseInfoCard}
+        >
+          <Text style={[styles.courseDescription, { color: theme.colors.text }]}>
+            {course.description}
           </Text>
           
-          <Text style={styles.courseDescription}>{course.description}</Text>
-          
-          {/* Progress section */}
-          <View style={styles.progressSection}>
-            <View style={styles.progressStats}>
-              <View style={styles.progressStat}>
-                <Text style={styles.progressStatValue}>{course.lessons.length}</Text>
-                <Text style={styles.progressStatLabel}>Lessons</Text>
-              </View>
-              
-              <View style={styles.progressStat}>
-                <Text style={styles.progressStatValue}>{course.totalQuizzes}</Text>
-                <Text style={styles.progressStatLabel}>Quizzes</Text>
-              </View>
-              
-              <View style={styles.progressStat}>
-                <Text style={styles.progressStatValue}>{completedCount}</Text>
-                <Text style={styles.progressStatLabel}>Completed</Text>
-              </View>
-            </View>
-            
-            <View style={styles.progressBarContainer}>
-              <View style={styles.progressBar}>
-                <View
-                  style={[
-                    styles.progressFill,
-                    { width: `${progressPercentage}%`, backgroundColor: getCategoryColor() }
-                  ]}
-                />
-              </View>
-              <Text style={styles.progressText}>{progressPercentage}% Complete</Text>
-            </View>
-          </View>
-        </View>
-        
-        {/* Lessons section */}
-        <View style={styles.lessonsSection}>
-          <Text style={styles.sectionTitle}>Course Content</Text>
-          
-          {course.lessons.map((lesson, index) => (
-            <LessonItem
-              key={lesson.id}
-              lesson={lesson}
-              onPress={() => {
-                // In a real app, navigate to lesson details
-                console.log(`Navigate to lesson ${lesson.id}`);
-              }}
-            />
-          ))}
-        </View>
-        
-        {/* Quizzes card */}
-        <Card
-          variant="outlined"
-          style={styles.quizzesCard}
-          onPress={() => router.push('/quizzes')}
-        >
-          <View style={styles.quizzesCardContent}>
-            <View>
-              <Text style={styles.quizzesCardTitle}>Test Your Knowledge</Text>
-              <Text style={styles.quizzesCardDescription}>
-                Take quizzes to reinforce your learning
+          <View style={styles.courseMetaContainer}>
+            <View style={styles.courseMetaItem}>
+              <Text style={[styles.courseMetaLabel, { color: theme.colors.text + '80' }]}>
+                Level
+              </Text>
+              <Text style={[styles.courseMetaValue, { color: theme.colors.text }]}>
+                {course.level}
               </Text>
             </View>
             
-            <Button
-              variant="primary"
-              size="small"
-              onPress={() => router.push('/quizzes')}
-            >
-              View Quizzes
-            </Button>
+            <View style={styles.courseMetaItem}>
+              <Text style={[styles.courseMetaLabel, { color: theme.colors.text + '80' }]}>
+                Duration
+              </Text>
+              <Text style={[styles.courseMetaValue, { color: theme.colors.text }]}>
+                {course.duration}
+              </Text>
+            </View>
           </View>
+          
+          <Button
+            label="Start Learning"
+            variant="primary"
+            style={styles.startButton}
+          />
         </Card>
+        
+        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+          Course Content
+        </Text>
+        
+        {course.modules.map((module, index) => (
+          <Card
+            key={module.id}
+            variant="outlined"
+            style={styles.moduleCard}
+          >
+            <TouchableOpacity
+              style={styles.moduleHeader}
+              onPress={() => toggleModule(module.id)}
+            >
+              <View style={styles.moduleHeaderContent}>
+                <Text style={[styles.moduleNumber, { color: theme.colors.primary }]}>
+                  Module {index + 1}
+                </Text>
+                <Text style={[styles.moduleTitle, { color: theme.colors.text }]}>
+                  {module.title}
+                </Text>
+                <Text style={[styles.lessonCount, { color: theme.colors.text + '80' }]}>
+                  {module.lessons.length} lessons
+                </Text>
+              </View>
+              
+              <Text style={{ color: theme.colors.primary, fontSize: 20 }}>
+                {expandedModules[module.id] ? '−' : '+'}
+              </Text>
+            </TouchableOpacity>
+            
+            {expandedModules[module.id] && (
+              <View style={styles.lessonsList}>
+                {module.lessons.map((lesson, lessonIndex) => (
+                  <TouchableOpacity
+                    key={lesson.id}
+                    style={[
+                      styles.lessonItem,
+                      lessonIndex < module.lessons.length - 1 && styles.lessonItemBorder,
+                      { borderColor: theme.colors.border }
+                    ]}
+                    onPress={() => {
+                      // Navigate to lesson screen
+                      // router.push(`/lessons/${lesson.id}`);
+                    }}
+                  >
+                    <View style={styles.lessonInfo}>
+                      <Text style={[styles.lessonTitle, { color: theme.colors.text }]}>
+                        {lesson.title}
+                      </Text>
+                      <Text style={[styles.lessonDuration, { color: theme.colors.text + '80' }]}>
+                        {lesson.duration}
+                      </Text>
+                    </View>
+                    <View
+                      style={[
+                        styles.lessonStatus,
+                        { 
+                          backgroundColor: lesson.completed 
+                            ? theme.colors.primary 
+                            : theme.colors.card 
+                        }
+                      ]}
+                    >
+                      {lesson.completed && (
+                        <Text style={{ color: '#FFFFFF', fontSize: 12 }}>✓</Text>
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </Card>
+        ))}
       </ScrollView>
     </View>
   );
@@ -295,159 +266,106 @@ export default function CourseDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Theme.colors.backgroundPrimary,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   scrollView: {
     flex: 1,
   },
-  courseHeader: {
-    padding: Theme.layout.spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: Theme.colors.border,
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 32,
   },
-  categoryBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: Theme.layout.spacing.sm,
-    paddingVertical: 4,
-    borderRadius: Theme.layout.borderRadius.small,
-    marginBottom: Theme.layout.spacing.sm,
+  centerContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  categoryText: {
-    color: Theme.colors.white,
-    fontSize: Theme.layout.fontSize.xs,
-    fontWeight: '600',
-  },
-  courseTitle: {
-    fontSize: Theme.layout.fontSize.xl,
-    fontWeight: 'bold',
-    color: Theme.colors.textPrimary,
-    marginBottom: Theme.layout.spacing.sm,
-  },
-  instructorName: {
-    fontSize: Theme.layout.fontSize.sm,
-    color: Theme.colors.textSecondary,
-    marginBottom: Theme.layout.spacing.md,
+  courseInfoCard: {
+    marginBottom: 24,
   },
   courseDescription: {
-    fontSize: Theme.layout.fontSize.md,
-    color: Theme.colors.textPrimary,
-    lineHeight: 22,
-    marginBottom: Theme.layout.spacing.lg,
+    fontSize: 16,
+    lineHeight: 24,
+    marginBottom: 16,
   },
-  progressSection: {
-    backgroundColor: Theme.colors.backgroundSecondary,
-    borderRadius: Theme.layout.borderRadius.medium,
-    padding: Theme.layout.spacing.md,
-  },
-  progressStats: {
+  courseMetaContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: Theme.layout.spacing.md,
+    marginBottom: 16,
   },
-  progressStat: {
-    alignItems: 'center',
+  courseMetaItem: {
+    marginRight: 24,
   },
-  progressStatValue: {
-    fontSize: Theme.layout.fontSize.xl,
-    fontWeight: 'bold',
-    color: Theme.colors.textPrimary,
+  courseMetaLabel: {
+    fontSize: 14,
+    marginBottom: 4,
   },
-  progressStatLabel: {
-    fontSize: Theme.layout.fontSize.xs,
-    color: Theme.colors.textSecondary,
-    marginTop: 2,
+  courseMetaValue: {
+    fontSize: 16,
+    fontWeight: '600',
   },
-  progressBarContainer: {
-    alignItems: 'center',
-  },
-  progressBar: {
-    width: '100%',
-    height: 8,
-    backgroundColor: Theme.colors.border,
-    borderRadius: 4,
-    marginBottom: Theme.layout.spacing.xs,
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 4,
-  },
-  progressText: {
-    fontSize: Theme.layout.fontSize.sm,
-    color: Theme.colors.textSecondary,
-  },
-  lessonsSection: {
-    padding: Theme.layout.spacing.lg,
+  startButton: {
+    marginTop: 8,
   },
   sectionTitle: {
-    fontSize: Theme.layout.fontSize.lg,
-    fontWeight: '600',
-    color: Theme.colors.textPrimary,
-    marginBottom: Theme.layout.spacing.md,
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 16,
   },
-  lessonItem: {
-    backgroundColor: Theme.colors.backgroundPrimary,
-    borderWidth: 1,
-    borderColor: Theme.colors.border,
-    borderRadius: Theme.layout.borderRadius.medium,
-    marginBottom: Theme.layout.spacing.md,
-    overflow: 'hidden',
+  moduleCard: {
+    marginBottom: 12,
+    padding: 0,
   },
-  lessonItemCompleted: {
-    borderColor: Theme.colors.success,
-  },
-  lessonContent: {
+  moduleHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: Theme.layout.spacing.md,
+    justifyContent: 'space-between',
+    padding: 16,
   },
-  lessonStatusContainer: {
-    marginRight: Theme.layout.spacing.md,
+  moduleHeaderContent: {
+    flex: 1,
   },
-  lessonStatusIndicator: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: Theme.colors.border,
+  moduleNumber: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 4,
   },
-  lessonStatusCompleted: {
-    backgroundColor: Theme.colors.success,
+  moduleTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  lessonCount: {
+    fontSize: 12,
+  },
+  lessonsList: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+  },
+  lessonItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+  },
+  lessonItemBorder: {
+    borderBottomWidth: 1,
   },
   lessonInfo: {
     flex: 1,
+    marginRight: 8,
   },
   lessonTitle: {
-    fontSize: Theme.layout.fontSize.md,
+    fontSize: 14,
     fontWeight: '500',
-    color: Theme.colors.textPrimary,
     marginBottom: 4,
   },
   lessonDuration: {
-    fontSize: Theme.layout.fontSize.sm,
-    color: Theme.colors.textLight,
+    fontSize: 12,
   },
-  quizzesCard: {
-    margin: Theme.layout.spacing.lg,
-    marginTop: 0,
-    marginBottom: Theme.layout.spacing.xxl,
-  },
-  quizzesCardContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  lessonStatus: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     alignItems: 'center',
-  },
-  quizzesCardTitle: {
-    fontSize: Theme.layout.fontSize.md,
-    fontWeight: '600',
-    color: Theme.colors.textPrimary,
-    marginBottom: 4,
-  },
-  quizzesCardDescription: {
-    fontSize: Theme.layout.fontSize.sm,
-    color: Theme.colors.textSecondary,
+    justifyContent: 'center',
   },
 });

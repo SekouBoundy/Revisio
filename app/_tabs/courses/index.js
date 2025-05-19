@@ -1,381 +1,352 @@
+// app/_tabs/courses/index.js
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useState } from 'react';
+import {
+    FlatList,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
+} from 'react-native';
 import Card from '../../../components/common/Card';
-import Theme from '../../../constants/Theme';
+import * as Theme from '../../../constants/Theme';
 
-// Mock data for courses
+// Dummy course data - in a real app, this would come from an API or local database
 const COURSES = [
   {
-    id: '1',
-    title: 'Mathematics for BAC',
-    category: 'bac',
-    description: 'Key concepts and practice problems for BAC mathematics',
-    lessons: 24,
-    progress: 35,
+    id: 'bac-math',
+    title: 'BAC Mathematics',
+    description: 'Advanced mathematics course for BAC preparation',
+    level: 'Advanced',
+    type: 'BAC',
+    progress: 0.2,
+    imageUrl: null // You can add actual images later
   },
   {
-    id: '2',
-    title: 'Physics & Chemistry',
-    category: 'bac',
-    description: 'Comprehensive review of physics and chemistry topics',
-    lessons: 18,
-    progress: 62,
+    id: 'bac-physics',
+    title: 'BAC Physics',
+    description: 'Comprehensive physics course for BAC preparation',
+    level: 'Advanced',
+    type: 'BAC',
+    progress: 0.1,
+    imageUrl: null
   },
   {
-    id: '3',
-    title: 'English Communication',
-    category: 'languages',
-    description: 'Improve your English speaking and writing skills',
-    lessons: 30,
-    progress: 15,
+    id: 'def-science',
+    title: 'DEF Science',
+    description: 'Science fundamentals for DEF preparation',
+    level: 'Intermediate',
+    type: 'DEF',
+    progress: 0.5,
+    imageUrl: null
   },
   {
-    id: '4',
-    title: 'Arabic Fundamentals',
-    category: 'languages',
-    description: 'Master the basics of Arabic grammar and vocabulary',
-    lessons: 20,
-    progress: 0,
+    id: 'def-math',
+    title: 'DEF Mathematics',
+    description: 'Core mathematics concepts for DEF preparation',
+    level: 'Intermediate',
+    type: 'DEF',
+    progress: 0.3,
+    imageUrl: null
   },
   {
-    id: '5',
-    title: 'Literature for DEF',
-    category: 'def',
-    description: 'Essential literature texts and analysis for DEF exam',
-    lessons: 15,
-    progress: 70,
+    id: 'english-beginner',
+    title: 'English for Beginners',
+    description: 'Start your journey with English language basics',
+    level: 'Beginner',
+    type: 'LANGUAGE',
+    progress: 0.8,
+    imageUrl: null
   },
   {
-    id: '6',
-    title: 'History & Geography',
-    category: 'def',
-    description: 'Comprehensive review of key historical events and geography',
-    lessons: 22,
-    progress: 40,
-  },
+    id: 'arabic-intermediate',
+    title: 'Intermediate Arabic',
+    description: 'Build upon your Arabic language foundations',
+    level: 'Intermediate',
+    type: 'LANGUAGE',
+    progress: 0.4,
+    imageUrl: null
+  }
 ];
 
-// Course card component
-const CourseCard = ({ course, onPress }) => {
-  // Get color based on course category
-  const getCategoryColor = () => {
-    switch (course.category) {
-      case 'bac':
-        return Theme.colors.bac;
-      case 'def':
-        return Theme.colors.def;
-      case 'languages':
-        return Theme.colors.languages;
-      default:
-        return Theme.colors.primary;
-    }
-  };
+// Categories for filtering
+const CATEGORIES = [
+  { id: 'all', label: 'All Courses' },
+  { id: 'BAC', label: 'BAC Preparation' },
+  { id: 'DEF', label: 'DEF Preparation' },
+  { id: 'LANGUAGE', label: 'Language Learning' }
+];
 
-  // Get category label
-  const getCategoryLabel = () => {
-    switch (course.category) {
-      case 'bac':
-        return 'BAC Prep';
-      case 'def':
-        return 'DEF Prep';
-      case 'languages':
-        return 'Languages';
-      default:
-        return course.category;
-    }
-  };
+export default function CoursesScreen() {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  
+  const router = useRouter();
+  const theme = Theme.createTheme(false); // Pass true for dark mode
 
-  return (
-    <Card
-      variant="default"
-      style={styles.courseCard}
-      onPress={onPress}
-    >
-      <View style={[styles.categoryBadge, { backgroundColor: getCategoryColor() }]}>
-        <Text style={styles.categoryText}>{getCategoryLabel()}</Text>
+  // Filter courses based on search query and selected category
+  const filteredCourses = COURSES.filter(course => {
+    const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        course.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = selectedCategory === 'all' || course.type === selectedCategory;
+    
+    return matchesSearch && matchesCategory;
+  });
+
+  // Render a progress bar
+  const ProgressBar = ({ progress }) => {
+    return (
+      <View style={styles.progressBarContainer}>
+        <View 
+          style={[
+            styles.progressBar, 
+            { 
+              width: `${progress * 100}%`,
+              backgroundColor: theme.colors.primary
+            }
+          ]} 
+        />
       </View>
-      
-      <Text style={styles.courseTitle}>{course.title}</Text>
-      <Text style={styles.courseDescription}>{course.description}</Text>
-      
-      <View style={styles.courseMetaContainer}>
-        <Text style={styles.lessonsCount}>{course.lessons} Lessons</Text>
-        
-        {/* Progress bar */}
-        <View style={styles.progressContainer}>
-          <View style={styles.progressBar}>
-            <View
-              style={[
-                styles.progressFill,
-                { width: `${course.progress}%`, backgroundColor: getCategoryColor() }
-              ]}
-            />
+    );
+  };
+
+  // Render a course card
+  const renderCourseCard = ({ item }) => (
+    <Card
+      title={item.title}
+      subtitle={item.description}
+      onPress={() => router.push(`/_tabs/courses/${item.id}`)}
+      style={styles.courseCard}
+    >
+      <View style={styles.courseCardContent}>
+        <View style={styles.courseMetaRow}>
+          <View style={styles.courseMetaItem}>
+            <Text style={[styles.courseMetaLabel, { color: theme.colors.text + '80' }]}>
+              Level
+            </Text>
+            <Text style={[styles.courseMetaValue, { color: theme.colors.text }]}>
+              {item.level}
+            </Text>
           </View>
-          <Text style={styles.progressText}>{course.progress}%</Text>
+          
+          <View style={styles.courseMetaItem}>
+            <Text style={[styles.courseMetaLabel, { color: theme.colors.text + '80' }]}>
+              Progress
+            </Text>
+            <Text style={[styles.courseMetaValue, { color: theme.colors.text }]}>
+              {Math.round(item.progress * 100)}%
+            </Text>
+          </View>
         </View>
+        
+        <ProgressBar progress={item.progress} />
       </View>
     </Card>
   );
-};
-
-// Category tab component
-const CategoryTab = ({ title, active, onPress }) => (
-  <TouchableOpacity
-    style={[
-      styles.categoryTab,
-      active && styles.categoryTabActive
-    ]}
-    onPress={onPress}
-  >
-    <Text
-      style={[
-        styles.categoryTabText,
-        active && styles.categoryTabTextActive
-      ]}
-    >
-      {title}
-    </Text>
-  </TouchableOpacity>
-);
-
-export default function CoursesScreen() {
-  const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeCategory, setActiveCategory] = useState('all');
-  const [filteredCourses, setFilteredCourses] = useState(COURSES);
-
-  // Filter courses based on search query and active category
-  useEffect(() => {
-    let result = COURSES;
-    
-    // Filter by category if not 'all'
-    if (activeCategory !== 'all') {
-      result = result.filter(course => course.category === activeCategory);
-    }
-    
-    // Filter by search query
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(course => 
-        course.title.toLowerCase().includes(query) || 
-        course.description.toLowerCase().includes(query)
-      );
-    }
-    
-    setFilteredCourses(result);
-  }, [searchQuery, activeCategory]);
-
-  // Navigate to course details
-  const handleCoursePress = (courseId) => {
-    router.push(`/courses/${courseId}`);
-  };
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="auto" />
-      
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={styles.header}>
-        <Text style={styles.screenTitle}>My Courses</Text>
-        
-        {/* Search bar */}
-        <View style={styles.searchContainer}>
+        <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
+          Courses
+        </Text>
+        <TouchableOpacity style={styles.notificationButton}>
+          <Ionicons name="notifications-outline" size={24} color={theme.colors.text} />
+        </TouchableOpacity>
+      </View>
+      
+      <View style={styles.searchContainer}>
+        <View 
+          style={[
+            styles.searchInputContainer,
+            { backgroundColor: theme.colors.card, borderColor: theme.colors.border }
+          ]}
+        >
+          <Ionicons name="search" size={20} color="#9CA3AF" style={styles.searchIcon} />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: theme.colors.text }]}
             placeholder="Search courses..."
-            placeholderTextColor={Theme.colors.textLight}
+            placeholderTextColor="#9CA3AF"
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
+          {searchQuery !== '' && (
+            <TouchableOpacity 
+              style={styles.clearButton}
+              onPress={() => setSearchQuery('')}
+            >
+              <Ionicons name="close-circle" size={18} color="#9CA3AF" />
+            </TouchableOpacity>
+          )}
         </View>
-        
-        {/* Category tabs */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.categoriesContainer}
-          contentContainerStyle={styles.categoriesContent}
-        >
-          <CategoryTab
-            title="All"
-            active={activeCategory === 'all'}
-            onPress={() => setActiveCategory('all')}
-          />
-          <CategoryTab
-            title="BAC Prep"
-            active={activeCategory === 'bac'}
-            onPress={() => setActiveCategory('bac')}
-          />
-          <CategoryTab
-            title="DEF Prep"
-            active={activeCategory === 'def'}
-            onPress={() => setActiveCategory('def')}
-          />
-          <CategoryTab
-            title="Languages"
-            active={activeCategory === 'languages'}
-            onPress={() => setActiveCategory('languages')}
-          />
-        </ScrollView>
       </View>
       
-      {/* Course list */}
-      <ScrollView
-        style={styles.coursesContainer}
-        contentContainerStyle={styles.coursesContent}
+      <View style={styles.categoriesContainer}>
+        <FlatList
+          data={CATEGORIES}
+          keyExtractor={item => item.id}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={[
+                styles.categoryButton,
+                selectedCategory === item.id && {
+                  backgroundColor: theme.colors.primary,
+                  borderColor: theme.colors.primary
+                },
+                selectedCategory !== item.id && {
+                  borderColor: theme.colors.border,
+                  backgroundColor: 'transparent'
+                }
+              ]}
+              onPress={() => setSelectedCategory(item.id)}
+            >
+              <Text
+                style={[
+                  styles.categoryButtonText,
+                  { 
+                    color: selectedCategory === item.id 
+                      ? '#FFFFFF' 
+                      : theme.colors.text
+                  }
+                ]}
+              >
+                {item.label}
+              </Text>
+            </TouchableOpacity>
+          )}
+          contentContainerStyle={styles.categoriesContent}
+        />
+      </View>
+      
+      <FlatList
+        data={filteredCourses}
+        keyExtractor={item => item.id}
+        renderItem={renderCourseCard}
+        contentContainerStyle={styles.coursesList}
         showsVerticalScrollIndicator={false}
-      >
-        {filteredCourses.length > 0 ? (
-          filteredCourses.map(course => (
-            <CourseCard
-              key={course.id}
-              course={course}
-              onPress={() => handleCoursePress(course.id)}
-            />
-          ))
-        ) : (
+        ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No courses found</Text>
-            <Text style={styles.emptySubText}>
-              Try adjusting your search or category filters
+            <Text style={[styles.emptyText, { color: theme.colors.text }]}>
+              No courses found for your search.
             </Text>
           </View>
-        )}
-      </ScrollView>
-    </View>
+        }
+      />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Theme.colors.backgroundPrimary,
   },
   header: {
-    paddingTop: 60,
-    paddingHorizontal: Theme.layout.spacing.lg,
-    backgroundColor: Theme.colors.backgroundPrimary,
-    borderBottomWidth: 1,
-    borderBottomColor: Theme.colors.border,
-    paddingBottom: Theme.layout.spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
   },
-  screenTitle: {
-    fontSize: Theme.layout.fontSize.xxl,
+  headerTitle: {
+    fontSize: 24,
     fontWeight: 'bold',
-    color: Theme.colors.textPrimary,
-    marginBottom: Theme.layout.spacing.md,
+  },
+  notificationButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   searchContainer: {
-    backgroundColor: Theme.colors.backgroundSecondary,
-    borderRadius: Theme.layout.borderRadius.medium,
-    paddingHorizontal: Theme.layout.spacing.md,
-    marginBottom: Theme.layout.spacing.md,
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
+  searchInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    height: 46,
+  },
+  searchIcon: {
+    marginRight: 8,
   },
   searchInput: {
-    height: 40,
-    color: Theme.colors.textPrimary,
-    fontSize: Theme.layout.fontSize.md,
+    flex: 1,
+    fontSize: 16,
+    height: '100%',
+  },
+  clearButton: {
+    padding: 4,
   },
   categoriesContainer: {
-    flexDirection: 'row',
-    marginBottom: Theme.layout.spacing.sm,
+    marginBottom: 12,
   },
   categoriesContent: {
-    paddingRight: Theme.layout.spacing.lg,
+    paddingHorizontal: 16,
+    paddingVertical: 4,
   },
-  categoryTab: {
-    paddingHorizontal: Theme.layout.spacing.md,
-    paddingVertical: Theme.layout.spacing.sm,
-    marginRight: Theme.layout.spacing.sm,
-    borderRadius: Theme.layout.borderRadius.medium,
-    backgroundColor: Theme.colors.backgroundSecondary,
+  categoryButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    marginRight: 8,
   },
-  categoryTabActive: {
-    backgroundColor: Theme.colors.primary,
-  },
-  categoryTabText: {
-    color: Theme.colors.textSecondary,
+  categoryButtonText: {
+    fontSize: 14,
     fontWeight: '500',
   },
-  categoryTabTextActive: {
-    color: Theme.colors.white,
-  },
-  coursesContainer: {
-    flex: 1,
-  },
-  coursesContent: {
-    padding: Theme.layout.spacing.lg,
-    paddingBottom: Theme.layout.spacing.xxl,
+  coursesList: {
+    padding: 16,
+    paddingBottom: 32,
   },
   courseCard: {
-    marginBottom: Theme.layout.spacing.lg,
+    marginBottom: 16,
   },
-  categoryBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: Theme.layout.spacing.sm,
-    paddingVertical: 4,
-    borderRadius: Theme.layout.borderRadius.small,
-    marginBottom: Theme.layout.spacing.sm,
+  courseCardContent: {
+    marginTop: 8,
   },
-  categoryText: {
-    color: Theme.colors.white,
-    fontSize: Theme.layout.fontSize.xs,
+  courseMetaRow: {
+    flexDirection: 'row',
+    marginBottom: 12,
+  },
+  courseMetaItem: {
+    marginRight: 24,
+  },
+  courseMetaLabel: {
+    fontSize: 12,
+    marginBottom: 2,
+  },
+  courseMetaValue: {
+    fontSize: 14,
     fontWeight: '600',
   },
-  courseTitle: {
-    fontSize: Theme.layout.fontSize.lg,
-    fontWeight: '600',
-    color: Theme.colors.textPrimary,
-    marginBottom: Theme.layout.spacing.xs,
-  },
-  courseDescription: {
-    fontSize: Theme.layout.fontSize.sm,
-    color: Theme.colors.textSecondary,
-    marginBottom: Theme.layout.spacing.md,
-  },
-  courseMetaContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  lessonsCount: {
-    fontSize: Theme.layout.fontSize.xs,
-    color: Theme.colors.textLight,
-  },
-  progressContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  progressBarContainer: {
+    height: 6,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 3,
+    overflow: 'hidden',
   },
   progressBar: {
-    width: 80,
-    height: 6,
-    backgroundColor: Theme.colors.backgroundSecondary,
-    borderRadius: 3,
-    marginRight: Theme.layout.spacing.xs,
-  },
-  progressFill: {
     height: '100%',
     borderRadius: 3,
-  },
-  progressText: {
-    fontSize: Theme.layout.fontSize.xs,
-    color: Theme.colors.textLight,
   },
   emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: Theme.layout.spacing.xxl,
+    paddingVertical: 32,
   },
   emptyText: {
-    fontSize: Theme.layout.fontSize.lg,
-    fontWeight: '600',
-    color: Theme.colors.textSecondary,
-    marginBottom: Theme.layout.spacing.sm,
-  },
-  emptySubText: {
-    fontSize: Theme.layout.fontSize.sm,
-    color: Theme.colors.textLight,
+    fontSize: 16,
     textAlign: 'center',
   },
 });

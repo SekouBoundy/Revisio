@@ -1,272 +1,379 @@
-import { useRouter } from 'expo-router';
+// app/_auth/register.js
+import { Stack, useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
-import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-
+import {
+    KeyboardAvoidingView,
+    Platform,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
+} from 'react-native';
 import Button from '../../components/common/Button';
 import Header from '../../components/common/Header';
 import Input from '../../components/common/Input';
-import Theme from '../../constants/Theme';
+import * as Theme from '../../constants/Theme';
 
 export default function RegisterScreen() {
-  const router = useRouter();
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [learningType, setLearningType] = useState('');
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    studentType: '', // BAC, DEF, or Language
+  });
+  
+  const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  
+  const router = useRouter();
+  const theme = Theme.createTheme(false); // Pass true for dark mode
 
-  const handleRegister = async () => {
-    // Reset error state
-    setError('');
-
-    // Validate input
-    if (!name || !email || !password || !confirmPassword) {
-      setError('All fields are required');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-
-    if (!learningType) {
-      setError('Please select a learning track');
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-
-      // Simulate API call with timeout
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Simulate successful registration (in a real app, call your API here)
-      const fakeUserToken = 'fake-auth-token';
-      const userData = JSON.stringify({
-        id: '123',
-        email: email,
-        name: name,
-        learningType: learningType
+  // Handle input changes
+  const handleChange = (field, value) => {
+    setFormData({
+      ...formData,
+      [field]: value
+    });
+    
+    // Clear error when typing
+    if (errors[field]) {
+      setErrors({
+        ...errors,
+        [field]: null
       });
+    }
+  };
 
-      // Store auth token in secure storage
-      await SecureStore.setItemAsync('user_token', fakeUserToken);
-      await SecureStore.setItemAsync('user_data', userData);
+  // Select student type
+  const selectStudentType = (type) => {
+    handleChange('studentType', type);
+  };
 
-      // Navigate to tabs
-      router.replace('/_tabs');
-    } catch (err) {
-      setError('Registration failed. Please try again.');
-      console.error('Registration error:', err);
+  // Validate form
+  const validateForm = () => {
+    const newErrors = {};
+    
+    // Full name validation
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = 'Full name is required';
+    }
+    
+    // Email validation
+    if (!formData.email) {
+      newErrors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+    
+    // Password validation
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+    } else if (formData.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
+    }
+    
+    // Confirm password validation
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
+    
+    // Student type validation
+    if (!formData.studentType) {
+      newErrors.studentType = 'Please select your student type';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // Handle registration
+  const handleRegister = async () => {
+    if (!validateForm()) {
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    try {
+      // Here you would implement your actual registration logic
+      // For example, calling your API to create a new user
+      
+      // Simulate API call with timeout
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // For demonstration, immediately log the user in
+      await SecureStore.setItemAsync('userToken', 'demo-token-123');
+      await SecureStore.setItemAsync('userProfile', JSON.stringify({
+        fullName: formData.fullName,
+        email: formData.email,
+        studentType: formData.studentType
+      }));
+      
+      // Navigate to the main app
+      router.replace('/(tabs)');
+    } catch (error) {
+      console.error('Registration error:', error);
+      setErrors({
+        ...errors,
+        general: 'Registration failed. Please try again.'
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const LearningTypeButton = ({ title, value, color }) => (
+  // Student type option button
+  const StudentTypeOption = ({ type, label, description }) => (
     <TouchableOpacity
       style={[
-        styles.learningTypeButton,
-        { borderColor: color },
-        learningType === value && { backgroundColor: color + '20' } // 20% opacity
+        styles.studentTypeOption,
+        {
+          backgroundColor: theme.colors.card,
+          borderColor: formData.studentType === type 
+            ? theme.colors.primary 
+            : theme.colors.border
+        }
       ]}
-      onPress={() => setLearningType(value)}
+      onPress={() => selectStudentType(type)}
     >
-      <Text
+      <View style={styles.studentTypeContent}>
+        <Text style={[styles.studentTypeLabel, { color: theme.colors.text }]}>
+          {label}
+        </Text>
+        <Text style={[styles.studentTypeDescription, { color: theme.colors.text + '80' }]}>
+          {description}
+        </Text>
+      </View>
+      <View 
         style={[
-          styles.learningTypeText,
-          { color },
-          learningType === value && styles.selectedLearningTypeText
+          styles.radioButton,
+          {
+            borderColor: formData.studentType === type 
+              ? theme.colors.primary 
+              : theme.colors.border
+          }
         ]}
       >
-        {title}
-      </Text>
+        {formData.studentType === type && (
+          <View 
+            style={[
+              styles.radioButtonInner,
+              { backgroundColor: theme.colors.primary }
+            ]} 
+          />
+        )}
+      </View>
     </TouchableOpacity>
   );
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <StatusBar style="auto" />
-      <Header
-        title="Create Account"
-        showBack={true}
-      />
-
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.keyboardView}
       >
-        <Text style={styles.heading}>Join Revisio</Text>
-        <Text style={styles.subheading}>
-          Create an account to start your learning journey
-        </Text>
-
-        {error ? (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{error}</Text>
-          </View>
-        ) : null}
-
-        <View style={styles.form}>
-          <Input
-            label="Full Name"
-            value={name}
-            onChangeText={setName}
-            placeholder="Enter your full name"
-          />
-
-          <Input
-            label="Email"
-            value={email}
-            onChangeText={setEmail}
-            placeholder="Enter your email"
-            autoCapitalize="none"
-            keyboardType="email-address"
-          />
-
-          <Input
-            label="Password"
-            value={password}
-            onChangeText={setPassword}
-            placeholder="Create a password"
-            secureTextEntry
-          />
-
-          <Input
-            label="Confirm Password"
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            placeholder="Confirm your password"
-            secureTextEntry
-          />
-
-          <Text style={styles.learningTypeLabel}>
-            Choose Your Learning Track
+        <Stack.Screen options={{ 
+          headerShown: false
+        }} />
+        
+        <Header 
+          title="Create Account" 
+          onBackPress={() => router.replace('/_auth/login')}
+        />
+        
+        <ScrollView 
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <Text style={[styles.title, { color: theme.colors.text }]}>
+            Join Revisio
+          </Text>
+          <Text style={[styles.subtitle, { color: theme.colors.text + '80' }]}>
+            Create an account to track your learning progress
           </Text>
           
-          <View style={styles.learningTypeContainer}>
-            <LearningTypeButton
-              title="BAC Prep"
-              value="bac"
-              color={Theme.colors.bac}
+          <View style={styles.form}>
+            <Input
+              label="Full Name"
+              value={formData.fullName}
+              onChangeText={(text) => handleChange('fullName', text)}
+              placeholder="Enter your full name"
+              autoCapitalize="words"
+              error={errors.fullName}
             />
             
-            <LearningTypeButton
-              title="DEF Prep"
-              value="def"
-              color={Theme.colors.def}
+            <Input
+              label="Email Address"
+              value={formData.email}
+              onChangeText={(text) => handleChange('email', text)}
+              placeholder="Enter your email"
+              keyboardType="email-address"
+              error={errors.email}
             />
             
-            <LearningTypeButton
-              title="Languages"
-              value="languages"
-              color={Theme.colors.languages}
+            <Input
+              label="Password"
+              value={formData.password}
+              onChangeText={(text) => handleChange('password', text)}
+              placeholder="Create a password"
+              secureTextEntry
+              error={errors.password}
+              hint="Must be at least 6 characters"
             />
+            
+            <Input
+              label="Confirm Password"
+              value={formData.confirmPassword}
+              onChangeText={(text) => handleChange('confirmPassword', text)}
+              placeholder="Confirm your password"
+              secureTextEntry
+              error={errors.confirmPassword}
+            />
+            
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+              What are you preparing for?
+            </Text>
+            
+            <StudentTypeOption
+              type="BAC"
+              label="BAC Exam"
+              description="For high school students preparing for the Baccalaureate"
+            />
+            
+            <StudentTypeOption
+              type="DEF"
+              label="DEF Exam"
+              description="For middle school students preparing for the DEF"
+            />
+            
+            <StudentTypeOption
+              type="LANGUAGE"
+              label="Language Learning"
+              description="For students learning English and Arabic"
+            />
+            
+            {errors.studentType && (
+              <Text style={styles.errorText}>{errors.studentType}</Text>
+            )}
+            
+            {errors.general && (
+              <Text style={styles.errorText}>{errors.general}</Text>
+            )}
+            
+            <Button
+              label="Create Account"
+              onPress={handleRegister}
+              isLoading={isLoading}
+              style={styles.button}
+            />
+            
+            <View style={styles.loginContainer}>
+              <Text style={[styles.loginText, { color: theme.colors.text }]}>
+                Already have an account?
+              </Text>
+              <TouchableOpacity onPress={() => router.replace('/_auth/login')}>
+                <Text style={[styles.loginLink, { color: theme.colors.primary }]}>
+                  {' Login'}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
-
-          <Button
-            onPress={handleRegister}
-            loading={isLoading}
-            fullWidth
-            style={styles.registerButton}
-          >
-            Create Account
-          </Button>
-        </View>
-
-        <View style={styles.loginContainer}>
-          <Text style={styles.loginText}>Already have an account? </Text>
-          <TouchableOpacity onPress={() => router.push('/_auth/login')}>
-            <Text style={styles.loginLink}>Log In</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Theme.colors.backgroundPrimary,
+  },
+  keyboardView: {
+    flex: 1,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    padding: Theme.layout.spacing.lg,
-    paddingBottom: Theme.layout.spacing.xxl * 2,
+    padding: 20,
+    paddingBottom: 40,
   },
-  heading: {
-    ...Theme.typography.heading2,
-    marginTop: Theme.layout.spacing.lg,
-    marginBottom: Theme.layout.spacing.sm,
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 8,
   },
-  subheading: {
-    ...Theme.typography.subtitle,
-    marginBottom: Theme.layout.spacing.xl,
+  subtitle: {
+    fontSize: 16,
+    marginBottom: 24,
   },
   form: {
-    marginBottom: Theme.layout.spacing.xl,
+    width: '100%',
   },
-  registerButton: {
-    marginTop: Theme.layout.spacing.xl,
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginTop: 8,
+    marginBottom: 16,
   },
-  errorContainer: {
-    backgroundColor: Theme.colors.error + '20', // 20% opacity
-    padding: Theme.layout.spacing.md,
-    borderRadius: Theme.layout.borderRadius.medium,
-    marginBottom: Theme.layout.spacing.lg,
-  },
-  errorText: {
-    color: Theme.colors.error,
-    fontSize: Theme.layout.fontSize.sm,
-  },
-  learningTypeLabel: {
-    ...Theme.typography.subtitle,
-    marginTop: Theme.layout.spacing.lg,
-    marginBottom: Theme.layout.spacing.md,
-  },
-  learningTypeContainer: {
+  studentTypeOption: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: Theme.layout.spacing.md,
-  },
-  learningTypeButton: {
-    flex: 1,
-    padding: Theme.layout.spacing.md,
-    borderWidth: 1,
-    borderRadius: Theme.layout.borderRadius.medium,
     alignItems: 'center',
-    marginHorizontal: Theme.layout.spacing.xs,
+    justifyContent: 'space-between',
+    padding: 16,
+    borderWidth: 2,
+    borderRadius: 12,
+    marginBottom: 12,
   },
-  learningTypeText: {
-    fontWeight: '500',
+  studentTypeContent: {
+    flex: 1,
+    marginRight: 12,
   },
-  selectedLearningTypeText: {
-    fontWeight: 'bold',
+  studentTypeLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  studentTypeDescription: {
+    fontSize: 14,
+  },
+  radioButton: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radioButtonInner: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
+  button: {
+    marginTop: 24,
+    marginBottom: 24,
   },
   loginContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: Theme.layout.spacing.xl,
   },
   loginText: {
-    color: Theme.colors.textSecondary,
-    fontSize: Theme.layout.fontSize.sm,
+    fontSize: 15,
   },
   loginLink: {
-    color: Theme.colors.primary,
-    fontSize: Theme.layout.fontSize.sm,
+    fontSize: 15,
     fontWeight: '600',
+  },
+  errorText: {
+    color: '#EF4444',
+    fontSize: 14,
+    marginTop: 4,
+    marginBottom: 8,
   },
 });

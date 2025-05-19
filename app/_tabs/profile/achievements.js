@@ -1,431 +1,362 @@
-/**
- * File: app/_tabs/profile/achievements.js
- * Achievements screen showing user's earned and locked achievements
- */
-
-import { StatusBar } from 'expo-status-bar';
-import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+// app/_tabs/profile/achievements.js
+import { Ionicons } from '@expo/vector-icons';
+import { Stack, useRouter } from 'expo-router';
+import {
+    FlatList,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    View
+} from 'react-native';
+import Card from '../../../components/common/Card';
 import Header from '../../../components/common/Header';
-import Theme from '../../../constants/Theme';
-
-// Mock achievement data
-const ACHIEVEMENTS = [
-  {
-    id: '1',
-    title: 'First Steps',
-    description: 'Complete your first lesson',
-    icon: '🏆',
-    unlocked: true,
-    date: '2023-10-15',
-  },
-  {
-    id: '2',
-    title: 'Quiz Master',
-    description: 'Score 100% on any quiz',
-    icon: '🥇',
-    unlocked: true,
-    date: '2023-10-18',
-  },
-  {
-    id: '3',
-    title: 'Study Streak',
-    description: 'Study for 7 consecutive days',
-    icon: '🔥',
-    unlocked: false,
-    progress: 3,
-    total: 7,
-  },
-  {
-    id: '4',
-    title: 'Perfect Week',
-    description: 'Complete all assigned activities in a week',
-    icon: '⭐',
-    unlocked: false,
-    progress: 4,
-    total: 10,
-  },
-  {
-    id: '5',
-    title: 'Math Whiz',
-    description: 'Complete the entire Mathematics course',
-    icon: '🧮',
-    unlocked: false,
-    progress: 5,
-    total: 24,
-  },
-  {
-    id: '6',
-    title: 'Language Explorer',
-    description: 'Complete lessons in both English and Arabic',
-    icon: '🌍',
-    unlocked: true,
-    date: '2023-11-05',
-  },
-  {
-    id: '7',
-    title: 'Quick Learner',
-    description: 'Complete 5 lessons in a single day',
-    icon: '⚡',
-    unlocked: true,
-    date: '2023-10-30',
-  },
-  {
-    id: '8',
-    title: 'Knowledge Seeker',
-    description: 'Score above 80% in 10 different quizzes',
-    icon: '🔍',
-    unlocked: false,
-    progress: 6,
-    total: 10,
-  },
-  {
-    id: '9',
-    title: 'Persistent Scholar',
-    description: 'Study for 30 consecutive days',
-    icon: '📚',
-    unlocked: false,
-    progress: 3,
-    total: 30,
-  },
-  {
-    id: '10',
-    title: 'Top of the Class',
-    description: 'Achieve the Gold Scholar rank',
-    icon: '👑',
-    unlocked: false,
-    progress: 450,
-    total: 1000,
-  },
-];
-
-// Achievement card component
-const AchievementCard = ({ achievement }) => (
-  <View 
-    style={[
-      styles.achievementCard,
-      !achievement.unlocked && styles.achievementCardLocked
-    ]}
-  >
-    <View style={styles.achievementIconContainer}>
-      <Text style={styles.achievementIcon}>
-        {achievement.unlocked ? achievement.icon : '🔒'}
-      </Text>
-    </View>
-    
-    <View style={styles.achievementDetails}>
-      <Text style={styles.achievementTitle}>{achievement.title}</Text>
-      <Text style={styles.achievementDescription}>{achievement.description}</Text>
-      
-      {achievement.unlocked ? (
-        <Text style={styles.achievementDate}>
-          Unlocked on {new Date(achievement.date).toLocaleDateString()}
-        </Text>
-      ) : (
-        <View style={styles.progressContainer}>
-          <View style={styles.progressBar}>
-            <View 
-              style={[
-                styles.progressFill,
-                { width: `${(achievement.progress / achievement.total) * 100}%` }
-              ]}
-            />
-          </View>
-          <Text style={styles.progressText}>
-            {achievement.progress}/{achievement.total}
-          </Text>
-        </View>
-      )}
-    </View>
-  </View>
-);
-
-// Achievement filter button
-const FilterButton = ({ label, active, onPress }) => (
-  <TouchableOpacity
-    style={[
-      styles.filterButton,
-      active && styles.filterButtonActive
-    ]}
-    onPress={onPress}
-  >
-    <Text
-      style={[
-        styles.filterButtonText,
-        active && styles.filterButtonTextActive
-      ]}
-    >
-      {label}
-    </Text>
-  </TouchableOpacity>
-);
+import * as Theme from '../../../constants/Theme';
 
 export default function AchievementsScreen() {
-  const [filter, setFilter] = useState('all');
-  
-  // Get filtered achievements
-  const getFilteredAchievements = () => {
-    switch (filter) {
-      case 'unlocked':
-        return ACHIEVEMENTS.filter(achievement => achievement.unlocked);
-      case 'locked':
-        return ACHIEVEMENTS.filter(achievement => !achievement.unlocked);
-      default:
-        return ACHIEVEMENTS;
+  const router = useRouter();
+  const theme = Theme.createTheme(false); // Pass true for dark mode
+
+  // Dummy achievements data
+  const achievements = [
+    {
+      id: 'achievement-1',
+      title: 'First Step',
+      description: 'Complete your first lesson',
+      icon: 'star-outline',
+      completed: true,
+      progress: 1,
+      total: 1,
+      dateEarned: '2023-10-15',
+      category: 'Beginner'
+    },
+    {
+      id: 'achievement-2',
+      title: 'Quiz Master',
+      description: 'Score 90% or higher on 5 quizzes',
+      icon: 'ribbon-outline',
+      completed: false,
+      progress: 3,
+      total: 5,
+      dateEarned: null,
+      category: 'Quiz'
+    },
+    {
+      id: 'achievement-3',
+      title: 'Learning Streak',
+      description: 'Study for 7 consecutive days',
+      icon: 'flame-outline',
+      completed: false,
+      progress: 4,
+      total: 7,
+      dateEarned: null,
+      category: 'Engagement'
+    },
+    {
+      id: 'achievement-4',
+      title: 'Course Champion',
+      description: 'Complete 5 courses',
+      icon: 'trophy-outline',
+      completed: false,
+      progress: 2,
+      total: 5,
+      dateEarned: null,
+      category: 'Course'
+    },
+    {
+      id: 'achievement-5',
+      title: 'Perfect Score',
+      description: 'Get 100% on a quiz',
+      icon: 'checkmark-circle-outline',
+      completed: true,
+      progress: 1,
+      total: 1,
+      dateEarned: '2023-09-28',
+      category: 'Quiz'
+    },
+    {
+      id: 'achievement-6',
+      title: 'Language Explorer',
+      description: 'Complete 10 language lessons',
+      icon: 'globe-outline',
+      completed: false,
+      progress: 6,
+      total: 10,
+      dateEarned: null,
+      category: 'Language'
+    },
+    {
+      id: 'achievement-7',
+      title: 'Math Genius',
+      description: 'Complete all math modules for your level',
+      icon: 'calculator-outline',
+      completed: false,
+      progress: 3,
+      total: 8,
+      dateEarned: null,
+      category: 'Math'
+    },
+    {
+      id: 'achievement-8',
+      title: 'Early Bird',
+      description: 'Study before 8 AM for 5 days',
+      icon: 'sunny-outline',
+      completed: true,
+      progress: 5,
+      total: 5,
+      dateEarned: '2023-11-02',
+      category: 'Engagement'
     }
-  };
+  ];
 
-  const filteredAchievements = getFilteredAchievements();
-  
-  // Calculate progress stats
-  const totalAchievements = ACHIEVEMENTS.length;
-  const unlockedAchievements = ACHIEVEMENTS.filter(a => a.unlocked).length;
-  const progressPercentage = Math.round((unlockedAchievements / totalAchievements) * 100);
+  // Group achievements by category
+  const achievementsByCategory = achievements.reduce((acc, achievement) => {
+    if (!acc[achievement.category]) {
+      acc[achievement.category] = [];
+    }
+    acc[achievement.category].push(achievement);
+    return acc;
+  }, {});
 
-  return (
-    <View style={styles.container}>
-      <StatusBar style="auto" />
-      <Header
-        title="Achievements"
-        showBack={true}
-      />
-      
-      <View style={styles.progressSection}>
-        <Text style={styles.progressSectionTitle}>Your Progress</Text>
+  // Convert grouped achievements to array for FlatList
+  const categorizedAchievements = Object.keys(achievementsByCategory).map(category => ({
+    category,
+    data: achievementsByCategory[category]
+  }));
+
+  // Render achievement item
+  const renderAchievement = ({ item }) => (
+    <Card
+      style={[
+        styles.achievementCard, 
+        { opacity: item.completed ? 1 : 0.7 }
+      ]}
+    >
+      <View style={styles.achievementContent}>
+        <View 
+          style={[
+            styles.achievementIconContainer,
+            { backgroundColor: theme.colors.primary + '20' }
+          ]}
+        >
+          <Ionicons 
+            name={item.icon} 
+            size={24} 
+            color={theme.colors.primary} 
+          />
+        </View>
         
-        <View style={styles.progressStatsContainer}>
-          <View style={styles.progressStat}>
-            <Text style={styles.progressStatValue}>{unlockedAchievements}</Text>
-            <Text style={styles.progressStatLabel}>Unlocked</Text>
-          </View>
+        <View style={styles.achievementInfo}>
+          <Text style={[styles.achievementTitle, { color: theme.colors.text }]}>
+            {item.title}
+          </Text>
+          <Text style={[styles.achievementDesc, { color: theme.colors.text + '80' }]}>
+            {item.description}
+          </Text>
           
-          <View style={styles.overallProgressContainer}>
-            <View style={styles.overallProgressBar}>
+          {item.completed ? (
+            <Text style={[styles.completedText, { color: theme.colors.primary }]}>
+              Earned on {formatDate(item.dateEarned)}
+            </Text>
+          ) : (
+            <View style={styles.progressContainer}>
               <View 
                 style={[
-                  styles.overallProgressFill,
-                  { width: `${progressPercentage}%` }
+                  styles.progressBar,
+                  {
+                    width: `${(item.progress / item.total) * 100}%`,
+                    backgroundColor: theme.colors.primary
+                  }
                 ]}
               />
+              <Text style={[styles.progressText, { color: theme.colors.text + '80' }]}>
+                {item.progress}/{item.total} completed
+              </Text>
             </View>
-            <Text style={styles.overallProgressText}>{progressPercentage}% Complete</Text>
+          )}
+        </View>
+        
+        {item.completed && (
+          <View 
+            style={[
+              styles.completedBadge,
+              { backgroundColor: theme.colors.primary }
+            ]}
+          >
+            <Ionicons name="checkmark" size={16} color="#FFFFFF" />
           </View>
-          
-          <View style={styles.progressStat}>
-            <Text style={styles.progressStatValue}>{totalAchievements - unlockedAchievements}</Text>
-            <Text style={styles.progressStatLabel}>Locked</Text>
-          </View>
+        )}
+      </View>
+    </Card>
+  );
+
+  // Render category header
+  const renderCategoryHeader = ({ category }) => (
+    <View style={styles.categoryHeader}>
+      <Text style={[styles.categoryTitle, { color: theme.colors.text }]}>
+        {category}
+      </Text>
+    </View>
+  );
+
+  // Format date string
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  return (
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <Stack.Screen options={{ 
+        headerShown: false
+      }} />
+      
+      <Header title="Achievements" onBackPress={() => router.back()} />
+      
+      <View style={styles.statsContainer}>
+        <View 
+          style={[
+            styles.statsCard, 
+            { backgroundColor: theme.colors.card, borderColor: theme.colors.border }
+          ]}
+        >
+          <Text style={[styles.statsValue, { color: theme.colors.text }]}>
+            {achievements.filter(a => a.completed).length}
+          </Text>
+          <Text style={[styles.statsLabel, { color: theme.colors.text + '80' }]}>
+            Achievements Earned
+          </Text>
+        </View>
+        
+        <View 
+          style={[
+            styles.statsCard, 
+            { backgroundColor: theme.colors.card, borderColor: theme.colors.border }
+          ]}
+        >
+          <Text style={[styles.statsValue, { color: theme.colors.text }]}>
+            {achievements.length - achievements.filter(a => a.completed).length}
+          </Text>
+          <Text style={[styles.statsLabel, { color: theme.colors.text + '80' }]}>
+            Remaining
+          </Text>
         </View>
       </View>
       
-      <View style={styles.filtersContainer}>
-        <FilterButton
-          label="All"
-          active={filter === 'all'}
-          onPress={() => setFilter('all')}
-        />
-        <FilterButton
-          label="Unlocked"
-          active={filter === 'unlocked'}
-          onPress={() => setFilter('unlocked')}
-        />
-        <FilterButton
-          label="In Progress"
-          active={filter === 'locked'}
-          onPress={() => setFilter('locked')}
-        />
-      </View>
-      
-      <ScrollView 
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {filteredAchievements.map(achievement => (
-          <AchievementCard
-            key={achievement.id}
-            achievement={achievement}
-          />
-        ))}
-        
-        {filteredAchievements.length === 0 && (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No achievements found</Text>
-            <Text style={styles.emptySubText}>
-              {filter === 'unlocked' 
-                ? "You haven't unlocked any achievements yet. Keep learning to earn them!" 
-                : filter === 'locked'
-                ? "No locked achievements found. Great job unlocking them all!"
-                : "No achievements available at the moment."
-              }
-            </Text>
+      <FlatList
+        data={categorizedAchievements}
+        keyExtractor={item => item.category}
+        renderItem={({ item }) => (
+          <View>
+            {renderCategoryHeader(item)}
+            {item.data.map(achievement => (
+              <View key={achievement.id}>
+                {renderAchievement({ item: achievement })}
+              </View>
+            ))}
           </View>
         )}
-      </ScrollView>
-    </View>
+        contentContainerStyle={styles.achievementsList}
+        showsVerticalScrollIndicator={false}
+      />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Theme.colors.backgroundPrimary,
   },
-  progressSection: {
-    padding: Theme.layout.spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: Theme.colors.border,
-  },
-  progressSectionTitle: {
-    fontSize: Theme.layout.fontSize.lg,
-    fontWeight: '600',
-    color: Theme.colors.textPrimary,
-    marginBottom: Theme.layout.spacing.md,
-  },
-  progressStatsContainer: {
+  statsContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    marginVertical: 16,
   },
-  progressStat: {
-    alignItems: 'center',
-  },
-  progressStatValue: {
-    fontSize: Theme.layout.fontSize.xl,
-    fontWeight: 'bold',
-    color: Theme.colors.textPrimary,
-  },
-  progressStatLabel: {
-    fontSize: Theme.layout.fontSize.xs,
-    color: Theme.colors.textSecondary,
-  },
-  overallProgressContainer: {
+  statsCard: {
     flex: 1,
-    marginHorizontal: Theme.layout.spacing.md,
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 4,
+    borderWidth: 1,
   },
-  overallProgressBar: {
-    height: 8,
-    backgroundColor: Theme.colors.backgroundSecondary,
-    borderRadius: 4,
+  statsValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
     marginBottom: 4,
   },
-  overallProgressFill: {
-    height: '100%',
-    backgroundColor: Theme.colors.primary,
-    borderRadius: 4,
+  statsLabel: {
+    fontSize: 12,
   },
-  overallProgressText: {
-    fontSize: Theme.layout.fontSize.xs,
-    color: Theme.colors.textSecondary,
-    textAlign: 'center',
+  achievementsList: {
+    padding: 16,
+    paddingBottom: 32,
   },
-  filtersContainer: {
-    flexDirection: 'row',
-    padding: Theme.layout.spacing.md,
-    paddingBottom: 0,
-    justifyContent: 'center',
+  categoryHeader: {
+    marginTop: 8,
+    marginBottom: 12,
   },
-  filterButton: {
-    paddingHorizontal: Theme.layout.spacing.md,
-    paddingVertical: Theme.layout.spacing.sm,
-    marginHorizontal: Theme.layout.spacing.xs,
-    borderRadius: Theme.layout.borderRadius.medium,
-    backgroundColor: Theme.colors.backgroundSecondary,
-  },
-  filterButtonActive: {
-    backgroundColor: Theme.colors.primary,
-  },
-  filterButtonText: {
-    color: Theme.colors.textSecondary,
-    fontWeight: '500',
-  },
-  filterButtonTextActive: {
-    color: Theme.colors.white,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: Theme.layout.spacing.lg,
-    paddingBottom: Theme.layout.spacing.xxl,
+  categoryTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   achievementCard: {
-    flexDirection: 'row',
-    padding: Theme.layout.spacing.md,
-    backgroundColor: Theme.colors.backgroundPrimary,
-    borderWidth: 1,
-    borderColor: Theme.colors.border,
-    borderRadius: Theme.layout.borderRadius.medium,
-    marginBottom: Theme.layout.spacing.md,
+    marginBottom: 12,
+    paddingVertical: 8,
   },
-  achievementCardLocked: {
-    opacity: 0.7,
+  achievementContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   achievementIconContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: Theme.colors.backgroundSecondary,
-    justifyContent: 'center',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
-    marginRight: Theme.layout.spacing.md,
-  },
-  achievementIcon: {
-    fontSize: 24,
-  },
-  achievementDetails: {
-    flex: 1,
     justifyContent: 'center',
+    marginRight: 12,
+  },
+  achievementInfo: {
+    flex: 1,
+    marginRight: 8,
   },
   achievementTitle: {
-    fontSize: Theme.layout.fontSize.md,
+    fontSize: 16,
     fontWeight: '600',
-    color: Theme.colors.textPrimary,
-    marginBottom: 2,
-  },
-  achievementDescription: {
-    fontSize: Theme.layout.fontSize.sm,
-    color: Theme.colors.textSecondary,
     marginBottom: 4,
   },
-  achievementDate: {
-    fontSize: Theme.layout.fontSize.xs,
-    color: Theme.colors.textLight,
+  achievementDesc: {
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  completedText: {
+    fontSize: 12,
+    fontWeight: '500',
   },
   progressContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4,
+    height: 6,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 3,
+    overflow: 'hidden',
+    marginBottom: 6,
   },
   progressBar: {
-    flex: 1,
-    height: 4,
-    backgroundColor: Theme.colors.border,
-    borderRadius: 2,
-    marginRight: Theme.layout.spacing.sm,
-  },
-  progressFill: {
     height: '100%',
-    backgroundColor: Theme.colors.primary,
-    borderRadius: 2,
+    borderRadius: 3,
   },
   progressText: {
-    fontSize: Theme.layout.fontSize.xs,
-    color: Theme.colors.textLight,
+    fontSize: 12,
   },
-  emptyContainer: {
+  completedBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: Theme.layout.spacing.xxl,
-  },
-  emptyText: {
-    fontSize: Theme.layout.fontSize.lg,
-    fontWeight: '600',
-    color: Theme.colors.textSecondary,
-    marginBottom: Theme.layout.spacing.sm,
-  },
-  emptySubText: {
-    fontSize: Theme.layout.fontSize.sm,
-    color: Theme.colors.textLight,
-    textAlign: 'center',
   },
 });

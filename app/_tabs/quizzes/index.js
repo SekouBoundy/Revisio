@@ -1,392 +1,352 @@
+// app/_tabs/quizzes/index.js
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+    FlatList,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
+} from 'react-native';
 import Card from '../../../components/common/Card';
-import Theme from '../../../constants/Theme';
+import * as Theme from '../../../constants/Theme';
 
-// Mock data for quizzes
+// Dummy quiz data - in a real app, this would come from an API
 const QUIZZES = [
   {
-    id: '1',
-    title: 'Mathematics: Calculus',
-    courseId: '1',
-    category: 'bac',
-    description: 'Test your knowledge of derivatives and integrals',
+    id: 'quiz-bac-math-1',
+    title: 'Algebra Quiz',
+    description: 'Test your knowledge of algebraic concepts',
+    courseId: 'bac-math',
+    courseName: 'BAC Mathematics',
+    type: 'BAC',
     questions: 10,
-    timeLimit: 15, // in minutes
+    timeLimit: 15, // minutes
     completed: false,
-    locked: false,
+    score: null
   },
   {
-    id: '2',
-    title: 'Physics: Mechanics',
-    courseId: '2',
-    category: 'bac',
-    description: 'Test your understanding of forces and motion',
-    questions: 8,
-    timeLimit: 12,
-    completed: true,
-    score: 85,
-    locked: false,
-  },
-  {
-    id: '3',
-    title: 'English: Grammar Rules',
-    courseId: '3',
-    category: 'languages',
-    description: 'Test your knowledge of English grammar',
+    id: 'quiz-bac-math-2',
+    title: 'Calculus Fundamentals',
+    description: 'Essential calculus concepts for BAC',
+    courseId: 'bac-math',
+    courseName: 'BAC Mathematics',
+    type: 'BAC',
     questions: 15,
     timeLimit: 20,
     completed: true,
-    score: 92,
-    locked: false,
+    score: 85
   },
   {
-    id: '4',
-    title: 'Arabic: Vocabulary',
-    courseId: '4',
-    category: 'languages',
-    description: 'Test your knowledge of Arabic vocabulary',
+    id: 'quiz-def-science-1',
+    title: 'Physics Basics',
+    description: 'Test your understanding of basic physics',
+    courseId: 'def-science',
+    courseName: 'DEF Science',
+    type: 'DEF',
     questions: 12,
+    timeLimit: 18,
+    completed: true,
+    score: 92
+  },
+  {
+    id: 'quiz-english-1',
+    title: 'English Vocabulary',
+    description: 'Basic English vocabulary test',
+    courseId: 'english-beginner',
+    courseName: 'English for Beginners',
+    type: 'LANGUAGE',
+    questions: 20,
     timeLimit: 15,
     completed: false,
-    locked: false,
+    score: null
   },
   {
-    id: '5',
-    title: 'Literature Analysis',
-    courseId: '5',
-    category: 'def',
-    description: 'Test your literary analysis skills',
-    questions: 10,
+    id: 'quiz-arabic-1',
+    title: 'Arabic Grammar',
+    description: 'Test your Arabic grammar knowledge',
+    courseId: 'arabic-intermediate',
+    courseName: 'Intermediate Arabic',
+    type: 'LANGUAGE',
+    questions: 15,
     timeLimit: 20,
     completed: false,
-    locked: true,
-  },
-  {
-    id: '6',
-    title: 'History: Key Events',
-    courseId: '6',
-    category: 'def',
-    description: 'Test your knowledge of important historical events',
-    questions: 15,
-    timeLimit: 18,
-    completed: false,
-    locked: true,
-  },
+    score: null
+  }
 ];
 
-// Quiz card component
-const QuizCard = ({ quiz, onPress }) => {
-  // Get color based on quiz category
-  const getCategoryColor = () => {
-    switch (quiz.category) {
-      case 'bac':
-        return Theme.colors.bac;
-      case 'def':
-        return Theme.colors.def;
-      case 'languages':
-        return Theme.colors.languages;
-      default:
-        return Theme.colors.primary;
-    }
-  };
+// Categories for filtering
+const CATEGORIES = [
+  { id: 'all', label: 'All Quizzes' },
+  { id: 'pending', label: 'Pending' },
+  { id: 'completed', label: 'Completed' }
+];
 
-  // Get status label and color
-  const getStatusInfo = () => {
-    if (quiz.locked) {
-      return {
-        label: 'Locked',
-        color: Theme.colors.textLight,
-        icon: '🔒',
-      };
-    } else if (quiz.completed) {
-      return {
-        label: `Score: ${quiz.score}%`,
-        color: Theme.colors.success,
-        icon: '✓',
-      };
-    } else {
-      return {
-        label: 'Available',
-        color: getCategoryColor(),
-        icon: '▶',
-      };
-    }
-  };
+export default function QuizzesScreen() {
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  
+  const router = useRouter();
+  const theme = Theme.createTheme(false); // Pass true for dark mode
 
-  const statusInfo = getStatusInfo();
+  // Filter quizzes based on selected category
+  const filteredQuizzes = QUIZZES.filter(quiz => {
+    if (selectedCategory === 'all') return true;
+    if (selectedCategory === 'pending') return !quiz.completed;
+    if (selectedCategory === 'completed') return quiz.completed;
+    return true;
+  });
 
-  return (
+  // Render a quiz card
+  const renderQuizCard = ({ item }) => (
     <Card
-      variant="default"
-      style={[
-        styles.quizCard,
-        quiz.locked && styles.quizCardLocked
-      ]}
-      onPress={quiz.locked ? null : onPress}
+      title={item.title}
+      subtitle={item.description}
+      onPress={() => router.push(`/_tabs/quizzes/${item.id}`)}
+      style={styles.quizCard}
     >
-      <View style={styles.quizHeader}>
-        <Text style={styles.quizTitle}>{quiz.title}</Text>
-        <View style={[styles.statusBadge, { backgroundColor: statusInfo.color }]}>
-          <Text style={styles.statusIcon}>{statusInfo.icon}</Text>
-          <Text style={styles.statusText}>{statusInfo.label}</Text>
-        </View>
-      </View>
-      
-      <Text style={styles.quizDescription}>{quiz.description}</Text>
-      
-      <View style={styles.quizMetaContainer}>
-        <View style={styles.quizMetaItem}>
-          <Text style={styles.quizMetaValue}>{quiz.questions}</Text>
-          <Text style={styles.quizMetaLabel}>Questions</Text>
+      <View style={styles.quizCardContent}>
+        <View style={styles.quizMetaRow}>
+          <View style={styles.quizMetaItem}>
+            <Text style={[styles.quizMetaLabel, { color: theme.colors.text + '80' }]}>
+              Course
+            </Text>
+            <Text style={[styles.quizMetaValue, { color: theme.colors.text }]}>
+              {item.courseName}
+            </Text>
+          </View>
+          
+          <View style={styles.quizInfoContainer}>
+            <View style={styles.quizInfoItem}>
+              <Ionicons name="help-circle-outline" size={16} color={theme.colors.text + '80'} />
+              <Text style={[styles.quizInfoText, { color: theme.colors.text }]}>
+                {item.questions} Questions
+              </Text>
+            </View>
+            
+            <View style={styles.quizInfoItem}>
+              <Ionicons name="time-outline" size={16} color={theme.colors.text + '80'} />
+              <Text style={[styles.quizInfoText, { color: theme.colors.text }]}>
+                {item.timeLimit} Minutes
+              </Text>
+            </View>
+          </View>
         </View>
         
-        <View style={styles.quizMetaItem}>
-          <Text style={styles.quizMetaValue}>{quiz.timeLimit}m</Text>
-          <Text style={styles.quizMetaLabel}>Time Limit</Text>
-        </View>
-        
-        <View style={styles.quizMetaItem}>
-          <Text style={styles.quizMetaValue}>{getCategoryColor() === Theme.colors.bac ? 'BAC' : getCategoryColor() === Theme.colors.def ? 'DEF' : 'Lang'}</Text>
-          <Text style={styles.quizMetaLabel}>Category</Text>
-        </View>
+        {item.completed ? (
+          <View style={styles.quizResultContainer}>
+            <View 
+              style={[
+                styles.scoreContainer, 
+                { 
+                  backgroundColor: item.score >= 70 ? '#10B981' : '#F59E0B',
+                  opacity: 0.9
+                }
+              ]}
+            >
+              <Text style={styles.scoreText}>{item.score}%</Text>
+            </View>
+            <Text style={[styles.completedText, { color: theme.colors.text + '80' }]}>
+              Completed
+            </Text>
+          </View>
+        ) : (
+          <TouchableOpacity
+            style={[styles.startButton, { backgroundColor: theme.colors.primary }]}
+            onPress={() => router.push(`/_tabs/quizzes/${item.id}`)}
+          >
+            <Text style={styles.startButtonText}>Start Quiz</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </Card>
   );
-};
-
-// Filter button component
-const FilterButton = ({ title, active, onPress }) => (
-  <TouchableOpacity
-    style={[
-      styles.filterButton,
-      active && styles.filterButtonActive
-    ]}
-    onPress={onPress}
-  >
-    <Text
-      style={[
-        styles.filterButtonText,
-        active && styles.filterButtonTextActive
-      ]}
-    >
-      {title}
-    </Text>
-  </TouchableOpacity>
-);
-
-export default function QuizzesScreen() {
-  const router = useRouter();
-  const [activeFilter, setActiveFilter] = useState('all');
-  
-  // Filter quizzes based on active filter
-  const getFilteredQuizzes = () => {
-    switch (activeFilter) {
-      case 'completed':
-        return QUIZZES.filter(quiz => quiz.completed);
-      case 'available':
-        return QUIZZES.filter(quiz => !quiz.completed && !quiz.locked);
-      case 'locked':
-        return QUIZZES.filter(quiz => quiz.locked);
-      default:
-        return QUIZZES;
-    }
-  };
-
-  const filteredQuizzes = getFilteredQuizzes();
-
-  // Navigate to quiz details
-  const handleQuizPress = (quizId) => {
-    router.push(`/quizzes/${quizId}`);
-  };
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="auto" />
-      
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={styles.header}>
-        <Text style={styles.screenTitle}>Quizzes</Text>
-        
-        {/* Filter buttons */}
-        <View style={styles.filtersContainer}>
-          <FilterButton
-            title="All"
-            active={activeFilter === 'all'}
-            onPress={() => setActiveFilter('all')}
-          />
-          <FilterButton
-            title="Completed"
-            active={activeFilter === 'completed'}
-            onPress={() => setActiveFilter('completed')}
-          />
-          <FilterButton
-            title="Available"
-            active={activeFilter === 'available'}
-            onPress={() => setActiveFilter('available')}
-          />
-          <FilterButton
-            title="Locked"
-            active={activeFilter === 'locked'}
-            onPress={() => setActiveFilter('locked')}
-          />
-        </View>
+        <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
+          Quizzes
+        </Text>
+        <TouchableOpacity style={styles.notificationButton}>
+          <Ionicons name="notifications-outline" size={24} color={theme.colors.text} />
+        </TouchableOpacity>
       </View>
       
-      {/* Quiz list */}
-      <ScrollView
-        style={styles.quizzesContainer}
-        contentContainerStyle={styles.quizzesContent}
+      <View style={styles.categoriesContainer}>
+        <FlatList
+          data={CATEGORIES}
+          keyExtractor={item => item.id}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={[
+                styles.categoryButton,
+                selectedCategory === item.id && {
+                  backgroundColor: theme.colors.primary,
+                  borderColor: theme.colors.primary
+                },
+                selectedCategory !== item.id && {
+                  borderColor: theme.colors.border,
+                  backgroundColor: 'transparent'
+                }
+              ]}
+              onPress={() => setSelectedCategory(item.id)}
+            >
+              <Text
+                style={[
+                  styles.categoryButtonText,
+                  { 
+                    color: selectedCategory === item.id 
+                      ? '#FFFFFF' 
+                      : theme.colors.text
+                  }
+                ]}
+              >
+                {item.label}
+              </Text>
+            </TouchableOpacity>
+          )}
+          contentContainerStyle={styles.categoriesContent}
+        />
+      </View>
+      
+      <FlatList
+        data={filteredQuizzes}
+        keyExtractor={item => item.id}
+        renderItem={renderQuizCard}
+        contentContainerStyle={styles.quizzesList}
         showsVerticalScrollIndicator={false}
-      >
-        {filteredQuizzes.length > 0 ? (
-          filteredQuizzes.map(quiz => (
-            <QuizCard
-              key={quiz.id}
-              quiz={quiz}
-              onPress={() => handleQuizPress(quiz.id)}
-            />
-          ))
-        ) : (
+        ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No quizzes found</Text>
-            <Text style={styles.emptySubText}>
-              {activeFilter === 'completed' ? 'You haven\'t completed any quizzes yet.' :
-               activeFilter === 'available' ? 'No available quizzes right now. Complete more lessons to unlock quizzes.' :
-               activeFilter === 'locked' ? 'No locked quizzes. All quizzes are available.' :
-               'No quizzes available at the moment.'}
+            <Text style={[styles.emptyText, { color: theme.colors.text }]}>
+              No quizzes found for this category.
             </Text>
           </View>
-        )}
-      </ScrollView>
-    </View>
+        }
+      />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Theme.colors.backgroundPrimary,
   },
   header: {
-    paddingTop: 60,
-    paddingHorizontal: Theme.layout.spacing.lg,
-    backgroundColor: Theme.colors.backgroundPrimary,
-    borderBottomWidth: 1,
-    borderBottomColor: Theme.colors.border,
-    paddingBottom: Theme.layout.spacing.md,
-  },
-  screenTitle: {
-    fontSize: Theme.layout.fontSize.xxl,
-    fontWeight: 'bold',
-    color: Theme.colors.textPrimary,
-    marginBottom: Theme.layout.spacing.md,
-  },
-  filtersContainer: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: Theme.layout.spacing.sm,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
   },
-  filterButton: {
-    paddingHorizontal: Theme.layout.spacing.md,
-    paddingVertical: Theme.layout.spacing.sm,
-    borderRadius: Theme.layout.borderRadius.medium,
-    backgroundColor: Theme.colors.backgroundSecondary,
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
   },
-  filterButtonActive: {
-    backgroundColor: Theme.colors.primary,
+  notificationButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  filterButtonText: {
-    color: Theme.colors.textSecondary,
+  categoriesContainer: {
+    marginBottom: 12,
+  },
+  categoriesContent: {
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+  },
+  categoryButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    marginRight: 8,
+  },
+  categoryButtonText: {
+    fontSize: 14,
     fontWeight: '500',
-    fontSize: Theme.layout.fontSize.sm,
   },
-  filterButtonTextActive: {
-    color: Theme.colors.white,
-  },
-  quizzesContainer: {
-    flex: 1,
-  },
-  quizzesContent: {
-    padding: Theme.layout.spacing.lg,
-    paddingBottom: Theme.layout.spacing.xxl,
+  quizzesList: {
+    padding: 16,
+    paddingBottom: 32,
   },
   quizCard: {
-    marginBottom: Theme.layout.spacing.lg,
+    marginBottom: 16,
   },
-  quizCardLocked: {
-    opacity: 0.7,
+  quizCardContent: {
+    marginTop: 8,
   },
-  quizHeader: {
+  quizMetaRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: Theme.layout.spacing.sm,
-  },
-  quizTitle: {
-    fontSize: Theme.layout.fontSize.lg,
-    fontWeight: '600',
-    color: Theme.colors.textPrimary,
-    flex: 1,
-    marginRight: Theme.layout.spacing.sm,
-  },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Theme.layout.spacing.sm,
-    paddingVertical: 4,
-    borderRadius: Theme.layout.borderRadius.small,
-  },
-  statusIcon: {
-    fontSize: Theme.layout.fontSize.sm,
-    color: Theme.colors.white,
-    marginRight: 4,
-  },
-  statusText: {
-    color: Theme.colors.white,
-    fontSize: Theme.layout.fontSize.xs,
-    fontWeight: '600',
-  },
-  quizDescription: {
-    fontSize: Theme.layout.fontSize.sm,
-    color: Theme.colors.textSecondary,
-    marginBottom: Theme.layout.spacing.md,
-  },
-  quizMetaContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    backgroundColor: Theme.colors.backgroundSecondary,
-    padding: Theme.layout.spacing.sm,
-    borderRadius: Theme.layout.borderRadius.small,
+    marginBottom: 12,
   },
   quizMetaItem: {
-    alignItems: 'center',
     flex: 1,
   },
-  quizMetaValue: {
-    fontSize: Theme.layout.fontSize.md,
-    fontWeight: '600',
-    color: Theme.colors.textPrimary,
-  },
   quizMetaLabel: {
-    fontSize: Theme.layout.fontSize.xs,
-    color: Theme.colors.textLight,
+    fontSize: 12,
+    marginBottom: 2,
+  },
+  quizMetaValue: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  quizInfoContainer: {
+    flexDirection: 'row',
+  },
+  quizInfoItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 12,
+  },
+  quizInfoText: {
+    fontSize: 13,
+    marginLeft: 4,
+  },
+  quizResultContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+  },
+  scoreContainer: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 16,
+  },
+  scoreText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  completedText: {
+    fontSize: 14,
+    marginLeft: 8,
+  },
+  startButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    alignSelf: 'flex-end',
+  },
+  startButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
   },
   emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: Theme.layout.spacing.xxl,
+    paddingVertical: 32,
   },
   emptyText: {
-    fontSize: Theme.layout.fontSize.lg,
-    fontWeight: '600',
-    color: Theme.colors.textSecondary,
-    marginBottom: Theme.layout.spacing.sm,
-  },
-  emptySubText: {
-    fontSize: Theme.layout.fontSize.sm,
-    color: Theme.colors.textLight,
+    fontSize: 16,
     textAlign: 'center',
   },
 });
