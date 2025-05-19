@@ -1,232 +1,103 @@
 // app/_tabs/quizzes/index.js
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
 import {
-    FlatList,
     SafeAreaView,
+    ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
     View
 } from 'react-native';
-import Card from '../../../components/common/Card';
-import * as Theme from '../../../constants/Theme';
 
-// Dummy quiz data - in a real app, this would come from an API
+// Mock data for quizzes
 const QUIZZES = [
   {
-    id: 'quiz-bac-math-1',
-    title: 'Algebra Quiz',
-    description: 'Test your knowledge of algebraic concepts',
-    courseId: 'bac-math',
-    courseName: 'BAC Mathematics',
-    type: 'BAC',
-    questions: 10,
-    timeLimit: 15, // minutes
+    id: 'quiz-1',
+    title: 'Science Basics',
+    course: 'DEF Science',
+    questionCount: 10,
+    duration: 15, // minutes
     completed: false,
-    score: null
+    color: '#10B981'
   },
   {
-    id: 'quiz-bac-math-2',
-    title: 'Calculus Fundamentals',
-    description: 'Essential calculus concepts for BAC',
-    courseId: 'bac-math',
-    courseName: 'BAC Mathematics',
-    type: 'BAC',
-    questions: 15,
-    timeLimit: 20,
-    completed: true,
-    score: 85
+    id: 'quiz-2',
+    title: 'Math Fundamentals',
+    course: 'DEF Mathematics',
+    questionCount: 15,
+    duration: 20,
+    completed: false,
+    color: '#8B5CF6'
   },
   {
-    id: 'quiz-def-science-1',
-    title: 'Physics Basics',
-    description: 'Test your understanding of basic physics',
-    courseId: 'def-science',
-    courseName: 'DEF Science',
-    type: 'DEF',
-    questions: 12,
-    timeLimit: 18,
-    completed: true,
-    score: 92
-  },
-  {
-    id: 'quiz-english-1',
+    id: 'quiz-3',
     title: 'English Vocabulary',
-    description: 'Basic English vocabulary test',
-    courseId: 'english-beginner',
-    courseName: 'English for Beginners',
-    type: 'LANGUAGE',
-    questions: 20,
-    timeLimit: 15,
+    course: 'English Basics',
+    questionCount: 20,
+    duration: 25,
     completed: false,
-    score: null
-  },
-  {
-    id: 'quiz-arabic-1',
-    title: 'Arabic Grammar',
-    description: 'Test your Arabic grammar knowledge',
-    courseId: 'arabic-intermediate',
-    courseName: 'Intermediate Arabic',
-    type: 'LANGUAGE',
-    questions: 15,
-    timeLimit: 20,
-    completed: false,
-    score: null
+    color: '#EC4899'
   }
 ];
 
-// Categories for filtering
-const CATEGORIES = [
-  { id: 'all', label: 'All Quizzes' },
-  { id: 'pending', label: 'Pending' },
-  { id: 'completed', label: 'Completed' }
-];
-
 export default function QuizzesScreen() {
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  
   const router = useRouter();
-  const theme = Theme.createTheme(false); // Pass true for dark mode
 
-  // Filter quizzes based on selected category
-  const filteredQuizzes = QUIZZES.filter(quiz => {
-    if (selectedCategory === 'all') return true;
-    if (selectedCategory === 'pending') return !quiz.completed;
-    if (selectedCategory === 'completed') return quiz.completed;
-    return true;
-  });
-
-  // Render a quiz card
-  const renderQuizCard = ({ item }) => (
-    <Card
-      title={item.title}
-      subtitle={item.description}
-      onPress={() => router.push(`/_tabs/quizzes/${item.id}`)}
-      style={styles.quizCard}
-    >
-      <View style={styles.quizCardContent}>
-        <View style={styles.quizMetaRow}>
-          <View style={styles.quizMetaItem}>
-            <Text style={[styles.quizMetaLabel, { color: theme.colors.text + '80' }]}>
-              Course
-            </Text>
-            <Text style={[styles.quizMetaValue, { color: theme.colors.text }]}>
-              {item.courseName}
-            </Text>
-          </View>
-          
-          <View style={styles.quizInfoContainer}>
-            <View style={styles.quizInfoItem}>
-              <Ionicons name="help-circle-outline" size={16} color={theme.colors.text + '80'} />
-              <Text style={[styles.quizInfoText, { color: theme.colors.text }]}>
-                {item.questions} Questions
-              </Text>
-            </View>
-            
-            <View style={styles.quizInfoItem}>
-              <Ionicons name="time-outline" size={16} color={theme.colors.text + '80'} />
-              <Text style={[styles.quizInfoText, { color: theme.colors.text }]}>
-                {item.timeLimit} Minutes
-              </Text>
-            </View>
-          </View>
+  // If no quizzes are available
+  if (QUIZZES.length === 0) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyTitle}>Quizzes</Text>
+          <Text style={styles.emptyMessage}>Your quizzes will appear here</Text>
         </View>
-        
-        {item.completed ? (
-          <View style={styles.quizResultContainer}>
-            <View 
-              style={[
-                styles.scoreContainer, 
-                { 
-                  backgroundColor: item.score >= 70 ? '#10B981' : '#F59E0B',
-                  opacity: 0.9
-                }
-              ]}
-            >
-              <Text style={styles.scoreText}>{item.score}%</Text>
-            </View>
-            <Text style={[styles.completedText, { color: theme.colors.text + '80' }]}>
-              Completed
-            </Text>
-          </View>
-        ) : (
-          <TouchableOpacity
-            style={[styles.startButton, { backgroundColor: theme.colors.primary }]}
-            onPress={() => router.push(`/_tabs/quizzes/${item.id}`)}
-          >
-            <Text style={styles.startButtonText}>Start Quiz</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-    </Card>
-  );
+      </SafeAreaView>
+    );
+  }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <View style={styles.header}>
-        <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
-          Quizzes
-        </Text>
-        <TouchableOpacity style={styles.notificationButton}>
-          <Ionicons name="notifications-outline" size={24} color={theme.colors.text} />
-        </TouchableOpacity>
-      </View>
-      
-      <View style={styles.categoriesContainer}>
-        <FlatList
-          data={CATEGORIES}
-          keyExtractor={item => item.id}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={[
-                styles.categoryButton,
-                selectedCategory === item.id && {
-                  backgroundColor: theme.colors.primary,
-                  borderColor: theme.colors.primary
-                },
-                selectedCategory !== item.id && {
-                  borderColor: theme.colors.border,
-                  backgroundColor: 'transparent'
-                }
-              ]}
-              onPress={() => setSelectedCategory(item.id)}
-            >
-              <Text
-                style={[
-                  styles.categoryButtonText,
-                  { 
-                    color: selectedCategory === item.id 
-                      ? '#FFFFFF' 
-                      : theme.colors.text
-                  }
-                ]}
+    <SafeAreaView style={styles.container}>
+      <ScrollView style={styles.scrollView}>
+        <Text style={styles.sectionTitle}>Available Quizzes</Text>
+        
+        {QUIZZES.map((quiz) => (
+          <TouchableOpacity
+            key={quiz.id}
+            style={styles.quizCard}
+            onPress={() => router.push(`/_tabs/quizzes/${quiz.id}`)}
+            activeOpacity={0.9}
+          >
+            <View style={[styles.quizIconContainer, { backgroundColor: quiz.color + '15' }]}>
+              <Ionicons name="help-circle-outline" size={24} color={quiz.color} />
+            </View>
+            
+            <View style={styles.quizContent}>
+              <Text style={styles.quizTitle}>{quiz.title}</Text>
+              <Text style={styles.quizCourse}>{quiz.course}</Text>
+              
+              <View style={styles.quizDetails}>
+                <View style={styles.quizDetailItem}>
+                  <Ionicons name="help-outline" size={16} color="#6B7280" />
+                  <Text style={styles.quizDetailText}>{quiz.questionCount} questions</Text>
+                </View>
+                
+                <View style={styles.quizDetailItem}>
+                  <Ionicons name="time-outline" size={16} color="#6B7280" />
+                  <Text style={styles.quizDetailText}>{quiz.duration} minutes</Text>
+                </View>
+              </View>
+              
+              <TouchableOpacity 
+                style={[styles.startButton, { backgroundColor: quiz.color }]}
+                onPress={() => router.push(`/_tabs/quizzes/${quiz.id}`)}
               >
-                {item.label}
-              </Text>
-            </TouchableOpacity>
-          )}
-          contentContainerStyle={styles.categoriesContent}
-        />
-      </View>
-      
-      <FlatList
-        data={filteredQuizzes}
-        keyExtractor={item => item.id}
-        renderItem={renderQuizCard}
-        contentContainerStyle={styles.quizzesList}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={[styles.emptyText, { color: theme.colors.text }]}>
-              No quizzes found for this category.
-            </Text>
-          </View>
-        }
-      />
+                <Text style={styles.startButtonText}>Start Quiz</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -234,119 +105,86 @@ export default function QuizzesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#FFFFFF',
   },
-  header: {
-    flexDirection: 'row',
+  scrollView: {
+    flex: 1,
+    padding: 16,
+    paddingBottom: 100, // Extra padding at the bottom
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    marginBottom: 16,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 8,
+    padding: 16,
   },
-  headerTitle: {
+  emptyTitle: {
     fontSize: 24,
     fontWeight: 'bold',
+    color: '#1F2937',
+    marginBottom: 12,
   },
-  notificationButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  emptyMessage: {
+    fontSize: 16,
+    color: '#6B7280',
+    textAlign: 'center',
+  },
+  quizCard: {
+    flexDirection: 'row',
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    marginBottom: 16,
+    overflow: 'hidden',
+  },
+  quizIconContainer: {
+    width: 70,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  categoriesContainer: {
-    marginBottom: 12,
-  },
-  categoriesContent: {
-    paddingHorizontal: 16,
-    paddingVertical: 4,
-  },
-  categoryButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    marginRight: 8,
-  },
-  categoryButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  quizzesList: {
-    padding: 16,
-    paddingBottom: 32,
-  },
-  quizCard: {
-    marginBottom: 16,
-  },
-  quizCardContent: {
-    marginTop: 8,
-  },
-  quizMetaRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  quizMetaItem: {
+  quizContent: {
     flex: 1,
+    padding: 16,
   },
-  quizMetaLabel: {
-    fontSize: 12,
-    marginBottom: 2,
+  quizTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    marginBottom: 4,
   },
-  quizMetaValue: {
+  quizCourse: {
     fontSize: 14,
-    fontWeight: '600',
+    color: '#6B7280',
+    marginBottom: 8,
   },
-  quizInfoContainer: {
+  quizDetails: {
     flexDirection: 'row',
+    marginBottom: 12,
   },
-  quizInfoItem: {
+  quizDetailItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginLeft: 12,
+    marginRight: 16,
   },
-  quizInfoText: {
-    fontSize: 13,
+  quizDetailText: {
+    fontSize: 14,
+    color: '#6B7280',
     marginLeft: 4,
   },
-  quizResultContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-  },
-  scoreContainer: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 16,
-  },
-  scoreText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  completedText: {
-    fontSize: 14,
-    marginLeft: 8,
-  },
   startButton: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 20,
-    alignSelf: 'flex-end',
+    borderRadius: 6,
+    alignSelf: 'flex-start',
   },
   startButtonText: {
     color: '#FFFFFF',
-    fontSize: 14,
     fontWeight: '600',
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 32,
-  },
-  emptyText: {
-    fontSize: 16,
-    textAlign: 'center',
-  },
+    fontSize: 14,
+  }
 });

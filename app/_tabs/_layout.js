@@ -1,93 +1,87 @@
 // app/_tabs/_layout.js
-import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
-import * as Theme from '../../constants/Theme';
+import { Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabsLayout() {
-  // Use try-catch in case Theme functions are undefined
-  let themeColors;
-  try {
-    const theme = Theme.createTheme(false); // Pass true for dark mode
-    themeColors = theme.colors;
-  } catch (error) {
-    console.error('Error creating theme:', error);
-    // Fallback colors in case theme creation fails
-    themeColors = {
-      background: '#FFFFFF',
-      text: '#000000',
-      primary: '#4361FF',
-      border: '#E0E0E0'
-    };
-  }
+  const insets = useSafeAreaInsets();
+  
+  // Calculate bottom padding to ensure tab bar doesn't hide content
+  const bottomPadding = Math.max(insets.bottom, 10);
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: themeColors.primary,
-        tabBarInactiveTintColor: '#7F8C9F',
+        tabBarActiveTintColor: '#4361FF', // Primary blue color
+        tabBarInactiveTintColor: '#9CA3AF', // Gray for inactive tabs
         tabBarStyle: {
-          backgroundColor: themeColors.background,
-          borderTopColor: themeColors.border,
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 8,
+          backgroundColor: '#FFFFFF',
+          borderTopColor: '#E5E7EB',
+          borderTopWidth: 1,
+          height: 60 + bottomPadding,
+          paddingBottom: bottomPadding,
+          paddingTop: 5,
           elevation: 8,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: -2 },
           shadowOpacity: 0.05,
-          shadowRadius: 6,
+          shadowRadius: 3,
+          position: 'absolute',
         },
         tabBarLabelStyle: {
-          fontSize: 12,
+          fontSize: 13,
           fontWeight: '500',
-          marginTop: 2,
-        },
-        tabBarIconStyle: {
-          marginBottom: 0,
-        },
-        headerShown: true,
-        headerTitleAlign: 'center',
-        headerTitleStyle: {
-          fontWeight: 'bold',
-          fontSize: 18,
+          marginBottom: Platform.OS === 'ios' ? 5 : 8,
         },
         headerStyle: {
-          backgroundColor: themeColors.background,
+          backgroundColor: '#FFFFFF',
+          shadowColor: 'transparent',
           elevation: 0,
-          shadowOpacity: 0,
           borderBottomWidth: 0,
         },
-        headerTintColor: themeColors.text,
+        headerTitleStyle: {
+          fontWeight: 'bold',
+          fontSize: 20,
+        },
+        headerTitleAlign: 'center',
+        // Add bottom padding to all screens to prevent content from being hidden behind the tab bar
+        contentStyle: {
+          paddingBottom: 80, // Ensure enough space at the bottom
+        },
+        // Remove default icon space
+        tabBarIconStyle: { display: 'none' },
       }}
     >
       <Tabs.Screen
-        name="courses/index"
+        name="dashboard"
+        options={{
+          title: "Dashboard",
+          tabBarLabel: "📱 Dashboard",
+          headerTitle: "Dashboard",
+        }}
+      />
+      <Tabs.Screen
+        name="courses"
         options={{
           title: "Courses",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="book-outline" size={24} color={color} />
-          ),
-          headerTitle: "Courses",
+          tabBarLabel: "📚 Cours",
+          headerTitle: "Cours",
         }}
       />
       <Tabs.Screen
-        name="quizzes/index"
+        name="quizzes"
         options={{
           title: "Quizzes",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="clipboard-outline" size={24} color={color} />
-          ),
-          headerTitle: "Quizzes",
+          tabBarLabel: "🧪 Quiz",
+          headerTitle: "Quiz",
         }}
       />
       <Tabs.Screen
-        name="profile/index"
+        name="profile"
         options={{
           title: "Profile",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-outline" size={24} color={color} />
-          ),
-          headerTitle: "Profile",
+          tabBarLabel: "👤 Profil",
+          headerTitle: "Profil",
         }}
       />
     </Tabs>
