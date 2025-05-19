@@ -1,6 +1,5 @@
 // app/_auth/login.js
 import { Stack, useRouter } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
 import { useState } from 'react';
 import {
     KeyboardAvoidingView,
@@ -15,6 +14,7 @@ import {
 import Button from '../../components/common/Button';
 import Header from '../../components/common/Header';
 import * as Theme from '../../constants/Theme';
+import { useAuth } from '../_layout';
 
 // Make sure this component is exported as default
 export default function LoginScreen() {
@@ -25,6 +25,7 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   
   const router = useRouter();
+  const { signIn } = useAuth();
   
   // Use try-catch in case Theme functions are undefined
   let themeColors;
@@ -55,26 +56,41 @@ export default function LoginScreen() {
     setErrorMessage('');
     
     try {
-      // Here you would implement your actual login logic
-      // For example, calling your authentication API
+      console.log('Attempting to log in...');
       
       // Simulate API call with timeout
       await new Promise(resolve => setTimeout(resolve, 1500));
       
+      console.log('Email:', email, 'Password:', password);
+      
       // For demonstration purposes, let's create simple validation
       // In a real app, this would be replaced with actual authentication
       if (email === 'student@example.com' && password === 'password123') {
-        // Store authentication token
-        await SecureStore.setItemAsync('userToken', 'demo-token-123');
+        console.log('Login successful, storing token...');
         
-        // Navigate to the main app
-        router.replace('/(tabs)');
+        try {
+          // Store authentication token via auth context
+          const success = await signIn('demo-token-123');
+          console.log('Token stored successfully:', success);
+          
+          if (success) {
+            // Navigate to the main app
+            console.log('Navigating to tabs...');
+            router.replace('/_tabs/courses');
+          } else {
+            setErrorMessage('Error storing login data. Please try again.');
+          }
+        } catch (storageError) {
+          console.error('Storage error:', storageError);
+          setErrorMessage('Error storing login data. Please try again.');
+        }
       } else {
+        console.log('Invalid credentials');
         setErrorMessage('Invalid email or password');
       }
     } catch (error) {
-      setErrorMessage('Login failed. Please try again.');
       console.error('Login error:', error);
+      setErrorMessage('Login failed. Please try again: ' + error.message);
     } finally {
       setIsLoading(false);
     }
