@@ -8,18 +8,13 @@ export default function RootLayout() {
   const pathname = usePathname();
   
   // Check if we're in a tab route
-  const isTabRoute = pathname.startsWith('/dashboard') || 
-                    pathname.startsWith('/courses') || 
-                    pathname.startsWith('/quizzes') || 
-                    pathname.startsWith('/profile');
+  const isTabRoute = pathname.startsWith('/_tabs/');
 
   return (
     <SafeAreaProvider>
       <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="dashboard" />
-        <Stack.Screen name="courses" />
-        <Stack.Screen name="quizzes" />
-        <Stack.Screen name="profile" />
+        <Stack.Screen name="index" />
+        <Stack.Screen name="_tabs" />
       </Stack>
       
       {/* Custom tab bar */}
@@ -27,11 +22,11 @@ export default function RootLayout() {
         <View style={styles.tabBar}>
           <TouchableOpacity 
             style={styles.tabItem} 
-            onPress={() => router.push('/dashboard')}
+            onPress={() => router.push('/_tabs/dashboard')}
           >
             <Text style={[
               styles.tabLabel, 
-              pathname.startsWith('/dashboard') && styles.activeTabLabel
+              pathname.includes('/dashboard') && styles.activeTabLabel
             ]}>
               📱 Dashboard
             </Text>
@@ -39,11 +34,11 @@ export default function RootLayout() {
           
           <TouchableOpacity 
             style={styles.tabItem} 
-            onPress={() => router.push('/courses')}
+            onPress={() => router.push('/_tabs/courses')}
           >
             <Text style={[
               styles.tabLabel, 
-              pathname.startsWith('/courses') && styles.activeTabLabel
+              pathname.includes('/courses') && styles.activeTabLabel
             ]}>
               📚 Cours
             </Text>
@@ -51,11 +46,11 @@ export default function RootLayout() {
           
           <TouchableOpacity 
             style={styles.tabItem} 
-            onPress={() => router.push('/quizzes')}
+            onPress={() => router.push('/_tabs/quizzes')}
           >
             <Text style={[
               styles.tabLabel, 
-              pathname.startsWith('/quizzes') && styles.activeTabLabel
+              pathname.includes('/quizzes') && styles.activeTabLabel
             ]}>
               🧪 Quiz
             </Text>
@@ -63,11 +58,11 @@ export default function RootLayout() {
           
           <TouchableOpacity 
             style={styles.tabItem} 
-            onPress={() => router.push('/profile')}
+            onPress={() => router.push('/_tabs/profile')}
           >
             <Text style={[
               styles.tabLabel, 
-              pathname.startsWith('/profile') && styles.activeTabLabel
+              pathname.includes('/profile') && styles.activeTabLabel
             ]}>
               👤 Profil
             </Text>
