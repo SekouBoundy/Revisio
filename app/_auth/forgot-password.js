@@ -1,170 +1,166 @@
-import { useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
+// app/_auth/forgot-password.js
+import { Stack, router } from 'expo-router';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
-
+import { KeyboardAvoidingView, Platform, SafeAreaView, StyleSheet, Text, TextInput, View } from 'react-native';
 import Button from '../../components/common/Button';
-import Header from '../../components/common/Header';
-import Input from '../../components/common/Input';
-import Theme from '../../constants/Theme';
+import * as Theme from '../../constants/Theme';
 
 export default function ForgotPasswordScreen() {
-  const router = useRouter();
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  
+  const theme = Theme.createTheme(false); // Pass true for dark mode
 
   const handleResetPassword = async () => {
-    // Reset error state
-    setError('');
-
-    // Validate input
-    if (!email) {
-      setError('Please enter your email');
+    // Validate email
+    if (!email || !email.includes('@')) {
+      setErrorMessage('Please enter a valid email address');
       return;
     }
-
+    
+    setIsLoading(true);
+    setErrorMessage('');
+    
     try {
-      setIsLoading(true);
-
+      // Here you would implement your actual password reset logic
+      // For example, calling an API endpoint
+      
       // Simulate API call with timeout
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Simulate successful password reset request (in a real app, call your API here)
-      setIsSubmitted(true);
-    } catch (err) {
-      setError('Password reset request failed. Please try again.');
-      console.error('Password reset error:', err);
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      setSuccessMessage('Password reset instructions have been sent to your email');
+      // You could navigate back to login after a delay
+      setTimeout(() => {
+        router.replace('/login');
+      }, 3000);
+    } catch (error) {
+      setErrorMessage('Failed to send reset instructions. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleReturnToLogin = () => {
-    router.replace('/_auth/login');
-  };
-
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <StatusBar style="auto" />
-      <Header
-        title="Forgot Password"
-        showBack={true}
-      />
-
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardView}
       >
-        {!isSubmitted ? (
-          <>
-            <Text style={styles.heading}>Reset Your Password</Text>
-            <Text style={styles.subheading}>
-              Enter your email address and we'll send you instructions to reset your password
-            </Text>
-
-            {error ? (
-              <View style={styles.errorContainer}>
-                <Text style={styles.errorText}>{error}</Text>
-              </View>
+        <Stack.Screen options={{ 
+          title: 'Reset Password',
+          headerShadowVisible: false,
+          headerStyle: { backgroundColor: theme.colors.background },
+          headerTitleStyle: { color: theme.colors.text },
+        }} />
+        
+        <View style={styles.content}>
+          <Text style={[styles.title, { color: theme.colors.text }]}>Reset Your Password</Text>
+          <Text style={[styles.subtitle, { color: theme.colors.text }]}>
+            Enter your email address and we'll send you instructions to reset your password.
+          </Text>
+          
+          <View style={styles.form}>
+            <Text style={[styles.label, { color: theme.colors.text }]}>Email Address</Text>
+            <TextInput
+              style={[
+                styles.input,
+                { 
+                  backgroundColor: theme.colors.card,
+                  color: theme.colors.text,
+                  borderColor: theme.colors.border
+                }
+              ]}
+              value={email}
+              onChangeText={setEmail}
+              placeholder="Enter your email"
+              placeholderTextColor="#9CA3AF"
+              autoCapitalize="none"
+              keyboardType="email-address"
+              autoCompleteType="email"
+            />
+            
+            {errorMessage ? (
+              <Text style={styles.errorText}>{errorMessage}</Text>
             ) : null}
-
-            <View style={styles.form}>
-              <Input
-                label="Email"
-                value={email}
-                onChangeText={setEmail}
-                placeholder="Enter your email"
-                autoCapitalize="none"
-                keyboardType="email-address"
-              />
-
-              <Button
-                onPress={handleResetPassword}
-                loading={isLoading}
-                fullWidth
-                style={styles.resetButton}
-              >
-                Reset Password
-              </Button>
-            </View>
-          </>
-        ) : (
-          <View style={styles.successContainer}>
-            <Text style={styles.heading}>Check Your Email</Text>
-            <Text style={styles.subheading}>
-              We've sent password reset instructions to {email}
-            </Text>
-            <Text style={styles.instructionText}>
-              If you don't see the email in your inbox, please check your spam folder.
-            </Text>
+            
+            {successMessage ? (
+              <Text style={styles.successText}>{successMessage}</Text>
+            ) : null}
             
             <Button
-              onPress={handleReturnToLogin}
-              fullWidth
-              style={styles.returnButton}
-            >
-              Return to Login
-            </Button>
+              label="Send Reset Instructions"
+              onPress={handleResetPassword}
+              isLoading={isLoading}
+              style={styles.button}
+            />
+            
+            <Button
+              label="Back to Login"
+              variant="text"
+              onPress={() => router.replace('/login')}
+              style={styles.linkButton}
+            />
           </View>
-        )}
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Theme.colors.backgroundPrimary,
   },
-  scrollView: {
+  keyboardView: {
     flex: 1,
   },
-  scrollContent: {
-    padding: Theme.layout.spacing.lg,
-    paddingBottom: Theme.layout.spacing.xxl,
+  content: {
+    flex: 1,
+    padding: 20,
+    justifyContent: 'center',
   },
-  heading: {
-    ...Theme.typography.heading2,
-    marginTop: Theme.layout.spacing.lg,
-    marginBottom: Theme.layout.spacing.sm,
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 8,
   },
-  subheading: {
-    ...Theme.typography.subtitle,
-    marginBottom: Theme.layout.spacing.xl,
+  subtitle: {
+    fontSize: 16,
+    marginBottom: 24,
+    opacity: 0.8,
   },
   form: {
-    marginBottom: Theme.layout.spacing.xl,
+    width: '100%',
   },
-  resetButton: {
-    marginTop: Theme.layout.spacing.lg,
+  label: {
+    fontSize: 16,
+    marginBottom: 8,
+    fontWeight: '500',
   },
-  returnButton: {
-    marginTop: Theme.layout.spacing.xl,
+  input: {
+    width: '100%',
+    height: 50,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    marginBottom: 16,
+    fontSize: 16,
   },
-  errorContainer: {
-    backgroundColor: Theme.colors.error + '20', // 20% opacity
-    padding: Theme.layout.spacing.md,
-    borderRadius: Theme.layout.borderRadius.medium,
-    marginBottom: Theme.layout.spacing.lg,
+  button: {
+    marginTop: 16,
+  },
+  linkButton: {
+    marginTop: 12,
+    alignSelf: 'center',
   },
   errorText: {
-    color: Theme.colors.error,
-    fontSize: Theme.layout.fontSize.sm,
+    color: '#EF4444',
+    marginBottom: 16,
   },
-  successContainer: {
-    paddingVertical: Theme.layout.spacing.xl,
-  },
-  instructionText: {
-    color: Theme.colors.textSecondary,
-    fontSize: Theme.layout.fontSize.sm,
-    lineHeight: 20,
-    marginBottom: Theme.layout.spacing.lg,
+  successText: {
+    color: '#10B981',
+    marginBottom: 16,
   },
 });
