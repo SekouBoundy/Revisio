@@ -1,10 +1,11 @@
 // app/_tabs/profile/index.js
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import {
-    SafeAreaView,
     ScrollView,
     StyleSheet,
+    Switch,
     Text,
     TouchableOpacity,
     View
@@ -12,39 +13,24 @@ import {
 
 // Mock user data
 const USER = {
-  name: 'Sarah Johnson',
-  email: 'sarah.j@example.com',
-  studentType: 'DEF',
-  joinDate: 'September 2023',
-  avatar: null, // We'll use initials instead
+  name: 'Amadou Diallo',
+  email: 'amadou.diallo@example.com',
+  studentType: 'BAC',
+  joinDate: 'Septembre 2023',
   stats: {
-    coursesCompleted: 2,
-    lessonsCompleted: 18,
-    quizzesTaken: 5,
+    coursesCompleted: 3,
+    lessonsCompleted: 24,
+    quizzesPassed: 8,
     averageScore: 87
-  },
-  achievements: [
-    {
-      id: 'ach1',
-      title: 'Quick Starter',
-      description: 'Completed first lesson',
-      icon: 'rocket-outline',
-      date: '15 Sep 2023'
-    },
-    {
-      id: 'ach2',
-      title: 'Quiz Master',
-      description: 'Scored 100% on a quiz',
-      icon: 'ribbon-outline',
-      date: '20 Sep 2023'
-    }
-  ]
+  }
 };
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const [darkMode, setDarkMode] = useState(false);
+  const [notifications, setNotifications] = useState(true);
   
-  // Get initials for avatar placeholder
+  // Get initials for avatar
   const getInitials = (name) => {
     return name
       .split(' ')
@@ -54,104 +40,120 @@ export default function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView}>
-        {/* Profile Header */}
-        <View style={styles.profileHeader}>
-          <View style={styles.avatarContainer}>
-            <Text style={styles.avatarText}>{getInitials(USER.name)}</Text>
+    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+      {/* Profile Header */}
+      <View style={styles.header}>
+        <View style={styles.avatarContainer}>
+          <Text style={styles.avatarText}>{getInitials(USER.name)}</Text>
+        </View>
+        <Text style={styles.userName}>{USER.name}</Text>
+        <Text style={styles.userEmail}>{USER.email}</Text>
+        <View style={styles.badgeContainer}>
+          <Text style={styles.badge}>{USER.studentType}</Text>
+        </View>
+      </View>
+      
+      {/* Stats Section */}
+      <View style={styles.statsContainer}>
+        <Text style={styles.sectionTitle}>Statistiques</Text>
+        <View style={styles.statsGrid}>
+          <View style={styles.statCard}>
+            <Text style={styles.statValue}>{USER.stats.coursesCompleted}</Text>
+            <Text style={styles.statLabel}>Cours terminés</Text>
           </View>
-          
-          <View style={styles.profileInfo}>
-            <Text style={styles.userName}>{USER.name}</Text>
-            <Text style={styles.userEmail}>{USER.email}</Text>
-            <View style={styles.userTypeBadge}>
-              <Text style={styles.userTypeText}>{USER.studentType} Student</Text>
-            </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statValue}>{USER.stats.lessonsCompleted}</Text>
+            <Text style={styles.statLabel}>Leçons complétées</Text>
           </View>
-          
-          <TouchableOpacity 
-            style={styles.editButton}
-            onPress={() => router.push('/_tabs/profile/edit')}
-          >
-            <Ionicons name="pencil-outline" size={20} color="#4361FF" />
-          </TouchableOpacity>
+          <View style={styles.statCard}>
+            <Text style={styles.statValue}>{USER.stats.quizzesPassed}</Text>
+            <Text style={styles.statLabel}>Quiz réussis</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statValue}>{USER.stats.averageScore}%</Text>
+            <Text style={styles.statLabel}>Score moyen</Text>
+          </View>
+        </View>
+      </View>
+      
+      {/* Settings Section */}
+      <View style={styles.settingsContainer}>
+        <Text style={styles.sectionTitle}>Paramètres</Text>
+        
+        <View style={styles.settingItem}>
+          <View style={styles.settingLeft}>
+            <Ionicons name="moon-outline" size={22} color="#4B5563" style={styles.settingIcon} />
+            <Text style={styles.settingLabel}>Mode sombre</Text>
+          </View>
+          <Switch
+            value={darkMode}
+            onValueChange={setDarkMode}
+            trackColor={{ false: "#D1D5DB", true: "#4361FF" }}
+            thumbColor="#FFFFFF"
+          />
         </View>
         
-        {/* Stats Section */}
-        <View style={styles.statsContainer}>
-          <View style={styles.statsRow}>
-            <View style={styles.statCard}>
-              <Text style={styles.statValue}>{USER.stats.coursesCompleted}</Text>
-              <Text style={styles.statLabel}>Courses</Text>
-            </View>
-            
-            <View style={styles.statCard}>
-              <Text style={styles.statValue}>{USER.stats.lessonsCompleted}</Text>
-              <Text style={styles.statLabel}>Lessons</Text>
-            </View>
+        <View style={styles.settingItem}>
+          <View style={styles.settingLeft}>
+            <Ionicons name="notifications-outline" size={22} color="#4B5563" style={styles.settingIcon} />
+            <Text style={styles.settingLabel}>Notifications</Text>
           </View>
-          
-          <View style={styles.statsRow}>
-            <View style={styles.statCard}>
-              <Text style={styles.statValue}>{USER.stats.quizzesTaken}</Text>
-              <Text style={styles.statLabel}>Quizzes</Text>
-            </View>
-            
-            <View style={styles.statCard}>
-              <Text style={styles.statValue}>{USER.stats.averageScore}%</Text>
-              <Text style={styles.statLabel}>Avg. Score</Text>
-            </View>
-          </View>
+          <Switch
+            value={notifications}
+            onValueChange={setNotifications}
+            trackColor={{ false: "#D1D5DB", true: "#4361FF" }}
+            thumbColor="#FFFFFF"
+          />
         </View>
         
-        {/* Achievements Section */}
-        <View style={styles.sectionContainer}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Achievements</Text>
-            <TouchableOpacity 
-              onPress={() => router.push('/_tabs/profile/achievements')}
-            >
-              <Text style={styles.seeAllText}>See All</Text>
-            </TouchableOpacity>
+        <TouchableOpacity style={styles.settingItem} onPress={() => alert('Langue modifiée')}>
+          <View style={styles.settingLeft}>
+            <Ionicons name="language-outline" size={22} color="#4B5563" style={styles.settingIcon} />
+            <Text style={styles.settingLabel}>Langue</Text>
           </View>
-          
-          {USER.achievements.map(achievement => (
-            <View key={achievement.id} style={styles.achievementCard}>
-              <View style={styles.achievementIcon}>
-                <Ionicons name={achievement.icon} size={24} color="#4361FF" />
-              </View>
-              
-              <View style={styles.achievementInfo}>
-                <Text style={styles.achievementTitle}>{achievement.title}</Text>
-                <Text style={styles.achievementDesc}>{achievement.description}</Text>
-                <Text style={styles.achievementDate}>Earned on {achievement.date}</Text>
-              </View>
-            </View>
-          ))}
-        </View>
+          <View style={styles.settingRight}>
+            <Text style={styles.settingValue}>Français</Text>
+            <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+          </View>
+        </TouchableOpacity>
         
-        {/* Settings Buttons */}
-        <View style={styles.settingsContainer}>
-          <TouchableOpacity style={styles.settingsButton}>
-            <Ionicons name="settings-outline" size={20} color="#6B7280" />
-            <Text style={styles.settingsButtonText}>Settings</Text>
-            <Ionicons name="chevron-forward" size={16} color="#6B7280" />
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.settingsButton}>
-            <Ionicons name="help-circle-outline" size={20} color="#6B7280" />
-            <Text style={styles.settingsButtonText}>Help & Support</Text>
-            <Ionicons name="chevron-forward" size={16} color="#6B7280" />
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.logoutButton}>
-            <Ionicons name="log-out-outline" size={20} color="#EF4444" />
-            <Text style={styles.logoutButtonText}>Logout</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+        <TouchableOpacity style={styles.settingItem} onPress={() => alert('Contactez-nous')}>
+          <View style={styles.settingLeft}>
+            <Ionicons name="help-circle-outline" size={22} color="#4B5563" style={styles.settingIcon} />
+            <Text style={styles.settingLabel}>Aide et support</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+        </TouchableOpacity>
+      </View>
+      
+      {/* Account Section */}
+      <View style={styles.accountContainer}>
+        <Text style={styles.sectionTitle}>Compte</Text>
+        
+        <TouchableOpacity style={styles.settingItem} onPress={() => router.push('/_tabs/profile/edit')}>
+          <View style={styles.settingLeft}>
+            <Ionicons name="person-outline" size={22} color="#4B5563" style={styles.settingIcon} />
+            <Text style={styles.settingLabel}>Modifier le profil</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.settingItem} onPress={() => alert('Mot de passe modifié')}>
+          <View style={styles.settingLeft}>
+            <Ionicons name="lock-closed-outline" size={22} color="#4B5563" style={styles.settingIcon} />
+            <Text style={styles.settingLabel}>Changer le mot de passe</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.logoutButton} onPress={() => router.replace('/_auth/login')}>
+          <Ionicons name="log-out-outline" size={20} color="#EF4444" />
+          <Text style={styles.logoutText}>Déconnexion</Text>
+        </TouchableOpacity>
+      </View>
+      
+      <Text style={styles.versionText}>Revisio v1.0.0</Text>
+    </ScrollView>
   );
 }
 
@@ -160,176 +162,141 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  scrollView: {
-    flex: 1,
-  },
-  profileHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  contentContainer: {
     padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    paddingBottom: 100,
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 24,
+    paddingVertical: 16,
   },
   avatarContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     backgroundColor: '#4361FF20',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 16,
-  },
-  avatarText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#4361FF',
-  },
-  profileInfo: {
-    flex: 1,
-  },
-  userName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1F2937',
-    marginBottom: 2,
-  },
-  userEmail: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginBottom: 6,
-  },
-  userTypeBadge: {
-    backgroundColor: '#4361FF20',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
-    alignSelf: 'flex-start',
-  },
-  userTypeText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#4361FF',
-  },
-  editButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F3F4F6',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  statsContainer: {
-    padding: 16,
-  },
-  statsRow: {
-    flexDirection: 'row',
     marginBottom: 12,
   },
-  statCard: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    marginHorizontal: 4,
+  avatarText: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#4361FF',
   },
-  statValue: {
+  userName: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#1F2937',
     marginBottom: 4,
   },
-  statLabel: {
+  userEmail: {
     fontSize: 14,
     color: '#6B7280',
+    marginBottom: 8,
   },
-  sectionContainer: {
-    padding: 16,
-    borderTopWidth: 8,
-    borderTopColor: '#F3F4F6',
+  badgeContainer: {
+    backgroundColor: '#4361FF20',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 16,
   },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
+  badge: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#4361FF',
+  },
+  statsContainer: {
+    marginBottom: 24,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#1F2937',
+    marginBottom: 16,
   },
-  seeAllText: {
-    fontSize: 14,
-    color: '#4361FF',
-    fontWeight: '500',
-  },
-  achievementCard: {
+  statsGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginHorizontal: -8,
+  },
+  statCard: {
+    width: '50%',
+    paddingHorizontal: 8,
+    marginBottom: 16,
+  },
+  statInnerCard: {
     backgroundColor: '#F9FAFB',
     borderRadius: 12,
-    padding: 12,
-    marginBottom: 12,
-  },
-  achievementIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#4361FF20',
+    padding: 16,
     alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
   },
-  achievementInfo: {
-    flex: 1,
-  },
-  achievementTitle: {
-    fontSize: 16,
+  statValue: {
+    fontSize: 24,
     fontWeight: 'bold',
-    color: '#1F2937',
-    marginBottom: 2,
-  },
-  achievementDesc: {
-    fontSize: 14,
-    color: '#6B7280',
+    color: '#4361FF',
     marginBottom: 4,
   },
-  achievementDate: {
-    fontSize: 12,
-    color: '#9CA3AF',
+  statLabel: {
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'center',
   },
   settingsContainer: {
-    padding: 16,
-    borderTopWidth: 8,
-    borderTopColor: '#F3F4F6',
-    paddingBottom: 100, // Extra padding to prevent content from being hidden by the tab bar
+    marginBottom: 24,
   },
-  settingsButton: {
+  settingItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
   },
-  settingsButtonText: {
-    flex: 1,
-    marginLeft: 12,
+  settingLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  settingIcon: {
+    marginRight: 12,
+  },
+  settingLabel: {
     fontSize: 16,
     color: '#1F2937',
+  },
+  settingRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  settingValue: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginRight: 4,
+  },
+  accountContainer: {
+    marginBottom: 24,
   },
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: '#FEE2E2',
-    borderRadius: 12,
-    padding: 16,
-    marginTop: 8,
+    borderRadius: 8,
+    paddingVertical: 12,
+    marginTop: 16,
   },
-  logoutButtonText: {
-    marginLeft: 12,
+  logoutText: {
     fontSize: 16,
-    color: '#EF4444',
     fontWeight: '500',
-  }
+    color: '#EF4444',
+    marginLeft: 8,
+  },
+  versionText: {
+    textAlign: 'center',
+    fontSize: 12,
+    color: '#9CA3AF',
+    marginTop: 8,
+    marginBottom: 24,
+  },
 });

@@ -1,211 +1,231 @@
 // app/_tabs/profile/edit.js
-import { Stack, useRouter } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
-import { useEffect, useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import {
     Alert,
-    SafeAreaView,
     ScrollView,
     StyleSheet,
     Text,
+    TextInput,
+    TouchableOpacity,
     View
 } from 'react-native';
-import Button from '../../../components/common/Button';
-import Header from '../../../components/common/Header';
-import Input from '../../../components/common/Input';
-import * as Theme from '../../../constants/Theme';
 
-export default function ProfileEditScreen() {
-  const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    bio: '',
-    studentType: ''
+export default function EditProfileScreen() {
+  const router = useRouter();
+  const [form, setForm] = useState({
+    name: 'Amadou Diallo',
+    email: 'amadou.diallo@example.com',
+    phone: '+223 76 54 32 10',
+    school: 'Lycée Central de Bamako',
+    grade: 'Terminale'
   });
   
-  const [isLoading, setIsLoading] = useState(false);
-  const [isFetching, setIsFetching] = useState(true);
-  
-  const router = useRouter();
-  const theme = Theme.createTheme(false); // Pass true for dark mode
-
-  // Load user profile data
-  useEffect(() => {
-    async function loadUserProfile() {
-      try {
-        const storedProfile = await SecureStore.getItemAsync('userProfile');
-        if (storedProfile) {
-          const profile = JSON.parse(storedProfile);
-          setFormData({
-            fullName: profile.fullName || '',
-            email: profile.email || '',
-            bio: profile.bio || '',
-            studentType: profile.studentType || ''
-          });
-        }
-      } catch (error) {
-        console.error('Error loading profile:', error);
-      } finally {
-        setIsFetching(false);
-      }
-    }
-
-    loadUserProfile();
-  }, []);
-
-  // Handle input changes
   const handleChange = (field, value) => {
-    setFormData({
-      ...formData,
+    setForm(prev => ({
+      ...prev,
       [field]: value
-    });
+    }));
   };
-
-  // Handle form submission
-  const handleSave = async () => {
-    // Validate form
-    if (!formData.fullName.trim()) {
-      Alert.alert('Error', 'Please enter your name');
-      return;
-    }
-    
-    if (!formData.email.trim() || !formData.email.includes('@')) {
-      Alert.alert('Error', 'Please enter a valid email address');
-      return;
-    }
-    
-    setIsLoading(true);
-    
-    try {
-      // Save profile data to secure storage
-      await SecureStore.setItemAsync('userProfile', JSON.stringify(formData));
-      
-      // Show success message and navigate back
-      Alert.alert(
-        'Success',
-        'Your profile has been updated successfully.',
-        [
-          { text: 'OK', onPress: () => router.back() }
-        ]
-      );
-    } catch (error) {
-      console.error('Error saving profile:', error);
-      Alert.alert('Error', 'Failed to save profile. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  if (isFetching) {
-    return (
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <Header title="Edit Profile" onBackPress={() => router.back()} />
-        <View style={styles.centerContent}>
-          <Text style={{ color: theme.colors.text }}>Loading profile data...</Text>
-        </View>
-      </SafeAreaView>
+  
+  const handleSave = () => {
+    Alert.alert(
+      "Profil mis à jour",
+      "Vos informations ont été enregistrées avec succès.",
+      [
+        { text: "OK", onPress: () => router.back() }
+      ]
     );
-  }
+  };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <Stack.Screen options={{ 
-        headerShown: false
-      }} />
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.backButton} 
+          onPress={() => router.back()}
+        >
+          <Ionicons name="arrow-back" size={24} color="#1F2937" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Modifier le profil</Text>
+        <View style={styles.placeholder} />
+      </View>
       
-      <Header title="Edit Profile" onBackPress={() => router.back()} />
-      
-      <ScrollView 
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <Input
-          label="Full Name"
-          value={formData.fullName}
-          onChangeText={(text) => handleChange('fullName', text)}
-          placeholder="Enter your full name"
-          autoCapitalize="words"
-        />
-        
-        <Input
-          label="Email Address"
-          value={formData.email}
-          onChangeText={(text) => handleChange('email', text)}
-          placeholder="Enter your email"
-          keyboardType="email-address"
-          autoCapitalize="none"
-          disabled={true} // Make email non-editable
-          hint="Email cannot be changed"
-        />
-        
-        <Input
-          label="Bio"
-          value={formData.bio}
-          onChangeText={(text) => handleChange('bio', text)}
-          placeholder="Tell us about yourself"
-          multiline
-          style={styles.bioInput}
-        />
-        
-        <View style={styles.studentTypeContainer}>
-          <Input
-            label="Student Type"
-            value={
-              formData.studentType === 'BAC' ? 'BAC Student' : 
-              formData.studentType === 'DEF' ? 'DEF Student' : 
-              formData.studentType === 'LANGUAGE' ? 'Language Student' : 
-              'Student'
-            }
-            disabled={true} // Make student type non-editable
-            hint="Student type cannot be changed"
-          />
+      <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
+        <View style={styles.avatarSection}>
+          <View style={styles.avatarContainer}>
+            <Text style={styles.avatarText}>
+              {form.name.split(' ').map(name => name[0]).join('').toUpperCase()}
+            </Text>
+          </View>
+          <TouchableOpacity style={styles.changePhotoButton}>
+            <Text style={styles.changePhotoText}>Changer la photo</Text>
+          </TouchableOpacity>
         </View>
         
-        <Button
-          label="Save Changes"
-          onPress={handleSave}
-          isLoading={isLoading}
-          style={styles.saveButton}
-        />
+        <View style={styles.formSection}>
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>Nom complet</Text>
+            <TextInput
+              style={styles.input}
+              value={form.name}
+              onChangeText={(text) => handleChange('name', text)}
+              placeholder="Entrez votre nom"
+            />
+          </View>
+          
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>Email</Text>
+            <TextInput
+              style={[styles.input, styles.disabledInput]}
+              value={form.email}
+              editable={false}
+              placeholder="Entrez votre email"
+            />
+            <Text style={styles.helperText}>L'adresse e-mail ne peut pas être modifiée</Text>
+          </View>
+          
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>Téléphone</Text>
+            <TextInput
+              style={styles.input}
+              value={form.phone}
+              onChangeText={(text) => handleChange('phone', text)}
+              placeholder="Entrez votre numéro de téléphone"
+              keyboardType="phone-pad"
+            />
+          </View>
+          
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>École</Text>
+            <TextInput
+              style={styles.input}
+              value={form.school}
+              onChangeText={(text) => handleChange('school', text)}
+              placeholder="Entrez le nom de votre école"
+            />
+          </View>
+          
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>Niveau</Text>
+            <TextInput
+              style={styles.input}
+              value={form.grade}
+              onChangeText={(text) => handleChange('grade', text)}
+              placeholder="Entrez votre niveau scolaire"
+            />
+          </View>
+        </View>
         
-        <Button
-          label="Cancel"
-          variant="outline"
-          onPress={() => router.back()}
-          style={styles.cancelButton}
-        />
+        <TouchableOpacity 
+          style={styles.saveButton}
+          onPress={handleSave}
+        >
+          <Text style={styles.saveButtonText}>Enregistrer les modifications</Text>
+        </TouchableOpacity>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#FFFFFF',
   },
-  centerContent: {
-    flex: 1,
-    justifyContent: 'center',
+  header: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
   },
-  scrollView: {
+  backButton: {
+    padding: 4,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1F2937',
+  },
+  placeholder: {
+    width: 32,
+  },
+  content: {
     flex: 1,
   },
-  scrollContent: {
+  contentContainer: {
     padding: 16,
-    paddingBottom: 32,
+    paddingBottom: 100,
   },
-  bioInput: {
-    height: 120,
-  },
-  studentTypeContainer: {
+  avatarSection: {
+    alignItems: 'center',
     marginBottom: 24,
   },
-  saveButton: {
+  avatarContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#4361FF20',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 12,
   },
-  cancelButton: {
+  avatarText: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    color: '#4361FF',
+  },
+  changePhotoButton: {
+    paddingVertical: 8,
+  },
+  changePhotoText: {
+    fontSize: 14,
+    color: '#4361FF',
+    fontWeight: '500',
+  },
+  formSection: {
     marginBottom: 24,
+  },
+  formGroup: {
+    marginBottom: 16,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#4B5563',
+    marginBottom: 8,
+  },
+  input: {
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    color: '#1F2937',
+  },
+  disabledInput: {
+    backgroundColor: '#F3F4F6',
+    color: '#6B7280',
+  },
+  helperText: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    marginTop: 4,
+  },
+  saveButton: {
+    backgroundColor: '#4361FF',
+    borderRadius: 8,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  saveButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
 });
