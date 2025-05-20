@@ -1,9 +1,11 @@
+// Enhanced animated tab bar with Ionicons
 // app/_layout.js
+import { Ionicons } from '@expo/vector-icons';
 import { Stack, usePathname, useRouter } from 'expo-router';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider, useTheme } from '../constants/ThemeContext';
-
 
 export default function RootLayout() {
   return (
@@ -20,6 +22,57 @@ function AppLayout() {
   
   // Check if we're in a tab route
   const isTabRoute = pathname.startsWith('/_tabs/');
+
+  // Define tab configuration
+  const tabs = [
+    {
+      name: 'dashboard',
+      label: 'Dashboard',
+      activeIcon: 'grid',
+      inactiveIcon: 'grid-outline',
+      route: '/_tabs/dashboard'
+    },
+    {
+      name: 'courses',
+      label: 'Cours',
+      activeIcon: 'book',
+      inactiveIcon: 'book-outline',
+      route: '/_tabs/courses'
+    },
+    {
+      name: 'quizzes',
+      label: 'Quiz',
+      activeIcon: 'help-circle',
+      inactiveIcon: 'help-circle-outline',
+      route: '/_tabs/quizzes'
+    },
+    {
+      name: 'profile',
+      label: 'Profil',
+      activeIcon: 'person',
+      inactiveIcon: 'person-outline',
+      route: '/_tabs/profile'
+    }
+  ];
+
+  // Animation values for each tab
+  const tabAnimations = useRef(tabs.map(() => new Animated.Value(0))).current;
+  
+  useEffect(() => {
+    // Find the active tab index
+    const activeTabIndex = tabs.findIndex(tab => pathname.includes(`/${tab.name}`));
+    
+    if (activeTabIndex !== -1) {
+      // Animate all tabs
+      tabs.forEach((_, index) => {
+        Animated.spring(tabAnimations[index], {
+          toValue: index === activeTabIndex ? 1 : 0,
+          useNativeDriver: true,
+          friction: 8
+        }).start();
+      });
+    }
+  }, [pathname]);
 
   return (
     <SafeAreaProvider>
@@ -42,61 +95,40 @@ function AppLayout() {
             borderTopColor: theme.border
           }
         ]}>
-          <TouchableOpacity 
-            style={styles.tabItem} 
-            onPress={() => router.push('/_tabs/dashboard')}
-          >
-            <Text style={[
-              styles.tabLabel, 
-              pathname.includes('/dashboard') ? 
-                [styles.activeTabLabel, { color: theme.primary }] : 
-                { color: theme.textSecondary }
-            ]}>
-              📱 Dashboard
-            </Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.tabItem} 
-            onPress={() => router.push('/_tabs/courses')}
-          >
-            <Text style={[
-              styles.tabLabel, 
-              pathname.includes('/courses') ? 
-                [styles.activeTabLabel, { color: theme.primary }] : 
-                { color: theme.textSecondary }
-            ]}>
-              📚 Cours
-            </Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.tabItem} 
-            onPress={() => router.push('/_tabs/quizzes')}
-          >
-            <Text style={[
-              styles.tabLabel, 
-              pathname.includes('/quizzes') ? 
-                [styles.activeTabLabel, { color: theme.primary }] : 
-                { color: theme.textSecondary }
-            ]}>
-              🧪 Quiz
-            </Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.tabItem} 
-            onPress={() => router.push('/_tabs/profile')}
-          >
-            <Text style={[
-              styles.tabLabel, 
-              pathname.includes('/profile') ? 
-                [styles.activeTabLabel, { color: theme.primary }] : 
-                { color: theme.textSecondary }
-            ]}>
-              👤 Profil
-            </Text>
-          </TouchableOpacity>
+          {tabs.map((tab, index) => {
+            const isActive = pathname.includes(`/${tab.name}`);
+            
+            // Scale animation for the icon
+            const scale = tabAnimations[index].interpolate({
+              inputRange: [0, 1],
+              outputRange: [1, 1.2]
+            });
+            
+            return (
+              <TouchableOpacity 
+                key={tab.name}
+                style={styles.tabItem} 
+                onPress={() => router.push(tab.route)}
+                activeOpacity={0.7}
+              >
+                <Animated.View style={{ transform: [{ scale }] }}>
+                  <Ionicons 
+                    name={isActive ? tab.activeIcon : tab.inactiveIcon} 
+                    size={24} 
+                    color={isActive ? theme.primary : theme.textSecondary} 
+                  />
+                </Animated.View>
+                <Text style={[
+                  styles.tabLabel, 
+                  isActive ? 
+                    { color: theme.primary, fontWeight: '600' } : 
+                    { color: theme.textSecondary }
+                ]}>
+                  {tab.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
       )}
     </SafeAreaProvider>
@@ -125,14 +157,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingTop: 10,
   },
   tabLabel: {
-    fontSize: 13,
-    color: '#9CA3AF',
-    fontWeight: '500',
-  },
-  activeTabLabel: {
-    color: '#4361FF',
-    fontWeight: 'bold',
+    fontSize: 12,
+    marginTop: 4,
   }
 });
