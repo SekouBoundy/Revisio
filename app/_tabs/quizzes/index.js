@@ -9,6 +9,7 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import { useTheme } from '../../../constants/ThemeContext';
 
 // Mock data for quizzes
 const QUIZZES = [
@@ -43,48 +44,49 @@ const QUIZZES = [
 
 export default function QuizzesScreen() {
   const router = useRouter();
+  const { theme, isDarkMode } = useTheme();
 
   // If no quizzes are available
   if (QUIZZES.length === 0) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyTitle}>Quizzes</Text>
-          <Text style={styles.emptyMessage}>Your quizzes will appear here</Text>
+          <Text style={[styles.emptyTitle, { color: theme.text }]}>Quizzes</Text>
+          <Text style={[styles.emptyMessage, { color: theme.textSecondary }]}>Your quizzes will appear here</Text>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView style={styles.scrollView}>
-        <Text style={styles.sectionTitle}>Available Quizzes</Text>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Available Quizzes</Text>
         
         {QUIZZES.map((quiz) => (
           <TouchableOpacity
             key={quiz.id}
-            style={styles.quizCard}
+            style={[styles.quizCard, { backgroundColor: theme.cardBackground }]}
             onPress={() => router.push(`/_tabs/quizzes/${quiz.id}`)}
             activeOpacity={0.9}
           >
-            <View style={[styles.quizIconContainer, { backgroundColor: quiz.color + '15' }]}>
+            <View style={[styles.quizIconContainer, { backgroundColor: isDarkMode ? quiz.color + '30' : quiz.color + '15' }]}>
               <Ionicons name="help-circle-outline" size={24} color={quiz.color} />
             </View>
             
             <View style={styles.quizContent}>
-              <Text style={styles.quizTitle}>{quiz.title}</Text>
-              <Text style={styles.quizCourse}>{quiz.course}</Text>
+              <Text style={[styles.quizTitle, { color: theme.text }]}>{quiz.title}</Text>
+              <Text style={[styles.quizCourse, { color: theme.textSecondary }]}>{quiz.course}</Text>
               
               <View style={styles.quizDetails}>
                 <View style={styles.quizDetailItem}>
-                  <Ionicons name="help-outline" size={16} color="#6B7280" />
-                  <Text style={styles.quizDetailText}>{quiz.questionCount} questions</Text>
+                  <Ionicons name="help-outline" size={16} color={theme.textSecondary} />
+                  <Text style={[styles.quizDetailText, { color: theme.textSecondary }]}>{quiz.questionCount} questions</Text>
                 </View>
                 
                 <View style={styles.quizDetailItem}>
-                  <Ionicons name="time-outline" size={16} color="#6B7280" />
-                  <Text style={styles.quizDetailText}>{quiz.duration} minutes</Text>
+                  <Ionicons name="time-outline" size={16} color={theme.textSecondary} />
+                  <Text style={[styles.quizDetailText, { color: theme.textSecondary }]}>{quiz.duration} minutes</Text>
                 </View>
               </View>
               

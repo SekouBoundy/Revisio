@@ -9,6 +9,7 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import { useTheme } from '../../../constants/ThemeContext';
 
 // Mock data for courses
 const COURSES = [
@@ -43,6 +44,7 @@ const COURSES = [
 
 export default function CoursesScreen() {
   const router = useRouter();
+  const { theme, isDarkMode } = useTheme();
   
   // Render Progress Bar
   const ProgressBar = ({ progress, color }) => {
@@ -63,12 +65,12 @@ export default function CoursesScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.contentContainer}>
         {COURSES.map((course, index) => (
           <TouchableOpacity
             key={course.id}
-            style={styles.courseCard}
+            style={[styles.courseCard, { backgroundColor: theme.cardBackground }]}
             onPress={() => router.push(`/_tabs/courses/${course.id}`)}
             activeOpacity={0.9}
           >
@@ -76,25 +78,25 @@ export default function CoursesScreen() {
             <View 
               style={[
                 styles.courseIconContainer, 
-                { backgroundColor: course.color + '15' }  // Light background based on course color
+                { backgroundColor: isDarkMode ? course.color + '30' : course.color + '15' }
               ]}
             >
               <Ionicons name={course.icon} size={42} color={course.color} />
             </View>
             
             {/* Course Info Area */}
-            <View style={styles.courseInfoContainer}>
-              <Text style={styles.courseTitle}>{course.title}</Text>
-              <Text style={styles.courseLessons}>{course.lessonsCount} lessons</Text>
+            <View style={[styles.courseInfoContainer, { backgroundColor: theme.cardBackground }]}>
+              <Text style={[styles.courseTitle, { color: theme.text }]}>{course.title}</Text>
+              <Text style={[styles.courseLessons, { color: theme.textSecondary }]}>{course.lessonsCount} lessons</Text>
               
               <ProgressBar progress={course.progress} color={course.color} />
               
               <View style={styles.courseFooter}>
-                <Text style={styles.courseProgress}>
+                <Text style={[styles.courseProgress, { color: theme.textSecondary }]}>
                   {Math.round(course.progress * 100)}% complete
                 </Text>
-                <View style={styles.categoryBadge}>
-                  <Text style={styles.categoryText}>{course.category}</Text>
+                <View style={[styles.categoryBadge, { backgroundColor: isDarkMode ? '#333' : '#F3F4F6' }]}>
+                  <Text style={[styles.categoryText, { color: theme.textSecondary }]}>{course.category}</Text>
                 </View>
               </View>
             </View>

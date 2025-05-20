@@ -2,31 +2,55 @@
 import { Stack, usePathname, useRouter } from 'expo-router';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { ThemeProvider, useTheme } from '../constants/ThemeContext';
+
 
 export default function RootLayout() {
+  return (
+    <ThemeProvider>
+      <AppLayout />
+    </ThemeProvider>
+  );
+}
+
+function AppLayout() {
   const router = useRouter();
   const pathname = usePathname();
+  const { theme, isDarkMode } = useTheme();
   
   // Check if we're in a tab route
   const isTabRoute = pathname.startsWith('/_tabs/');
 
   return (
     <SafeAreaProvider>
-      <Stack screenOptions={{ headerShown: false }}>
+      <Stack screenOptions={{ 
+        headerShown: false,
+        contentStyle: {
+          backgroundColor: theme.background
+        }
+      }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="_tabs" />
       </Stack>
       
       {/* Custom tab bar */}
       {isTabRoute && (
-        <View style={styles.tabBar}>
+        <View style={[
+          styles.tabBar,
+          { 
+            backgroundColor: theme.background,
+            borderTopColor: theme.border
+          }
+        ]}>
           <TouchableOpacity 
             style={styles.tabItem} 
             onPress={() => router.push('/_tabs/dashboard')}
           >
             <Text style={[
               styles.tabLabel, 
-              pathname.includes('/dashboard') && styles.activeTabLabel
+              pathname.includes('/dashboard') ? 
+                [styles.activeTabLabel, { color: theme.primary }] : 
+                { color: theme.textSecondary }
             ]}>
               📱 Dashboard
             </Text>
@@ -38,7 +62,9 @@ export default function RootLayout() {
           >
             <Text style={[
               styles.tabLabel, 
-              pathname.includes('/courses') && styles.activeTabLabel
+              pathname.includes('/courses') ? 
+                [styles.activeTabLabel, { color: theme.primary }] : 
+                { color: theme.textSecondary }
             ]}>
               📚 Cours
             </Text>
@@ -50,7 +76,9 @@ export default function RootLayout() {
           >
             <Text style={[
               styles.tabLabel, 
-              pathname.includes('/quizzes') && styles.activeTabLabel
+              pathname.includes('/quizzes') ? 
+                [styles.activeTabLabel, { color: theme.primary }] : 
+                { color: theme.textSecondary }
             ]}>
               🧪 Quiz
             </Text>
@@ -62,7 +90,9 @@ export default function RootLayout() {
           >
             <Text style={[
               styles.tabLabel, 
-              pathname.includes('/profile') && styles.activeTabLabel
+              pathname.includes('/profile') ? 
+                [styles.activeTabLabel, { color: theme.primary }] : 
+                { color: theme.textSecondary }
             ]}>
               👤 Profil
             </Text>
