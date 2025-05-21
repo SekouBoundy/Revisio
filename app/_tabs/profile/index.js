@@ -1,16 +1,17 @@
 // app/_tabs/profile/index.js
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    ScrollView,
-    StyleSheet,
-    Switch,
-    Text,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { useAuth } from '../../../constants/AuthContext';
 import { useTheme } from '../../../constants/ThemeContext';
@@ -19,7 +20,7 @@ import { useUser } from '../../../constants/UserContext';
 export default function ProfileScreen() {
   const router = useRouter();
   const { theme, isDarkMode, toggleTheme } = useTheme();
-  const { isLoggedIn, isLoading: authLoading } = useAuth();
+  const { isLoggedIn, isLoading: authLoading, signOut } = useAuth();
   const { userProfile } = useUser();
   const [notifications, setNotifications] = useState(true);
   const [loading, setLoading] = useState(true);
@@ -35,7 +36,35 @@ export default function ProfileScreen() {
       .toUpperCase();
   };
 
-  // Load user data
+  // Reload data when screen comes into focus
+  useFocusEffect(
+  useCallback(() => {
+    const loadFreshData = async () => {
+      if (!isLoggedIn) return;
+      
+      try {
+        setLoading(true);
+        
+        // Get fresh data directly from storage without modifying it
+        const savedUserData = await AsyncStorage.getItem('@user_data');
+        
+        if (savedUserData) {
+          // Use the data exactly as saved from the edit screen
+          setUserData(JSON.parse(savedUserData));
+        }
+      } catch (error) {
+        console.error('Error loading user data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadFreshData();
+  }, [isLoggedIn])
+);
+
+
+  // Initial load
   useEffect(() => {
     const loadUserData = async () => {
       try {
@@ -51,13 +80,19 @@ export default function ProfileScreen() {
         const savedUserData = await AsyncStorage.getItem('@user_data');
         
         if (savedUserData) {
-          setUserData(JSON.parse(savedUserData));
+          const parsedData = JSON.parse(savedUserData);
+          // Set the email to the desired one
+          parsedData.email = "sekouboundy@example.com";
+          // Save the updated data
+          await AsyncStorage.setItem('@user_data', JSON.stringify(parsedData));
+          setUserData(parsedData);
         } else if (userProfile) {
           // If no saved data but we have a user profile, use that
           const profileData = {
             name: userProfile.fullName || 'User',
-            email: userProfile.email || '',
+            email: "sekouboundy@example.com", 
             studentType: userProfile.studentType || '',
+            gradeDescription: userProfile.gradeDescription || userProfile.studentType || '',
             joinDate: userProfile.joinDate || new Date().toLocaleDateString(),
             stats: {
               coursesCompleted: 0,
@@ -79,12 +114,11 @@ export default function ProfileScreen() {
     
     loadUserData();
   }, [isLoggedIn, userProfile]);
+
   // Handle logout
   const handleLogout = async () => {
     try {
-      const { signOut } = useAuth();
-      await AsyncStorage.removeItem('@user_data');
-      await AsyncStorage.removeItem('@user_profile');
+      await AsyncStorage.clear();
       await signOut();
       router.replace('/_auth/login');
     } catch (error) {
@@ -118,7 +152,7 @@ export default function ProfileScreen() {
         <Text style={[styles.userName, { color: theme.text }]}>{userData.name}</Text>
         <Text style={[styles.userEmail, { color: theme.textSecondary }]}>{userData.email}</Text>
         <View style={[styles.badgeContainer, { backgroundColor: theme.primary + '20' }]}>
-          <Text style={[styles.badge, { color: theme.primary }]}>{userData.studentType}</Text>
+          <Text style={[styles.badge, { color: theme.primary }]}>{userData.gradeDescription || userData.studentType}</Text>
         </View>
       </View>
       
@@ -192,7 +226,8 @@ export default function ProfileScreen() {
           <Ionicons name="chevron-forward" size={18} color={theme.textSecondary} />
         </TouchableOpacity>
         
-        <TouchableOpacity          style={[
+        <TouchableOpacity 
+          style={[
             styles.logoutButton, 
             { backgroundColor: isDarkMode ? '#491818' : '#FEE2E2' }
           ]} 

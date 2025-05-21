@@ -6,7 +6,7 @@ import { ActivityIndicator, Animated, StyleSheet, Text, TouchableOpacity, View }
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '../constants/AuthContext';
 import { ThemeProvider, useTheme } from '../constants/ThemeContext';
-import { STUDENT_LEVELS, UserProvider, useUser } from '../constants/UserContext';
+import { UserProvider, useUser } from '../constants/UserContext';
 
 export default function RootLayout() {
   const [isReady, setIsReady] = useState(false);
@@ -81,26 +81,6 @@ function RootLayoutNav() {
       }
     ];
 
-    // Add level-specific tabs
-    if (studentLevel === STUDENT_LEVELS.BAC) {
-      tabs.push({
-        name: 'exams',
-        label: 'BAC',
-        activeIcon: 'school',
-        inactiveIcon: 'school-outline',
-        route: '/_tabs/exams',
-        visible: true
-      });
-    } else if (studentLevel === STUDENT_LEVELS.LANGUAGE) {
-      tabs.push({
-        name: 'practice',
-        label: 'Practice',
-        activeIcon: 'mic',
-        inactiveIcon: 'mic-outline',
-        route: '/_tabs/practice',
-        visible: true
-      });
-    }
 
     // Profile tab (always last)
     tabs.push({
@@ -112,8 +92,8 @@ function RootLayoutNav() {
       visible: true
     });
 
-    return tabs.filter(tab => tab.visible);
-  }, [isLoggedIn, studentLevel]);
+     return tabs.filter(tab => tab.visible);
+}, [isLoggedIn]);
 
   // Check if we're in a tab route
   const isTabRoute = pathname.startsWith('/_tabs/');

@@ -53,15 +53,21 @@ export const UserProvider = ({ children }) => {
 
   // Sign in
   const signIn = async (userData) => {
-    try {
-      await AsyncStorage.setItem('@user_profile', JSON.stringify(userData));
-      setUserProfile(userData);
-      return true;
-    } catch (error) {
-      console.error('Error signing in:', error);
-      return false;
-    }
-  };
+  try {
+    // If there's a default email being set somewhere, change it here
+    const userWithUpdatedEmail = {
+      ...userData,
+      email: userData.email || "sekouboundy@example.com" // Use provided email or default
+    };
+    
+    await AsyncStorage.setItem('@user_profile', JSON.stringify(userWithUpdatedEmail));
+    setUserProfile(userWithUpdatedEmail);
+    return true;
+  } catch (error) {
+    console.error('Error signing in:', error);
+    return false;
+  }
+};
 
   // Sign out
   const signOut = async () => {

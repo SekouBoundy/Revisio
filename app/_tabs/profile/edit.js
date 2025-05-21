@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import CustomDropdown from '../../../components/common/CustomDropdown';
 import { useTheme } from '../../../constants/ThemeContext';
+import { useUser } from '../../../constants/UserContext';
 
 // Format options for the dropdown
 const levels = [
@@ -36,6 +37,7 @@ const levelOptions = levels.map(level => ({
 export default function EditProfileScreen() {
   const router = useRouter();
   const { theme } = useTheme();
+  const { updateUserProfile } = useUser();
   const [initialForm, setInitialForm] = useState({
     name: '',
     email: '',
@@ -79,24 +81,32 @@ export default function EditProfileScreen() {
   };
   
   const handleSave = async () => {
-    // Don't proceed if nothing changed
     if (!hasChanged) return;
     
     try {
-      // Show loading state
       setIsSaving(true);
       
       // Save to AsyncStorage
-      try {
-        await AsyncStorage.setItem('@user_data', JSON.stringify(form));
-      } catch (storageError) {
-        console.error('Error saving profile data:', storageError);
+      await AsyncStorage.setItem('@user_data', JSON.stringify(form));
+      
+      // Update student type in user context
+      if (form.grade) {
+        // Extract the student type
+        let studentType = 'LANGUAGE';
+        if (form.grade.startsWith('BAC')) {
+          studentType = 'BAC';
+        } else if (form.grade.startsWith('DEF')) {
+          studentType = 'DEF';
+        }
+        
+        // Update UserContext with both values
+        await updateUserProfile({ 
+          studentType: studentType,
+          gradeDescription: form.grade
+        });
       }
       
-      // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // Navigate back immediately (no alert)
       router.back();
     } catch (error) {
       console.error('Error saving profile:', error);
@@ -383,24 +393,5 @@ const styles = StyleSheet.create({
   saveButtonDisabled: {
     backgroundColor: '#A0AEC0',
     opacity: 0.5,
-  },
-  pickerContainer: {
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 8,
-    backgroundColor: '#F9FAFB',
-    marginBottom: 8,
-    overflow: 'hidden', // Important for Android
-  },
-  iosPicker: {
-    height: 48,
-    width: '100%',
-    color: '#1F2937',
-  },
-  androidPicker: {
-    height: 48,
-    width: '100%',
-    color: '#1F2937',
-    backgroundColor: 'transparent',
-  },
+  }
 });
