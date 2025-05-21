@@ -1,4 +1,5 @@
 // app/_auth/login.js
+import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -13,8 +14,8 @@ import {
 } from 'react-native';
 import Button from '../../components/common/Button';
 import Header from '../../components/common/Header';
+import { useAuth } from '../../constants/AuthContext';
 import * as Theme from '../../constants/Theme';
-import { useAuth } from '../_layout';
 
 // Make sure this component is exported as default
 export default function LoginScreen() {
@@ -23,74 +24,37 @@ export default function LoginScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  
   const router = useRouter();
   const { signIn } = useAuth();
-  
-  // Use try-catch in case Theme functions are undefined
-  let themeColors;
-  try {
-    const theme = Theme.createTheme(false); // Pass true for dark mode
-    themeColors = theme.colors;
-  } catch (error) {
-    console.error('Error creating theme:', error);
-    // Fallback colors in case theme creation fails
-    themeColors = {
-      background: '#FFFFFF',
-      text: '#000000',
-      primary: '#4361FF',
-      card: '#F5F5F5',
-      border: '#E0E0E0',
-      notification: '#FF3B30'
-    };
-  }
+  const themeColors = Theme.createTheme(false).colors;
+  // No need to check isLoggedIn here as it's handled by the root layout
 
   const handleLogin = async () => {
-    // Validate inputs
     if (!email || !password) {
       setErrorMessage('Please enter both email and password');
       return;
     }
-    
+
     setIsLoading(true);
     setErrorMessage('');
-    
+
     try {
-      console.log('Attempting to log in...');
-      
-      // Simulate API call with timeout
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      console.log('Email:', email, 'Password:', password);
-      
-      // For demonstration purposes, let's create simple validation
-      // In a real app, this would be replaced with actual authentication
-      if (email === 'student@example.com' && password === 'password123') {
-        console.log('Login successful, storing token...');
-        
-        try {
-          // Store authentication token via auth context
-          const success = await signIn('demo-token-123');
-          console.log('Token stored successfully:', success);
-          
-          if (success) {
-            // Navigate to the main app
-            console.log('Navigating to tabs...');
-            router.replace('/_tabs/courses');
-          } else {
-            setErrorMessage('Error storing login data. Please try again.');
-          }
-        } catch (storageError) {
-          console.error('Storage error:', storageError);
-          setErrorMessage('Error storing login data. Please try again.');
-        }
+      // For demo purposes, any email/password combination works
+      const userData = {
+        email,
+        name: email.split('@')[0], // Use part of email as name for demo
+        studentType: 'BAC' // Default student type
+      };
+
+      const success = await signIn(userData);
+      if (success) {
+        router.replace('/_tabs/dashboard');
       } else {
-        console.log('Invalid credentials');
-        setErrorMessage('Invalid email or password');
+        setErrorMessage('Login failed. Please try again.');
       }
     } catch (error) {
       console.error('Login error:', error);
-      setErrorMessage('Login failed. Please try again: ' + error.message);
+      setErrorMessage('An error occurred. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -132,7 +96,10 @@ export default function LoginScreen() {
                 }
               ]}
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(text) => {
+                setEmail(text);
+                setErrorMessage('');
+              }}
               placeholder="Enter your email"
               placeholderTextColor="#9CA3AF"
               autoCapitalize="none"
@@ -152,7 +119,10 @@ export default function LoginScreen() {
                   }
                 ]}
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  setErrorMessage('');
+                }}
                 placeholder="Enter your password"
                 placeholderTextColor="#9CA3AF"
                 secureTextEntry={!showPassword}
@@ -161,9 +131,11 @@ export default function LoginScreen() {
                 style={styles.passwordToggle}
                 onPress={() => setShowPassword(!showPassword)}
               >
-                <Text style={{ color: themeColors.primary }}>
-                  {showPassword ? 'Hide' : 'Show'}
-                </Text>
+                <Ionicons 
+                  name={showPassword ? "eye-off-outline" : "eye-outline"}
+                  size={20} 
+                  color={themeColors.primary}
+                />
               </TouchableOpacity>
             </View>
             
@@ -217,11 +189,6 @@ const styles = StyleSheet.create({
   logoContainer: {
     alignItems: 'center',
     marginBottom: 40,
-  },
-  logo: {
-    width: 100,
-    height: 100,
-    marginBottom: 16,
   },
   appName: {
     fontSize: 28,

@@ -12,29 +12,19 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import { useAuth } from '../../../constants/AuthContext';
 import { useTheme } from '../../../constants/ThemeContext';
-
-// Mock user data - This would typically come from an API or AsyncStorage
-const initialUserData = {
-  name: '',
-  email: '',
-  studentType: '',
-  joinDate: '',
-  stats: {
-    coursesCompleted: 0,
-    lessonsCompleted: 0,
-    quizzesPassed: 0,
-    averageScore: 0
-  }
-};
+import { useUser } from '../../../constants/UserContext';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { theme, isDarkMode, toggleTheme } = useTheme();
+  const { isLoggedIn, isLoading: authLoading } = useAuth();
+  const { userProfile } = useUser();
   const [notifications, setNotifications] = useState(true);
-  const [userData, setUserData] = useState(initialUserData);
   const [loading, setLoading] = useState(true);
-  
+  const [userData, setUserData] = useState(null);
+
   // Get initials for avatar
   const getInitials = (name) => {
     if (!name) return '';
@@ -44,72 +34,78 @@ export default function ProfileScreen() {
       .join('')
       .toUpperCase();
   };
-  
+
   // Load user data
   useEffect(() => {
     const loadUserData = async () => {
       try {
         setLoading(true);
         
-        // In a real app, this would be a call to your API or AsyncStorage
-        // Simulating API call with timeout
-        setTimeout(async () => {
-          // Check if there's saved user data
-          const savedUserData = await AsyncStorage.getItem('@user_data');
-          
-          if (savedUserData) {
-            setUserData(JSON.parse(savedUserData));
-          } else {
-            // Demo data for first-time users
-            const demoData = {
-              name: 'Amadou Diallo',
-              email: 'amadou.diallo@example.com',
-              studentType: 'BAC',
-              joinDate: 'Septembre 2023',
-              stats: {
-                coursesCompleted: 3,
-                lessonsCompleted: 24,
-                quizzesPassed: 8,
-                averageScore: 87
-              }
-            };
-            
-            setUserData(demoData);
-            
-            // Save demo data
-            await AsyncStorage.setItem('@user_data', JSON.stringify(demoData));
-          }
-          
-          setLoading(false);
-        }, 1000);
+        // First check authentication
+        if (!isLoggedIn) {
+          router.replace('/_auth/login');
+          return;
+        }
+
+        // Get user data from storage
+        const savedUserData = await AsyncStorage.getItem('@user_data');
         
+        if (savedUserData) {
+          setUserData(JSON.parse(savedUserData));
+        } else if (userProfile) {
+          // If no saved data but we have a user profile, use that
+          const profileData = {
+            name: userProfile.fullName || 'User',
+            email: userProfile.email || '',
+            studentType: userProfile.studentType || '',
+            joinDate: userProfile.joinDate || new Date().toLocaleDateString(),
+            stats: {
+              coursesCompleted: 0,
+              lessonsCompleted: 0,
+              quizzesPassed: 0,
+              averageScore: 0
+            }
+          };
+          
+          setUserData(profileData);
+          await AsyncStorage.setItem('@user_data', JSON.stringify(profileData));
+        }
       } catch (error) {
         console.error('Error loading user data:', error);
+      } finally {
         setLoading(false);
       }
     };
     
     loadUserData();
-  }, []);
-
+  }, [isLoggedIn, userProfile]);
   // Handle logout
   const handleLogout = async () => {
     try {
-      // In a real app, you would clear auth tokens here
-      await AsyncStorage.removeItem('userToken');
+      const { signOut } = useAuth();
+      await AsyncStorage.removeItem('@user_data');
+      await AsyncStorage.removeItem('@user_profile');
+      await signOut();
       router.replace('/_auth/login');
     } catch (error) {
       console.error('Error logging out:', error);
     }
   };
 
-  if (loading) {
+  // Show loading state
+  if (loading || authLoading) {
     return (
       <View style={[styles.container, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }]}>
         <ActivityIndicator size="large" color={theme.primary} />
         <Text style={{ color: theme.text, marginTop: 16 }}>Chargement du profil...</Text>
       </View>
     );
+  }
+
+  // If not logged in or no user data, redirect to login
+  if (!isLoggedIn || !userData) {
+    router.replace('/_auth/login');
+    return null;
   }
 
   return (
@@ -196,12 +192,11 @@ export default function ProfileScreen() {
           <Ionicons name="chevron-forward" size={18} color={theme.textSecondary} />
         </TouchableOpacity>
         
-        <TouchableOpacity 
-          style={[
+        <TouchableOpacity          style={[
             styles.logoutButton, 
             { backgroundColor: isDarkMode ? '#491818' : '#FEE2E2' }
           ]} 
-          onPress={() => router.replace('/_auth/login')}
+          onPress={handleLogout}
         >
           <Ionicons name="log-out-outline" size={20} color="#EF4444" />
           <Text style={styles.logoutText}>Déconnexion</Text>

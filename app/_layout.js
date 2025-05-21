@@ -1,100 +1,58 @@
 // app/_layout.js
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, usePathname, useRouter } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
-import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { AuthProvider, useAuth } from '../constants/AuthContext';
 import { ThemeProvider, useTheme } from '../constants/ThemeContext';
 import { STUDENT_LEVELS, UserProvider, useUser } from '../constants/UserContext';
 
 export default function RootLayout() {
   const [isReady, setIsReady] = useState(false);
-  const [userToken, setUserToken] = useState(null);
 
-  // Load token
   useEffect(() => {
-    const loadToken = async () => {
-      try {
-        const token = await SecureStore.getItemAsync('userToken');
-        if (token) {
-          setUserToken(token);
-        }
-      } catch (e) {
-        console.warn('Failed to load token', e);
-      } finally {
-        setIsReady(true);
-      }
-    };
-
-    loadToken();
+    // Perform any initialization here
+    setIsReady(true);
   }, []);
 
-  // Create auth context
-  const authContext = {
-    signIn: async (token) => {
-      try {
-        await SecureStore.setItemAsync('userToken', token);
-        setUserToken(token);
-        return true;
-      } catch (e) {
-        console.error('Error storing token', e);
-        return false;
-      }
-    },
-    signOut: async () => {
-      try {
-        await SecureStore.deleteItemAsync('userToken');
-        setUserToken(null);
-        return true;
-      } catch (e) {
-        console.error('Error removing token', e);
-        return false;
-      }
-    },
-    token: userToken,
-    isLoggedIn: !!userToken
-  };
-
-  // Wait until we've checked token storage
   if (!isReady) {
-    return null; // You could show a splash screen here
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
   }
 
+  // Wrap everything in SafeAreaProvider first, then other providers
   return (
-    <ThemeProvider>
-      <UserProvider>
-        <AuthContext.Provider value={authContext}>
-          <AppLayout />
-        </AuthContext.Provider>
-      </UserProvider>
-    </ThemeProvider>
+    <SafeAreaProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <UserProvider>
+            <RootLayoutNav />
+          </UserProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }
 
-// Auth context
-export const AuthContext = React.createContext();
-export const useAuth = () => useContext(AuthContext);
-
-function AppLayout() {
+// Navigation component
+function RootLayoutNav() {
   const router = useRouter();
   const pathname = usePathname();
   const { theme, isDarkMode } = useTheme();
   const { userProfile, studentLevel } = useUser();
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, isLoading } = useAuth();
+  const tabAnimations = useRef([]); // Moved useRef to the top level, before any conditionals
   
-  // Check if we're in a tab route
-  const isTabRoute = pathname.startsWith('/_tabs/');
-
-  // Redirect to login if not logged in
-  useEffect(() => {
-    if (!isLoggedIn && !pathname.startsWith('/_auth/')) {
-      router.replace('/_auth/login');
-    }
-  }, [isLoggedIn, pathname]);
-
-  // Define tab configuration - personalized based on user level
+  // Initialize getTabs with useCallback before any conditional logic
   const getTabs = useCallback(() => {
+    if (!isLoggedIn) {
+      return [];
+    }
+
     // Base tabs for all users
     const tabs = [
       {
@@ -103,7 +61,7 @@ function AppLayout() {
         activeIcon: 'grid',
         inactiveIcon: 'grid-outline',
         route: '/_tabs/dashboard',
-        visible: true // Always visible
+        visible: true
       },
       {
         name: 'courses',
@@ -111,7 +69,7 @@ function AppLayout() {
         activeIcon: 'book',
         inactiveIcon: 'book-outline',
         route: '/_tabs/courses',
-        visible: true // Always visible
+        visible: true
       },
       {
         name: 'quizzes',
@@ -119,11 +77,11 @@ function AppLayout() {
         activeIcon: 'help-circle',
         inactiveIcon: 'help-circle-outline',
         route: '/_tabs/quizzes',
-        visible: true // Always visible
+        visible: true
       }
     ];
 
-    // Add level-specific tabs or customize labels if needed
+    // Add level-specific tabs
     if (studentLevel === STUDENT_LEVELS.BAC) {
       tabs.push({
         name: 'exams',
@@ -155,23 +113,35 @@ function AppLayout() {
     });
 
     return tabs.filter(tab => tab.visible);
-  }, [studentLevel]);
+  }, [isLoggedIn, studentLevel]);
 
+  // Check if we're in a tab route
+  const isTabRoute = pathname.startsWith('/_tabs/');
+  const isAuthRoute = pathname.startsWith('/_auth/');
+
+  // Redirect to login if not logged in and not already on an auth route
+  useEffect(() => {
+    if (!isLoading && !isLoggedIn && !isAuthRoute) {
+      router.replace('/_auth/login');
+    }
+  }, [isLoggedIn, isLoading, pathname]);
+
+  // Get tabs for the current user level
   const tabs = getTabs();
   
-  // Animation values for each tab
-  const tabAnimations = useRef(
-    Array(5).fill(0).map(() => new Animated.Value(0))
-  ).current;
-  
+  // Update tabAnimations array length if needed (after hooks, before conditional returns)
+  if (tabAnimations.current.length !== tabs.length) {
+    tabAnimations.current = Array(tabs.length).fill(0).map(() => new Animated.Value(0));
+  }
+
+  // Animation effect
   useEffect(() => {
     // Find the active tab index
     const activeTabIndex = tabs.findIndex(tab => pathname.includes(`/${tab.name}`));
-    
     if (activeTabIndex !== -1) {
       // Animate all tabs
       tabs.forEach((_, index) => {
-        Animated.spring(tabAnimations[index], {
+        Animated.spring(tabAnimations.current[index], {
           toValue: index === activeTabIndex ? 1 : 0,
           useNativeDriver: true,
           friction: 8
@@ -179,6 +149,17 @@ function AppLayout() {
       });
     }
   }, [pathname, tabs]);
+
+  // Show loading state while checking auth
+  if (isLoading && !isAuthRoute) {
+    return (
+      <SafeAreaProvider>
+        <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+          <ActivityIndicator size="large" color={theme.primary} />
+        </View>
+      </SafeAreaProvider>
+    );
+  }
 
   return (
     <SafeAreaProvider>
@@ -194,7 +175,6 @@ function AppLayout() {
           animation: 'fade',
         }} />
       </Stack>
-      
       {/* Custom tab bar - only show when logged in and on tab route */}
       {isLoggedIn && isTabRoute && (
         <View style={[
@@ -206,13 +186,11 @@ function AppLayout() {
         ]}>
           {tabs.map((tab, index) => {
             const isActive = pathname.includes(`/${tab.name}`);
-            
             // Scale animation for the icon
-            const scale = tabAnimations[index].interpolate({
+            const scale = tabAnimations.current[index].interpolate({
               inputRange: [0, 1],
               outputRange: [1, 1.2]
             });
-            
             return (
               <TouchableOpacity 
                 key={tab.name}
@@ -245,6 +223,11 @@ function AppLayout() {
 }
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
   tabBar: {
     flexDirection: 'row',
     backgroundColor: '#FFFFFF',
