@@ -78,7 +78,32 @@ function RootLayoutNav() {
         inactiveIcon: 'help-circle-outline',
         route: '/_tabs/quizzes',
         visible: true
-      }
+      },
+      {
+    name: 'schedule',
+    label: 'Emploi du temps',
+    activeIcon: 'calendar',
+    inactiveIcon: 'calendar-outline',
+    route: '/_tabs/schedule',
+    visible: true
+  },
+  {
+    name: 'study-planner',
+    label: 'Étude',
+    activeIcon: 'book',
+    inactiveIcon: 'book-outline',
+    route: '/_tabs/study-planner',
+    visible: true
+  },
+  {
+    name: 'trimestre',
+    label: 'Trimestres',
+    activeIcon: 'school',
+    inactiveIcon: 'school-outline',
+    route: '/_tabs/trimestre',
+    visible: true
+  },
+
     ];
 
 
