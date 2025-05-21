@@ -22,14 +22,44 @@ export const UserProvider = ({ children }) => {
     loadUserProfile();
   }, []);
 
+  // Helper function to extract student type from grade selection
+  const extractStudentTypeFromGrade = (grade) => {
+    if (!grade) return 'BAC'; // Default fallback
+    
+    // Check the string prefix to determine student type
+    if (grade.startsWith('DEF')) return 'DEF';
+    if (grade.startsWith('BAC')) return 'BAC';
+    if (grade.toLowerCase().includes('language')) return 'LANGUAGE';
+    
+    // Additional safety - if the string contains these words anywhere in the string
+    if (grade.includes('DEF')) return 'DEF';
+    
+    // Final fallback - default to BAC
+    return 'BAC';
+  };
+
   // Load user profile from storage
   const loadUserProfile = async () => {
     try {
       setIsLoading(true);
+      console.log("Loading user profile from storage...");
+      
       const profileData = await AsyncStorage.getItem('@user_profile');
       
       if (profileData) {
-        setUserProfile(JSON.parse(profileData));
+        const parsedProfile = JSON.parse(profileData);
+        console.log("Loaded profile:", parsedProfile);
+        
+        // Ensure studentType is set correctly based on grade
+        if (parsedProfile.grade && !parsedProfile.studentType) {
+          parsedProfile.studentType = extractStudentTypeFromGrade(parsedProfile.grade);
+          // Save the updated profile back to storage
+          await AsyncStorage.setItem('@user_profile', JSON.stringify(parsedProfile));
+        }
+        
+        setUserProfile(parsedProfile);
+      } else {
+        console.log("No profile found in storage");
       }
     } catch (error) {
       console.error('Error loading user profile:', error);
@@ -41,9 +71,31 @@ export const UserProvider = ({ children }) => {
   // Update user profile
   const updateUserProfile = async (newProfileData) => {
     try {
-      const updatedProfile = { ...userProfile, ...newProfileData };
+      console.log("Updating profile with:", newProfileData);
+      
+      // Extract student type if grade is being updated
+      let studentType = userProfile?.studentType;
+      
+      if (newProfileData.grade) {
+        studentType = extractStudentTypeFromGrade(newProfileData.grade);
+        console.log("Extracted student type:", studentType, "from grade:", newProfileData.grade);
+      }
+      
+      const updatedProfile = { 
+        ...userProfile, 
+        ...newProfileData,
+        studentType // Ensure this is explicitly updated
+      };
+      
+      console.log("Full updated profile:", updatedProfile);
+      
       setUserProfile(updatedProfile);
       await AsyncStorage.setItem('@user_profile', JSON.stringify(updatedProfile));
+      
+      // Verification - read back the saved profile
+      const savedProfile = await AsyncStorage.getItem('@user_profile');
+      console.log("Verification - saved profile:", JSON.parse(savedProfile));
+      
       return true;
     } catch (error) {
       console.error('Error updating user profile:', error);
@@ -53,21 +105,28 @@ export const UserProvider = ({ children }) => {
 
   // Sign in
   const signIn = async (userData) => {
-  try {
-    // If there's a default email being set somewhere, change it here
-    const userWithUpdatedEmail = {
-      ...userData,
-      email: userData.email || "sekouboundy@example.com" // Use provided email or default
-    };
-    
-    await AsyncStorage.setItem('@user_profile', JSON.stringify(userWithUpdatedEmail));
-    setUserProfile(userWithUpdatedEmail);
-    return true;
-  } catch (error) {
-    console.error('Error signing in:', error);
-    return false;
-  }
-};
+    try {
+      // If there's a default email being set somewhere, change it here
+      const userWithUpdatedEmail = {
+        ...userData,
+        email: userData.email || "sekouboundy@example.com" // Use provided email or default
+      };
+      
+      // Ensure student type is set based on grade if available
+      if (userWithUpdatedEmail.grade && !userWithUpdatedEmail.studentType) {
+        userWithUpdatedEmail.studentType = extractStudentTypeFromGrade(userWithUpdatedEmail.grade);
+      }
+      
+      console.log("Signing in with user data:", userWithUpdatedEmail);
+      
+      await AsyncStorage.setItem('@user_profile', JSON.stringify(userWithUpdatedEmail));
+      setUserProfile(userWithUpdatedEmail);
+      return true;
+    } catch (error) {
+      console.error('Error signing in:', error);
+      return false;
+    }
+  };
 
   // Sign out
   const signOut = async () => {
@@ -88,6 +147,22 @@ export const UserProvider = ({ children }) => {
     return contentLevels.includes(userProfile.studentType);
   };
   
+  // Debug function to help troubleshoot user profile issues
+  const debugUserProfile = async () => {
+    try {
+      const storedProfile = await AsyncStorage.getItem('@user_profile');
+      console.log("==== USER PROFILE DEBUG ====");
+      console.log("In-memory profile:", userProfile);
+      console.log("Stored profile:", storedProfile ? JSON.parse(storedProfile) : "None");
+      console.log("Student level:", userProfile?.studentType || "Not set");
+      console.log("============================");
+      return true;
+    } catch (error) {
+      console.error("Error in debug function:", error);
+      return false;
+    }
+  };
+  
   return (
     <UserContext.Provider 
       value={{ 
@@ -97,7 +172,8 @@ export const UserProvider = ({ children }) => {
         signIn, 
         signOut,
         isContentForUserLevel,
-        studentLevel: userProfile?.studentType || null
+        debugUserProfile, // Exposed for troubleshooting
+        studentLevel: userProfile?.studentType || 'BAC' // Provide a default if null
       }}
     >
       {children}

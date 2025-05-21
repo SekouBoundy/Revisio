@@ -37,7 +37,7 @@ const levelOptions = levels.map(level => ({
 export default function EditProfileScreen() {
   const router = useRouter();
   const { theme } = useTheme();
-  const { updateUserProfile } = useUser();
+  const { updateUserProfile, debugUserProfile } = useUser();
   const [initialForm, setInitialForm] = useState({
     name: '',
     email: '',
@@ -89,21 +89,20 @@ export default function EditProfileScreen() {
       // Save to AsyncStorage
       await AsyncStorage.setItem('@user_data', JSON.stringify(form));
       
-      // Update student type in user context
+      // Update profile with grade information
       if (form.grade) {
-        // Extract the student type
-        let studentType = 'LANGUAGE';
-        if (form.grade.startsWith('BAC')) {
-          studentType = 'BAC';
-        } else if (form.grade.startsWith('DEF')) {
-          studentType = 'DEF';
-        }
+        console.log("Saving grade:", form.grade);
         
-        // Update UserContext with both values
+        // Update UserContext with both grade and gradeDescription
         await updateUserProfile({ 
-          studentType: studentType,
+          grade: form.grade,
           gradeDescription: form.grade
         });
+        
+        // Debug the profile after update if the debug function is available
+        if (debugUserProfile) {
+          await debugUserProfile();
+        }
       }
       
       await new Promise(resolve => setTimeout(resolve, 800));
