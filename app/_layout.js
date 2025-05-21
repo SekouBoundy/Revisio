@@ -12,7 +12,6 @@ export default function RootLayout() {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    // Perform any initialization here
     setIsReady(true);
   }, []);
 
@@ -24,7 +23,6 @@ export default function RootLayout() {
     );
   }
 
-  // Wrap everything in SafeAreaProvider first, then other providers
   return (
     <SafeAreaProvider>
       <ThemeProvider>
@@ -38,22 +36,17 @@ export default function RootLayout() {
   );
 }
 
-// Navigation component
 function RootLayoutNav() {
   const router = useRouter();
   const pathname = usePathname();
   const { theme, isDarkMode } = useTheme();
   const { userProfile, studentLevel } = useUser();
   const { isLoggedIn, isLoading } = useAuth();
-  const tabAnimations = useRef([]); // Moved useRef to the top level, before any conditionals
-  
-  // Initialize getTabs with useCallback before any conditional logic
-  const getTabs = useCallback(() => {
-    if (!isLoggedIn) {
-      return [];
-    }
+  const tabAnimations = useRef([]);
 
-    // Base tabs for all users
+  const getTabs = useCallback(() => {
+    if (!isLoggedIn) return [];
+
     const tabs = [
       {
         name: 'dashboard',
@@ -64,11 +57,11 @@ function RootLayoutNav() {
         visible: true
       },
       {
-        name: 'courses',
-        label: 'Cours',
-        activeIcon: 'book',
-        inactiveIcon: 'book-outline',
-        route: '/_tabs/courses',
+        name: 'schedule',
+        label: 'Emploi du temps',
+        activeIcon: 'calendar',
+        inactiveIcon: 'calendar-outline',
+        route: '/_tabs/schedule',
         visible: true
       },
       {
@@ -80,71 +73,36 @@ function RootLayoutNav() {
         visible: true
       },
       {
-    name: 'schedule',
-    label: 'Emploi du temps',
-    activeIcon: 'calendar',
-    inactiveIcon: 'calendar-outline',
-    route: '/_tabs/schedule',
-    visible: true
-  },
-  {
-    name: 'study-planner',
-    label: 'Étude',
-    activeIcon: 'book',
-    inactiveIcon: 'book-outline',
-    route: '/_tabs/study-planner',
-    visible: true
-  },
-  {
-    name: 'trimestre',
-    label: 'Trimestres',
-    activeIcon: 'school',
-    inactiveIcon: 'school-outline',
-    route: '/_tabs/trimestre',
-    visible: true
-  },
-
+        name: 'profile',
+        label: 'Profil',
+        activeIcon: 'person',
+        inactiveIcon: 'person-outline',
+        route: '/_tabs/profile',
+        visible: true
+      },
     ];
 
+    return tabs.filter(tab => tab.visible);
+  }, [isLoggedIn]);
 
-    // Profile tab (always last)
-    tabs.push({
-      name: 'profile',
-      label: 'Profil',
-      activeIcon: 'person',
-      inactiveIcon: 'person-outline',
-      route: '/_tabs/profile',
-      visible: true
-    });
-
-     return tabs.filter(tab => tab.visible);
-}, [isLoggedIn]);
-
-  // Check if we're in a tab route
   const isTabRoute = pathname.startsWith('/_tabs/');
   const isAuthRoute = pathname.startsWith('/_auth/');
 
-  // Redirect to login if not logged in and not already on an auth route
   useEffect(() => {
     if (!isLoading && !isLoggedIn && !isAuthRoute) {
       router.replace('/_auth/login');
     }
   }, [isLoggedIn, isLoading, pathname]);
 
-  // Get tabs for the current user level
   const tabs = getTabs();
-  
-  // Update tabAnimations array length if needed (after hooks, before conditional returns)
+
   if (tabAnimations.current.length !== tabs.length) {
     tabAnimations.current = Array(tabs.length).fill(0).map(() => new Animated.Value(0));
   }
 
-  // Animation effect
   useEffect(() => {
-    // Find the active tab index
     const activeTabIndex = tabs.findIndex(tab => pathname.includes(`/${tab.name}`));
     if (activeTabIndex !== -1) {
-      // Animate all tabs
       tabs.forEach((_, index) => {
         Animated.spring(tabAnimations.current[index], {
           toValue: index === activeTabIndex ? 1 : 0,
@@ -155,7 +113,6 @@ function RootLayoutNav() {
     }
   }, [pathname, tabs]);
 
-  // Show loading state while checking auth
   if (isLoading && !isAuthRoute) {
     return (
       <SafeAreaProvider>
@@ -168,7 +125,7 @@ function RootLayoutNav() {
 
   return (
     <SafeAreaProvider>
-      <Stack screenOptions={{ 
+      <Stack screenOptions={{
         headerShown: false,
         contentStyle: {
           backgroundColor: theme.background
@@ -176,44 +133,42 @@ function RootLayoutNav() {
       }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="_tabs" />
-        <Stack.Screen name="_auth" options={{ 
-          animation: 'fade',
-        }} />
+        <Stack.Screen name="_auth" options={{ animation: 'fade' }} />
       </Stack>
-      {/* Custom tab bar - only show when logged in and on tab route */}
+
       {isLoggedIn && isTabRoute && (
         <View style={[
           styles.tabBar,
-          { 
+          {
             backgroundColor: theme.background,
             borderTopColor: theme.border
           }
         ]}>
           {tabs.map((tab, index) => {
             const isActive = pathname.includes(`/${tab.name}`);
-            // Scale animation for the icon
             const scale = tabAnimations.current[index].interpolate({
               inputRange: [0, 1],
               outputRange: [1, 1.2]
             });
+
             return (
-              <TouchableOpacity 
+              <TouchableOpacity
                 key={tab.name}
-                style={styles.tabItem} 
+                style={styles.tabItem}
                 onPress={() => router.push(tab.route)}
                 activeOpacity={0.7}
               >
                 <Animated.View style={{ transform: [{ scale }] }}>
-                  <Ionicons 
-                    name={isActive ? tab.activeIcon : tab.inactiveIcon} 
-                    size={24} 
-                    color={isActive ? theme.primary : theme.textSecondary} 
+                  <Ionicons
+                    name={isActive ? tab.activeIcon : tab.inactiveIcon}
+                    size={24}
+                    color={isActive ? theme.primary : theme.textSecondary}
                   />
                 </Animated.View>
                 <Text style={[
-                  styles.tabLabel, 
-                  isActive ? 
-                    { color: theme.primary, fontWeight: '600' } : 
+                  styles.tabLabel,
+                  isActive ?
+                    { color: theme.primary, fontWeight: '600' } :
                     { color: theme.textSecondary }
                 ]}>
                   {tab.label}
