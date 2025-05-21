@@ -6,18 +6,28 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import {
-    Alert,
-    Modal,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Switch,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  Alert,
+  Modal,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
-import { useTheme } from '../../../constants/ThemeContext';
+
+const theme = {
+  text: '#000',
+  background: '#fff',
+  primary: '#3366FF',
+  textSecondary: '#666',
+  border: '#ddd',
+  cardBackground: '#f9f9f9',
+};
+
+const isDarkMode = false;
 
 // Predefined subject options with colors
 const SUBJECTS = [

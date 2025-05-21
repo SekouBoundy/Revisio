@@ -15,7 +15,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useTheme } from '../../../constants/ThemeContext';
+import { useTheme } from '../../../../constants/ThemeContext';
 import { StatusBar } from 'expo-status-bar';
 
 export default function TrimestreTrackerScreen() {

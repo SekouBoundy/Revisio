@@ -1,21 +1,33 @@
-// app/_tabs/schedule/index.js
+// 📁 File: app/_tabs/planning/schedule/index.js
+
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import {
-    Alert,
-    Modal,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  Alert,
+  Modal,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
-import { useTheme } from '../../../constants/ThemeContext';
+
+// ✅ Custom fallback theme (you can replace with useTheme() later)
+const theme = {
+  text: '#000',
+  background: '#fff',
+  primary: '#3366FF',
+  textSecondary: '#666',
+  border: '#ddd',
+  cardBackground: '#f9f9f9',
+};
+
+const isDarkMode = false;
 
 // Color options for classes
 const SUBJECT_COLORS = {
@@ -29,6 +41,8 @@ const SUBJECT_COLORS = {
   'Sciences Économiques': '#F97316',
   'Autre': '#6B7280'
 };
+
+
 
 export default function ScheduleScreen() {
   const router = useRouter();
