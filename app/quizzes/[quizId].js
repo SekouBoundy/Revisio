@@ -11,8 +11,8 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
-import Card from '../../../components/common/Card';
-import * as Theme from '../../../constants/Theme';
+import Card from '../../components/common/Card';
+import * as Theme from '../../constants/Theme';
 
 export default function ProfileScreen() {
   const [userProfile, setUserProfile] = useState(null);

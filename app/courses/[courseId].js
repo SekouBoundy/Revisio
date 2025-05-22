@@ -1,7 +1,7 @@
 // Example of using level-based content in a course screen
 import { StyleSheet, Text, View } from 'react-native';
-import LevelBasedContent, { BACOnly, DEFOnly, LanguageOnly } from '../../../components/common/LevelBasedContent';
-import { STUDENT_LEVELS } from '../../../constants/UserContext';
+import LevelBasedContent, { BACOnly, DEFOnly, LanguageOnly } from '../../components/common/LevelBasedContent';
+import { STUDENT_LEVELS } from '../../constants/UserContext';
 
 export default function CourseScreen() {
   return (
