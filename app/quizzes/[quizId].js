@@ -1,15 +1,15 @@
-// app/_tabs/profile/index.js
+// app/(tabs)/profile/index.js
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { useEffect, useState } from 'react';
 import {
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import Card from '../../components/common/Card';
 import * as Theme from '../../constants/Theme';
@@ -150,7 +150,7 @@ export default function ProfileScreen() {
           
           <TouchableOpacity
             style={[styles.editButton, { borderColor: theme.colors.border }]}
-            onPress={() => router.push('/_tabs/profile/edit')}
+            onPress={() => router.push('/(tabs)/profile/edit')}
           >
             <Ionicons name="pencil-outline" size={16} color={theme.colors.text} />
             <Text style={[styles.editButtonText, { color: theme.colors.text }]}>
@@ -244,7 +244,7 @@ export default function ProfileScreen() {
             <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
               Achievements
             </Text>
-            <TouchableOpacity onPress={() => router.push('/_tabs/profile/achievements')}>
+            <TouchableOpacity onPress={() => router.push('/(tabs)/profile/achievements')}>
               <Text style={[styles.seeAllText, { color: theme.colors.primary }]}>
                 See All
               </Text>

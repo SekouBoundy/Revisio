@@ -3,14 +3,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-    KeyboardAvoidingView,
-    Platform,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import Button from '../../components/common/Button';
 import Header from '../../components/common/Header';
@@ -48,7 +48,7 @@ export default function LoginScreen() {
 
       const success = await signIn(userData);
       if (success) {
-        router.replace('/_tabs/dashboard');
+        router.replace('/(tabs)/dashboard');
       } else {
         setErrorMessage('Login failed. Please try again.');
       }

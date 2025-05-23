@@ -1,22 +1,10 @@
 // File: app/(tabs)/_layout.js
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
-import { useContext } from 'react';
-import { ThemeContext } from '../context/ThemeContext';
 
 export default function TabsLayout() {
-  // Pull primary color from ThemeContext, fallback to blue
-  const themeContext = useContext(ThemeContext);
-  const activeTint = themeContext?.colors?.primary ?? '#3366FF';
-
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: activeTint,
-      }}
-    >
-      {/* Dashboard tab */}
+    <Tabs screenOptions={{ tabBarActiveTintColor: '#3366FF' }}>
       <Tabs.Screen
         name="dashboard"
         options={{
@@ -26,45 +14,37 @@ export default function TabsLayout() {
           ),
         }}
       />
-
-      {/* Courses tab */}
       <Tabs.Screen
         name="courses"
         options={{
-          title: 'Cours',
+          title: 'Courses',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="book-outline" size={size} color={color} />
           ),
         }}
       />
-
-      {/* Quiz tab */}
       <Tabs.Screen
         name="quizzes"
         options={{
-          title: 'Quiz',
+          title: 'Quizzes',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="help-circle-outline" size={size} color={color} />
+            <Ionicons name="help-outline" size={size} color={color} />
           ),
         }}
       />
-
-      {/* Schedule tab */}
       <Tabs.Screen
         name="schedule"
         options={{
-          title: 'Emploi du temps',
+          title: 'Schedule',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="calendar-outline" size={size} color={color} />
           ),
         }}
       />
-
-      {/* Profile tab */}
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profil',
+          title: 'Profile',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person-outline" size={size} color={color} />
           ),
