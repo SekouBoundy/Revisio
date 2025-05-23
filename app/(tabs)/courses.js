@@ -4,7 +4,6 @@ import { useContext } from 'react';
 import { SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { ThemeContext } from '../../constants/ThemeContext';
 
-
 export default function CoursesTabScreen() {
   const router = useRouter();
   const { theme } = useContext(ThemeContext);

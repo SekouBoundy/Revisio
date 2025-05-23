@@ -16,5 +16,6 @@ export default function HomeRedirect() {
 
   if (loading) return null;
 
-return <Redirect href={loggedIn ? '/(tabs)/dashboard' : '/entry'} />;
+return <Redirect href={loggedIn ? '/dashboard' : '/login'} />;
+
 }
