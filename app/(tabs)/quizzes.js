@@ -2,7 +2,7 @@
 import { useRouter } from 'expo-router';
 import { useContext } from 'react';
 import { SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { ThemeContext } from '../../constants/ThemeContext';
+import { ThemeContext } from '../../contexts/ThemeContext';
 
 
 export default function QuizzesTabScreen() {

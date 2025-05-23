@@ -1,7 +1,7 @@
 // File: app/courses/BAC/index.js
 import { useContext } from 'react';
 import { SafeAreaView, StyleSheet, Text } from 'react-native';
-import { ThemeContext } from '../../../constants/ThemeContext';
+import { ThemeContext } from '../../../contexts/ThemeContext';
 
 export default function BACCoursesScreen() {
   const { theme } = useContext(ThemeContext);

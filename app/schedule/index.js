@@ -1,7 +1,7 @@
 // File: app/schedule/index.js
 import { useContext } from 'react';
 import { SafeAreaView, StyleSheet, Text, View } from 'react-native';
-import { ThemeContext } from '../../constants/ThemeContext';
+import { ThemeContext } from '../../contexts/ThemeContext';
 
 export default function ScheduleScreen() {
   const { theme } = useContext(ThemeContext);

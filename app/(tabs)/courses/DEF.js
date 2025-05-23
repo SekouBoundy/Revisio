@@ -1,17 +1,17 @@
-// File: app/courses/DEF/index.js
+// File: app/courses/BAC/index.js
 import { useContext } from 'react';
 import { SafeAreaView, StyleSheet, Text } from 'react-native';
-import { ThemeContext } from '../../../constants/ThemeContext';
+import { ThemeContext } from '../../../contexts/ThemeContext';
 
-export default function DEFCoursesScreen() {
+export default function BACCoursesScreen() {
   const { theme } = useContext(ThemeContext);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <Text style={[styles.header, { color: theme.text }]}>
-        DEF / Études Fondamentales
+        BAC / Sciences Exactes
       </Text>
-      {/* …your DEF course list goes here… */}
+      {/* …your BAC course list goes here… */}
     </SafeAreaView>
   );
 }

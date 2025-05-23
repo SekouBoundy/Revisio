@@ -14,8 +14,8 @@ import {
 } from 'react-native';
 import Button from '../../components/common/Button';
 import Header from '../../components/common/Header';
-import { useAuth } from '../../constants/AuthContext';
-import * as Theme from '../../constants/Theme';
+import { useAuth } from '../../contexts/AuthContext';
+import * as Theme from '../../contexts/Theme';
 
 // Make sure this component is exported as default
 export default function LoginScreen() {
