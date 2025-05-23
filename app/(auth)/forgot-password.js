@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 
 import Button from '../../components/common/Button';
-import { ThemeContext } from '../../contexts/ThemeContext';
+import { ThemeContext } from '../../constants/ThemeContext';
 
 export default function ForgotPasswordScreen() {
   const { theme } = useContext(ThemeContext);

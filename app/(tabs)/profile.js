@@ -1,14 +1,10 @@
-import { StyleSheet, Text, View } from 'react-native';
+// app/(tabs)/profile.js
+import { View, Text } from 'react-native';
 
 export default function ProfileScreen() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Profil</Text>
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+      <Text style={{ fontWeight: 'bold', fontSize: 24 }}>Profile</Text>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex:1, alignItems:'center', justifyContent:'center' },
-  text: { fontSize:18 },
-});

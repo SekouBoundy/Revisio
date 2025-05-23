@@ -1,14 +1,10 @@
-import { StyleSheet, Text, View } from 'react-native';
+// app/(tabs)/schedule.js
+import { View, Text } from 'react-native';
 
 export default function ScheduleScreen() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Emploi du temps</Text>
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+      <Text style={{ fontWeight: 'bold', fontSize: 24 }}>Schedule</Text>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex:1, alignItems:'center', justifyContent:'center' },
-  text: { fontSize:18 },
-});
