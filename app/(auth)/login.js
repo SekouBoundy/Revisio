@@ -1,7 +1,6 @@
-// app/_auth/login.js
-import { Ionicons } from '@expo/vector-icons';
-import { Stack, useRouter } from 'expo-router';
-import { useState } from 'react';
+// File: app/(auth)/login.js
+import React, { useState, useContext } from 'react';
+import { Stack, router } from 'expo-router';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -9,165 +8,107 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  View,
+  ActivityIndicator,
   TouchableOpacity,
-  View
 } from 'react-native';
+
 import Button from '../../components/common/Button';
 import Header from '../../components/common/Header';
 import { useAuth } from '../../contexts/AuthContext';
-import * as Theme from '../../contexts/Theme';
+import { ThemeContext } from '../../contexts/ThemeContext';
 
-// Make sure this component is exported as default
 export default function LoginScreen() {
+  const { theme } = useContext(ThemeContext);
+  const { login } = useAuth();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const router = useRouter();
-  const { signIn } = useAuth();
-  const themeColors = Theme.createTheme(false).colors;
-  // No need to check isLoggedIn here as it's handled by the root layout
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      setErrorMessage('Please enter both email and password');
-      return;
-    }
-
-    setIsLoading(true);
     setErrorMessage('');
-
+    setIsLoading(true);
     try {
-      // For demo purposes, any email/password combination works
-      const userData = {
-        email,
-        name: email.split('@')[0], // Use part of email as name for demo
-        studentType: 'BAC' // Default student type
-      };
-
-      const success = await signIn(userData);
-      if (success) {
-        router.replace('/(tabs)/dashboard');
-      } else {
-        setErrorMessage('Login failed. Please try again.');
-      }
+      // Replace with your real authentication logic
+      await login(email, password);
+      router.replace('/dashboard');
     } catch (error) {
-      console.error('Login error:', error);
-      setErrorMessage('An error occurred. Please try again.');
+      setErrorMessage('Invalid credentials. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: themeColors.background }]}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+      <Stack.Screen
+        options={{
+          title: 'Login',
+          headerStyle: { backgroundColor: theme.primary },
+          headerTintColor: theme.text,
+        }}
+      />
+      <Header title="Login" />
+
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <Stack.Screen options={{ 
-          headerShown: false
-        }} />
-        
-        <Header 
-          title="Login"
-          showBackButton={false}
+        <Text style={[styles.label, { color: theme.text }]}>Email Address</Text>
+        <TextInput
+          style={[
+            styles.input,
+            {
+              backgroundColor: theme.background === '#FFF' ? '#f0f0f0' : '#333',
+              color: theme.text,
+            },
+          ]}
+          placeholder="you@example.com"
+          placeholderTextColor={`${theme.text}80`}
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
         />
-        
-        <View style={styles.content}>
-          <View style={styles.logoContainer}>
-            {/* Try to load logo if it exists, otherwise just show app name */}
-            <Text style={[styles.appName, { color: themeColors.text }]}>Revisio</Text>
-            <Text style={[styles.tagline, { color: themeColors.text }]}>
-              Your Learning Companion
-            </Text>
-          </View>
-          
-          <View style={styles.form}>
-            <Text style={[styles.label, { color: themeColors.text }]}>Email</Text>
-            <TextInput
-              style={[
-                styles.input,
-                { 
-                  backgroundColor: themeColors.card,
-                  color: themeColors.text,
-                  borderColor: themeColors.border
-                }
-              ]}
-              value={email}
-              onChangeText={(text) => {
-                setEmail(text);
-                setErrorMessage('');
-              }}
-              placeholder="Enter your email"
-              placeholderTextColor="#9CA3AF"
-              autoCapitalize="none"
-              keyboardType="email-address"
-            />
-            
-            <Text style={[styles.label, { color: themeColors.text }]}>Password</Text>
-            <View style={styles.passwordContainer}>
-              <TextInput
-                style={[
-                  styles.input,
-                  styles.passwordInput,
-                  { 
-                    backgroundColor: themeColors.card,
-                    color: themeColors.text,
-                    borderColor: themeColors.border
-                  }
-                ]}
-                value={password}
-                onChangeText={(text) => {
-                  setPassword(text);
-                  setErrorMessage('');
-                }}
-                placeholder="Enter your password"
-                placeholderTextColor="#9CA3AF"
-                secureTextEntry={!showPassword}
-              />
-              <TouchableOpacity
-                style={styles.passwordToggle}
-                onPress={() => setShowPassword(!showPassword)}
-              >
-                <Ionicons 
-                  name={showPassword ? "eye-off-outline" : "eye-outline"}
-                  size={20} 
-                  color={themeColors.primary}
-                />
-              </TouchableOpacity>
-            </View>
-            
-            <TouchableOpacity
-              onPress={() => router.push('/_auth/forgot-password')}
-              style={styles.forgotPassword}
-            >
-              <Text style={{ color: themeColors.primary }}>Forgot Password?</Text>
-            </TouchableOpacity>
-            
-            {errorMessage ? (
-              <Text style={styles.errorText}>{errorMessage}</Text>
-            ) : null}
-            
-            <Button
-              label="Login"
-              onPress={handleLogin}
-              isLoading={isLoading}
-              style={styles.button}
-            />
-            
-            <View style={styles.registerContainer}>
-              <Text style={[styles.registerText, { color: themeColors.text }]}>
-                Don't have an account?
-              </Text>
-              <TouchableOpacity onPress={() => router.push('/_auth/register')}>
-                <Text style={[styles.registerLink, { color: themeColors.primary }]}>
-                  {' Register'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+
+        <Text style={[styles.label, { color: theme.text }]}>Password</Text>
+        <TextInput
+          style={[
+            styles.input,
+            {
+              backgroundColor: theme.background === '#FFF' ? '#f0f0f0' : '#333',
+              color: theme.text,
+            },
+          ]}
+          placeholder="Enter your password"
+          placeholderTextColor={`${theme.text}80`}
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+        />
+
+        {errorMessage ? (
+          <Text style={styles.errorText}>{errorMessage}</Text>
+        ) : null}
+
+        <Button
+          title={
+            isLoading ? <ActivityIndicator color={theme.text} /> : 'Login'
+          }
+          onPress={handleLogin}
+          disabled={isLoading}
+        />
+
+        <View style={styles.bottomRow}>
+          <TouchableOpacity onPress={() => router.push('/register')}>
+            <Text style={[styles.linkText, { color: theme.primary }]}>Register</Text>
+          </TouchableOpacity>
+          <Text style={{ color: theme.text }}>  |  </Text>
+          <TouchableOpacity onPress={() => router.push('/forgot-password')}>
+            <Text style={[styles.linkText, { color: theme.primary }]}>Forgot Password?</Text>
+          </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -175,82 +116,34 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
+  safeArea: { flex: 1 },
   container: {
-    flex: 1,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  content: {
     flex: 1,
     padding: 20,
     justifyContent: 'center',
   },
-  logoContainer: {
-    alignItems: 'center',
-    marginBottom: 40,
-  },
-  appName: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  tagline: {
-    fontSize: 16,
-    opacity: 0.8,
-  },
-  form: {
-    width: '100%',
-  },
   label: {
-    fontSize: 16,
     marginBottom: 8,
+    fontSize: 16,
     fontWeight: '500',
   },
   input: {
-    width: '100%',
-    height: 50,
-    borderWidth: 1,
+    height: 48,
     borderRadius: 8,
     paddingHorizontal: 12,
-    marginBottom: 16,
-    fontSize: 16,
-  },
-  passwordContainer: {
-    position: 'relative',
-    marginBottom: 16,
-  },
-  passwordInput: {
-    paddingRight: 50,
-    marginBottom: 0,
-  },
-  passwordToggle: {
-    position: 'absolute',
-    right: 12,
-    top: 0,
-    height: '100%',
-    justifyContent: 'center',
-  },
-  forgotPassword: {
-    alignSelf: 'flex-end',
-    marginBottom: 24,
-  },
-  button: {
-    marginBottom: 24,
-  },
-  registerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  registerText: {
-    fontSize: 15,
-  },
-  registerLink: {
-    fontSize: 15,
-    fontWeight: '600',
+    marginBottom: 12,
   },
   errorText: {
-    color: '#EF4444',
-    marginBottom: 16,
+    color: 'red',
+    marginBottom: 8,
+  },
+  bottomRow: {
+    flexDirection: 'row',
+    marginTop: 20,
+    justifyContent: 'center',
+  },
+  linkText: {
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 });

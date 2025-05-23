@@ -9,7 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useTheme } from '../../context/ThemeContext';
+
 
 // Mock DEF quizzes data
 const DEF_QUIZZES = [
