@@ -1,6 +1,6 @@
 // File: app/(auth)/login.js
 import React, { useState, useContext } from 'react';
-import { Stack, router } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -19,6 +19,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { ThemeContext } from '../../contexts/ThemeContext';
 
 export default function LoginScreen() {
+  const router = useRouter();
   const { theme } = useContext(ThemeContext);
   const { login } = useAuth();
 
@@ -31,11 +32,10 @@ export default function LoginScreen() {
     setErrorMessage('');
     setIsLoading(true);
     try {
-      // Replace with your real authentication logic
-      await login(email, password);
-      router.replace('/dashboard');
-    } catch (error) {
-      setErrorMessage('Invalid credentials. Please try again.');
+      await login(email, password);        // your auth logic
+      router.replace('/dashboard');        // navigate on success
+    } catch (err) {
+      setErrorMessage('Invalid credentials.');
     } finally {
       setIsLoading(false);
     }
@@ -56,15 +56,9 @@ export default function LoginScreen() {
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <Text style={[styles.label, { color: theme.text }]}>Email Address</Text>
+        <Text style={[styles.label, { color: theme.text }]}>Email</Text>
         <TextInput
-          style={[
-            styles.input,
-            {
-              backgroundColor: theme.background === '#FFF' ? '#f0f0f0' : '#333',
-              color: theme.text,
-            },
-          ]}
+          style={[styles.input, { color: theme.text, backgroundColor: theme.background === '#FFF' ? '#f0f0f0' : '#333' }]}
           placeholder="you@example.com"
           placeholderTextColor={`${theme.text}80`}
           value={email}
@@ -75,28 +69,20 @@ export default function LoginScreen() {
 
         <Text style={[styles.label, { color: theme.text }]}>Password</Text>
         <TextInput
-          style={[
-            styles.input,
-            {
-              backgroundColor: theme.background === '#FFF' ? '#f0f0f0' : '#333',
-              color: theme.text,
-            },
-          ]}
-          placeholder="Enter your password"
+          style={[styles.input, { color: theme.text, backgroundColor: theme.background === '#FFF' ? '#f0f0f0' : '#333' }]}
+          placeholder="••••••"
           placeholderTextColor={`${theme.text}80`}
+          secureTextEntry
           value={password}
           onChangeText={setPassword}
-          secureTextEntry
         />
 
-        {errorMessage ? (
-          <Text style={styles.errorText}>{errorMessage}</Text>
-        ) : null}
+        {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
 
         <Button
-          title={
-            isLoading ? <ActivityIndicator color={theme.text} /> : 'Login'
-          }
+          title={ isLoading 
+                    ? <ActivityIndicator color={theme.text} /> 
+                    : 'Login' }
           onPress={handleLogin}
           disabled={isLoading}
         />
@@ -105,9 +91,11 @@ export default function LoginScreen() {
           <TouchableOpacity onPress={() => router.push('/register')}>
             <Text style={[styles.linkText, { color: theme.primary }]}>Register</Text>
           </TouchableOpacity>
-          <Text style={{ color: theme.text }}>  |  </Text>
+          <Text style={{ color: theme.text }}> | </Text>
           <TouchableOpacity onPress={() => router.push('/forgot-password')}>
-            <Text style={[styles.linkText, { color: theme.primary }]}>Forgot Password?</Text>
+            <Text style={[styles.linkText, { color: theme.primary }]}>
+              Forgot Password?
+            </Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -117,33 +105,10 @@ export default function LoginScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
-  container: {
-    flex: 1,
-    padding: 20,
-    justifyContent: 'center',
-  },
-  label: {
-    marginBottom: 8,
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  input: {
-    height: 48,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    marginBottom: 12,
-  },
-  errorText: {
-    color: 'red',
-    marginBottom: 8,
-  },
-  bottomRow: {
-    flexDirection: 'row',
-    marginTop: 20,
-    justifyContent: 'center',
-  },
-  linkText: {
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
+  container: { flex: 1, padding: 20, justifyContent: 'center' },
+  label: { marginBottom: 8, fontSize: 16, fontWeight: '500' },
+  input: { height: 48, borderRadius: 8, paddingHorizontal: 12, marginBottom: 12 },
+  errorText: { color: 'red', marginBottom: 8 },
+  bottomRow: { flexDirection: 'row', justifyContent: 'center', marginTop: 20 },
+  linkText: { fontWeight: 'bold', fontSize: 16 },
 });
