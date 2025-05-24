@@ -1,8 +1,8 @@
 // app/_layout.js
-import { Stack } from 'expo-router';
+import { Slot } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { AuthProvider } from '../constants/AuthContext';
 import { ThemeProvider } from '../constants/ThemeContext';
+import { AuthProvider } from '../constants/AuthContext';
 import { UserProvider } from '../constants/UserContext';
 
 export default function RootLayout() {
@@ -10,8 +10,8 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <ThemeProvider>
         <AuthProvider>
-          <UserProvider value={{ user: { level: "DEF" } }}>
-            <Stack screenOptions={{ headerShown: false }} />
+          <UserProvider>
+            <Slot />
           </UserProvider>
         </AuthProvider>
       </ThemeProvider>

@@ -1,5 +1,7 @@
+// app/(tabs)/quizzes/index.js
 import { useEffect } from 'react';
 import { useRouter } from 'expo-router';
+import { View, ActivityIndicator } from 'react-native';
 import { useUser } from '../../../constants/UserContext';
 
 export default function QuizzesIndex() {
@@ -7,8 +9,16 @@ export default function QuizzesIndex() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace(`/quizzes/${user.level}`);
-  }, [router, user.level]);
+    if (user?.level) {
+      // Use replace to maintain tab state
+      router.replace(`/(tabs)/quizzes/${user.level}`);
+    }
+  }, [router, user?.level]);
 
-  return null;
+  // Show loading while redirecting
+  return (
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+      <ActivityIndicator size="large" />
+    </View>
+  );
 }

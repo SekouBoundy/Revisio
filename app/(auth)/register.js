@@ -1,5 +1,6 @@
 // File: app/(auth)/register.js
 import React, { useState, useContext } from 'react';
+import { useRouter } from 'expo-router'; // Added missing import
 import {
   KeyboardAvoidingView,
   Platform,
@@ -18,6 +19,7 @@ import { ThemeContext } from '../../constants/ThemeContext';
 
 export default function RegisterScreen() {
   const { theme } = useContext(ThemeContext);
+  const router = useRouter(); // Added router hook
 
   const [formData, setFormData] = useState({
     email: '',
