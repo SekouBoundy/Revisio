@@ -20,9 +20,9 @@ export default function TabsLayout() {
         }}
       />
 
-      {/* 2) Courses */}
+      {/* 2) Courses - point to the index that handles redirection */}
       <Tabs.Screen
-        name="courses/index"
+        name="courses"
         options={{
           title: 'Courses',
           tabBarIcon: ({ color, size }) =>
@@ -30,9 +30,9 @@ export default function TabsLayout() {
         }}
       />
 
-      {/* 3) Quizzes */}
+      {/* 3) Quizzes - point to the index that handles redirection */}
       <Tabs.Screen
-        name="quizzes/index"
+        name="quizzes"
         options={{
           title: 'Quizzes',
           tabBarIcon: ({ color, size }) =>
@@ -60,13 +60,31 @@ export default function TabsLayout() {
         }}
       />
 
-      {/* ——— HIDE ALL DYNAMIC / DETAIL ROUTES ——— */}
-      <Tabs.Group screenOptions={{ href: null }}>
-        <Tabs.Screen name="courses/[level]/index" />
-        <Tabs.Screen name="courses/[level]/[courseName]" />
-        <Tabs.Screen name="quizzes/[level]/index" />
-        <Tabs.Screen name="quizzes/[level]/[quizId]" />
-      </Tabs.Group>
+      {/* Hide ALL dynamic routes from tab bar */}
+      <Tabs.Screen
+        name="courses/[level]"
+        options={{ href: null }}
+      />
+      <Tabs.Screen
+        name="courses/[level]/index"
+        options={{ href: null }}
+      />
+      <Tabs.Screen
+        name="courses/[level]/[courseName]"
+        options={{ href: null }}
+      />
+      <Tabs.Screen
+        name="quizzes/[level]"
+        options={{ href: null }}
+      />
+      <Tabs.Screen
+        name="quizzes/[level]/index"
+        options={{ href: null }}
+      />
+      <Tabs.Screen
+        name="quizzes/[level]/[quizId]"
+        options={{ href: null }}
+      />
     </Tabs>
   );
 }
