@@ -1,5 +1,5 @@
 // app/(tabs)/profile.js
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   SafeAreaView,
   ScrollView,
   Switch,
+  Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -21,6 +22,32 @@ export default function ProfileScreen() {
   const { user, updateUser } = useUser();
   const { logout } = useAuth();
   const router = useRouter();
+  const [showLevelModal, setShowLevelModal] = useState(false);
+  const [showBacOptions, setShowBacOptions] = useState(false);
+
+  const bacSpecializations = [
+    { value: 'TSE', label: 'Sciences Exactes (TSE)' },
+    { value: 'TSEXP', label: 'Sciences Expérimentales (TSEXP)' },
+    { value: 'TSECO', label: 'Sciences Économiques (TSECO)' },
+    { value: 'TSS', label: 'Sciences Sociales (TSS)' },
+    { value: 'TAL', label: 'Arts et Lettres (TAL)' },
+    { value: 'TLL', label: 'Langues et Lettres (TLL)' },
+    { value: 'STI', label: 'Sciences et Technologies Industrielles (STI)' },
+    { value: 'STG', label: 'Sciences et Technologies de Gestion (STG)' },
+  ];
+
+  const handleLevelChange = (value) => {
+    if (value === 'BAC') {
+      setShowBacOptions(true);
+    } else if (value === 'DEF') {
+      setShowBacOptions(false);
+      updateUser({ level: 'DEF' });
+      setShowLevelModal(false);
+    } else {
+      updateUser({ level: value });
+      setShowLevelModal(false);
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -61,6 +88,121 @@ export default function ProfileScreen() {
     </View>
   );
 
+  const LevelPickerModal = () => {
+    const currentLevelIsBac = user?.level !== 'DEF';
+    
+    return (
+      <Modal
+        visible={showLevelModal}
+        transparent={true}
+        animationType="slide"
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: theme.background }]}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: theme.text }]}>
+                Choisir le niveau académique
+              </Text>
+              <TouchableOpacity 
+                onPress={() => {
+                  setShowLevelModal(false);
+                  setShowBacOptions(false);
+                }}
+                style={styles.closeButton}
+              >
+                <Ionicons name="close" size={24} color={theme.text} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalBody}>
+              <View style={styles.levelPickerContainer}>
+                <View style={styles.mainLevelContainer}>
+                  <TouchableOpacity
+                    style={[
+                      styles.mainLevelOption,
+                      { 
+                        backgroundColor: user?.level === 'DEF' ? theme.primary : theme.surface,
+                        borderColor: user?.level === 'DEF' ? theme.primary : theme.text + '20'
+                      }
+                    ]}
+                    onPress={() => handleLevelChange('DEF')}
+                  >
+                    <Text style={[
+                      styles.mainLevelText,
+                      { color: user?.level === 'DEF' ? '#fff' : theme.text }
+                    ]}>
+                      DEF
+                    </Text>
+                    <Text style={[
+                      styles.mainLevelSubtext,
+                      { color: user?.level === 'DEF' ? '#fff' : theme.text + '80' }
+                    ]}>
+                      Secondaire
+                    </Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity
+                    style={[
+                      styles.mainLevelOption,
+                      { 
+                        backgroundColor: currentLevelIsBac ? theme.primary : theme.surface,
+                        borderColor: currentLevelIsBac ? theme.primary : theme.text + '20'
+                      }
+                    ]}
+                    onPress={() => handleLevelChange('BAC')}
+                  >
+                    <Text style={[
+                      styles.mainLevelText,
+                      { color: currentLevelIsBac ? '#fff' : theme.text }
+                    ]}>
+                      BAC
+                    </Text>
+                    <Text style={[
+                      styles.mainLevelSubtext,
+                      { color: currentLevelIsBac ? '#fff' : theme.text + '80' }
+                    ]}>
+                      Baccalauréat
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {(showBacOptions || currentLevelIsBac) && (
+                  <View style={styles.bacOptionsContainer}>
+                    <Text style={[styles.bacOptionsTitle, { color: theme.text }]}>
+                      Choisissez votre spécialisation :
+                    </Text>
+                    <View style={styles.bacOptionsGrid}>
+                      {bacSpecializations.map((spec) => (
+                        <TouchableOpacity
+                          key={spec.value}
+                          style={[
+                            styles.bacOption,
+                            { 
+                              backgroundColor: user?.level === spec.value ? theme.primary : theme.surface,
+                              borderColor: user?.level === spec.value ? theme.primary : theme.text + '20'
+                            }
+                          ]}
+                          onPress={() => handleLevelChange(spec.value)}
+                        >
+                          <Text style={[
+                            styles.bacOptionText,
+                            { color: user?.level === spec.value ? '#fff' : theme.text }
+                          ]}>
+                            {spec.label}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </View>
+                )}
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+    );
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -77,9 +219,14 @@ export default function ProfileScreen() {
           <Text style={[styles.userEmail, { color: theme.text + '80' }]}>
             {user?.email || 'user@example.com'}
           </Text>
+          {user?.bio && (
+            <Text style={[styles.userBio, { color: theme.text + '90' }]}>
+              {user.bio}
+            </Text>
+          )}
           <View style={[styles.levelBadge, { backgroundColor: theme.primary + '20' }]}>
             <Text style={[styles.levelText, { color: theme.primary }]}>
-              Level: {user?.level || 'DEF'}
+              Niveau: {user?.level || 'DEF'}
             </Text>
           </View>
         </View>
@@ -97,8 +244,8 @@ export default function ProfileScreen() {
           <ProfileItem
             icon="school-outline"
             title="Niveau académique"
-            value={user?.level === 'DEF' ? 'DEUG/Formation' : 'Baccalauréat'}
-            onPress={() => console.log('Change Level')}
+            value={user?.level === 'DEF' ? 'DEF (Secondaire)' : `BAC ${user?.level || ''}`}
+            onPress={() => setShowLevelModal(true)}
           />
           
           <ProfileItem
@@ -159,6 +306,8 @@ export default function ProfileScreen() {
 
         <View style={styles.bottomPadding} />
       </ScrollView>
+
+      <LevelPickerModal />
     </SafeAreaView>
   );
 }
@@ -193,6 +342,13 @@ const styles = StyleSheet.create({
   userEmail: {
     fontSize: 16,
     marginBottom: 12,
+  },
+  userBio: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 16,
+    paddingHorizontal: 20,
+    lineHeight: 20,
   },
   levelBadge: {
     paddingHorizontal: 16,
@@ -258,5 +414,81 @@ const styles = StyleSheet.create({
   },
   bottomPadding: {
     height: 40,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  closeButton: {
+    padding: 4,
+  },
+  modalBody: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  levelPickerContainer: {
+    gap: 16,
+  },
+  mainLevelContainer: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  mainLevelOption: {
+    flex: 1,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  mainLevelText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 2,
+  },
+  mainLevelSubtext: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  bacOptionsContainer: {
+    marginTop: 8,
+  },
+  bacOptionsTitle: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 12,
+  },
+  bacOptionsGrid: {
+    gap: 8,
+  },
+  bacOption: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  bacOptionText: {
+    fontSize: 14,
+    fontWeight: '500',
+    textAlign: 'center',
   },
 });

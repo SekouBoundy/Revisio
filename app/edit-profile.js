@@ -51,7 +51,7 @@ export default function EditProfileScreen() {
   };
 
   const handleCancel = () => {
-    router.back();
+    router.push('/(tabs)/profile');
   };
 
   const handleChangePhoto = () => {
