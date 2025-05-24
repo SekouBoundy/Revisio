@@ -10,12 +10,10 @@ export default function QuizzesIndex() {
 
   useEffect(() => {
     if (user?.level) {
-      // Use replace to maintain tab state
       router.replace(`/(tabs)/quizzes/${user.level}`);
     }
   }, [router, user?.level]);
 
-  // Show loading while redirecting
   return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
       <ActivityIndicator size="large" />

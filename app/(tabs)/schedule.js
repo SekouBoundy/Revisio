@@ -7,6 +7,9 @@ import {
   ScrollView,
   TouchableOpacity,
   SafeAreaView,
+  Modal,
+  TextInput,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -16,42 +19,7 @@ import { useUser } from '../../constants/UserContext';
 export default function ScheduleScreen() {
   const { theme } = useContext(ThemeContext);
   const { user } = useUser();
-  const [selectedDay, setSelectedDay] = useState(1); // Monday = 1
-
   const isDefLevel = user?.level === 'DEF';
-
-  const days = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
-  const dates = [21, 22, 23, 24, 25, 26];
-
-  const ClassItem = ({ time, subject, teacher, room, type, color }) => (
-    <View style={[styles.classItem, { backgroundColor: theme.surface }]}>
-      <View style={[styles.timeIndicator, { backgroundColor: color }]} />
-      <View style={styles.classContent}>
-        <View style={styles.classHeader}>
-          <Text style={[styles.subjectText, { color: theme.text }]}>{subject}</Text>
-          <Text style={[styles.timeText, { color: theme.text + '80' }]}>{time}</Text>
-        </View>
-        <Text style={[styles.teacherText, { color: theme.text + '60' }]}>{teacher}</Text>
-        <View style={styles.classDetails}>
-          <Text style={[styles.roomText, { color: theme.text + '60' }]}>{room}</Text>
-          <View style={[styles.typeBadge, { backgroundColor: color + '20' }]}>
-            <Text style={[styles.typeText, { color }]}>{type}</Text>
-          </View>
-        </View>
-      </View>
-    </View>
-  );
-
-  const ExamItem = ({ date, subject, type, color }) => (
-    <View style={styles.examItem}>
-      <View style={[styles.examIndicator, { backgroundColor: color }]} />
-      <View style={styles.examContent}>
-        <Text style={[styles.examSubject, { color: theme.text }]}>{subject}</Text>
-        <Text style={[styles.examType, { color: color }]}>{type}</Text>
-        <Text style={[styles.examDate, { color: theme.text + '60' }]}>{date}</Text>
-      </View>
-    </View>
-  );
 
   const getDefSchedule = () => ({
     1: [ // Monday
@@ -84,6 +52,134 @@ export default function ScheduleScreen() {
       { time: '15:15-16:15', subject: 'Anglais', teacher: 'Mrs. Johnson', room: 'Salle 210', type: 'Oral', color: '#3F51B5' }
     ]
   });
+  
+  const [selectedDay, setSelectedDay] = useState(1);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingClass, setEditingClass] = useState(null);
+  const [schedule, setSchedule] = useState(isDefLevel ? getDefSchedule() : getBacSchedule());
+
+  const [classForm, setClassForm] = useState({
+    time: '',
+    subject: '',
+    teacher: '',
+    room: '',
+    type: 'Cours',
+    color: '#2196F3'
+  });
+
+  const days = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+  const dates = [21, 22, 23, 24, 25, 26];
+
+  const resetForm = () => {
+    setClassForm({
+      time: '',
+      subject: '',
+      teacher: '',
+      room: '',
+      type: 'Cours',
+      color: '#2196F3'
+    });
+  };
+
+  const handleEditClass = (classItem, index) => {
+    setEditingClass({ ...classItem, index });
+    setClassForm(classItem);
+    setShowEditModal(true);
+  };
+
+  const handleAddClass = () => {
+    resetForm();
+    setEditingClass(null);
+    setShowEditModal(true);
+  };
+
+  const handleSaveClass = () => {
+    if (!classForm.time || !classForm.subject) {
+      Alert.alert('Erreur', 'Veuillez remplir les champs obligatoires');
+      return;
+    }
+
+    const newSchedule = { ...schedule };
+    if (editingClass) {
+      newSchedule[selectedDay][editingClass.index] = classForm;
+    } else {
+      if (!newSchedule[selectedDay]) {
+        newSchedule[selectedDay] = [];
+      }
+      newSchedule[selectedDay].push(classForm);
+      newSchedule[selectedDay].sort((a, b) => a.time.localeCompare(b.time));
+    }
+    
+    setSchedule(newSchedule);
+    setShowEditModal(false);
+    resetForm();
+  };
+
+  const handleDeleteClass = (index) => {
+    Alert.alert(
+      'Supprimer le cours',
+      'Êtes-vous sûr de vouloir supprimer ce cours ?',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Supprimer',
+          style: 'destructive',
+          onPress: () => {
+            const newSchedule = { ...schedule };
+            newSchedule[selectedDay].splice(index, 1);
+            setSchedule(newSchedule);
+          }
+        }
+      ]
+    );
+  };
+
+  const ClassItem = ({ time, subject, teacher, room, type, color, index }) => (
+    <View style={[styles.classItem, { backgroundColor: theme.surface }]}>
+      <View style={[styles.timeIndicator, { backgroundColor: color }]} />
+      <View style={styles.classContent}>
+        <View style={styles.classHeader}>
+          <Text style={[styles.subjectText, { color: theme.text }]}>{subject}</Text>
+          <Text style={[styles.timeText, { color: theme.text + '80' }]}>{time}</Text>
+        </View>
+        <Text style={[styles.teacherText, { color: theme.text + '60' }]}>{teacher}</Text>
+        <View style={styles.classDetails}>
+          <Text style={[styles.roomText, { color: theme.text + '60' }]}>{room}</Text>
+          <View style={[styles.typeBadge, { backgroundColor: color + '20' }]}>
+            <Text style={[styles.typeText, { color }]}>{type}</Text>
+          </View>
+        </View>
+      </View>
+      {isEditMode && (
+        <View style={styles.editActions}>
+          <TouchableOpacity 
+            style={styles.editButton}
+            onPress={() => handleEditClass({ time, subject, teacher, room, type, color }, index)}
+          >
+            <Ionicons name="pencil" size={16} color={theme.primary} />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.deleteButton}
+            onPress={() => handleDeleteClass(index)}
+          >
+            <Ionicons name="trash" size={16} color="#FF3B30" />
+          </TouchableOpacity>
+        </View>
+      )}
+    </View>
+  );
+
+  const ExamItem = ({ date, subject, type, color }) => (
+    <View style={styles.examItem}>
+      <View style={[styles.examIndicator, { backgroundColor: color }]} />
+      <View style={styles.examContent}>
+        <Text style={[styles.examSubject, { color: theme.text }]}>{subject}</Text>
+        <Text style={[styles.examType, { color: color }]}>{type}</Text>
+        <Text style={[styles.examDate, { color: theme.text + '60' }]}>{date}</Text>
+      </View>
+    </View>
+  );
 
   const getUpcomingExams = () => {
     if (isDefLevel) {
@@ -101,19 +197,127 @@ export default function ScheduleScreen() {
     }
   };
 
-  const scheduleData = isDefLevel ? getDefSchedule() : getBacSchedule();
+  const scheduleData = schedule;
   const currentDaySchedule = scheduleData[selectedDay] || [];
+
+  const EditModal = () => (
+    <Modal visible={showEditModal} animationType="slide" transparent>
+      <View style={styles.modalOverlay}>
+        <View style={[styles.modalContent, { backgroundColor: theme.background }]}>
+          <View style={styles.modalHeader}>
+            <Text style={[styles.modalTitle, { color: theme.text }]}>
+              {editingClass ? 'Modifier le cours' : 'Ajouter un cours'}
+            </Text>
+            <TouchableOpacity onPress={() => setShowEditModal(false)}>
+              <Ionicons name="close" size={24} color={theme.text} />
+            </TouchableOpacity>
+          </View>
+          
+          <ScrollView style={styles.modalBody}>
+            <View style={styles.inputGroup}>
+              <Text style={[styles.inputLabel, { color: theme.text }]}>Horaire *</Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: theme.surface, color: theme.text }]}
+                placeholder="08:00-09:00"
+                value={classForm.time}
+                onChangeText={(text) => setClassForm({...classForm, time: text})}
+              />
+            </View>
+            
+            <View style={styles.inputGroup}>
+              <Text style={[styles.inputLabel, { color: theme.text }]}>Matière *</Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: theme.surface, color: theme.text }]}
+                placeholder="Mathématiques"
+                value={classForm.subject}
+                onChangeText={(text) => setClassForm({...classForm, subject: text})}
+              />
+            </View>
+            
+            <View style={styles.inputGroup}>
+              <Text style={[styles.inputLabel, { color: theme.text }]}>Professeur</Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: theme.surface, color: theme.text }]}
+                placeholder="M. Dupont"
+                value={classForm.teacher}
+                onChangeText={(text) => setClassForm({...classForm, teacher: text})}
+              />
+            </View>
+            
+            <View style={styles.inputGroup}>
+              <Text style={[styles.inputLabel, { color: theme.text }]}>Salle</Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: theme.surface, color: theme.text }]}
+                placeholder="Salle 12"
+                value={classForm.room}
+                onChangeText={(text) => setClassForm({...classForm, room: text})}
+              />
+            </View>
+            
+            <View style={styles.inputGroup}>
+              <Text style={[styles.inputLabel, { color: theme.text }]}>Type</Text>
+              <View style={styles.typeButtons}>
+                {['Cours', 'TP', 'TD', 'Examen', 'Contrôle'].map((type) => (
+                  <TouchableOpacity
+                    key={type}
+                    style={[
+                      styles.typeButton,
+                      { backgroundColor: classForm.type === type ? theme.primary : theme.surface }
+                    ]}
+                    onPress={() => setClassForm({...classForm, type})}
+                  >
+                    <Text style={[
+                      styles.typeButtonText,
+                      { color: classForm.type === type ? '#fff' : theme.text }
+                    ]}>
+                      {type}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </ScrollView>
+          
+          <View style={styles.modalActions}>
+            <TouchableOpacity
+              style={[styles.cancelButton, { backgroundColor: theme.surface }]}
+              onPress={() => setShowEditModal(false)}
+            >
+              <Text style={[styles.cancelButtonText, { color: theme.text }]}>Annuler</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.saveButton, { backgroundColor: theme.primary }]}
+              onPress={handleSaveClass}
+            >
+              <Text style={styles.saveButtonText}>Sauvegarder</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={styles.header}>
         <Text style={[styles.headerTitle, { color: theme.text }]}>Planning</Text>
-        <TouchableOpacity style={styles.calendarButton}>
-          <Ionicons name="calendar-outline" size={24} color={theme.text} />
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity 
+            style={[styles.editModeButton, { backgroundColor: isEditMode ? theme.primary : theme.surface }]}
+            onPress={() => setIsEditMode(!isEditMode)}
+          >
+            <Ionicons 
+              name={isEditMode ? "checkmark" : "pencil"} 
+              size={20} 
+              color={isEditMode ? '#fff' : theme.text} 
+            />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.calendarButton}>
+            <Ionicons name="calendar-outline" size={24} color={theme.text} />
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {/* Week Navigation */}
       <View style={styles.weekContainer}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           {days.map((day, index) => (
@@ -143,15 +347,25 @@ export default function ScheduleScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Today's Schedule */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>
-            Cours du {days[selectedDay - 1]}
-          </Text>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>
+              Cours du {days[selectedDay - 1]}
+            </Text>
+            {isEditMode && (
+              <TouchableOpacity 
+                style={[styles.addButton, { backgroundColor: theme.primary }]}
+                onPress={handleAddClass}
+              >
+                <Ionicons name="add" size={20} color="#fff" />
+              </TouchableOpacity>
+            )}
+          </View>
           {currentDaySchedule.length > 0 ? (
             currentDaySchedule.map((classItem, index) => (
               <ClassItem
                 key={index}
+                index={index}
                 time={classItem.time}
                 subject={classItem.subject}
                 teacher={classItem.teacher}
@@ -166,11 +380,18 @@ export default function ScheduleScreen() {
               <Text style={[styles.emptyText, { color: theme.text + '60' }]}>
                 Aucun cours prévu
               </Text>
+              {isEditMode && (
+                <TouchableOpacity 
+                  style={[styles.addClassButton, { backgroundColor: theme.primary }]}
+                  onPress={handleAddClass}
+                >
+                  <Text style={styles.addClassButtonText}>Ajouter un cours</Text>
+                </TouchableOpacity>
+              )}
             </View>
           )}
         </View>
 
-        {/* Upcoming Exams */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>
             {isDefLevel ? 'Prochains contrôles' : 'Examens à venir'}
@@ -188,6 +409,8 @@ export default function ScheduleScreen() {
 
         <View style={styles.bottomPadding} />
       </ScrollView>
+      
+      <EditModal />
     </SafeAreaView>
   );
 }
@@ -206,6 +429,17 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
+  },
+  headerActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  editModeButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   calendarButton: {
     padding: 8,
@@ -234,10 +468,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginBottom: 24,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 16,
+  },
+  addButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   classItem: {
     flexDirection: 'row',
@@ -322,6 +568,119 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 14,
     marginTop: 8,
+    marginBottom: 16,
+  },
+  addClassButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  addClassButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  editActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  editButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(33, 150, 243, 0.1)',
+  },
+  deleteButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 59, 48, 0.1)',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  modalBody: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  inputGroup: {
+    marginBottom: 16,
+  },
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 8,
+  },
+  input: {
+    height: 48,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    fontSize: 16,
+  },
+  typeButtons: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  typeButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  typeButtonText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  cancelButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  saveButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
   bottomPadding: {
     height: 40,
