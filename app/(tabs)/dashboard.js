@@ -144,24 +144,31 @@ export default function DashboardScreen() {
             />
             <CourseItem
               icon="flask-outline"
-              title="Sciences"
+              title="Physique-Chimie"
               subtitle="60% Complété"
               progress={60}
-              color="#4CAF50"
+              color="#E91E63"
             />
             <CourseItem
               icon="language-outline"
               title="Français"
               subtitle="Nouveau chapitre"
               isNew={true}
-              color="#E91E63"
+              color="#FF9800"
             />
             <CourseItem
               icon="globe-outline"
-              title="Histoire-Géo"
+              title="Histoire-Géographie"
               subtitle="75% Complété"
               progress={75}
-              color="#FF9800"
+              color="#9C27B0"
+            />
+            <CourseItem
+              icon="leaf-outline"
+              title="Sciences de la Vie et de la Terre"
+              subtitle="30% Complété"
+              progress={30}
+              color="#4CAF50"
             />
           </View>
 
@@ -175,10 +182,10 @@ export default function DashboardScreen() {
               color="#2196F3"
             />
             <UpcomingItem
-              title="Quiz Sciences"
+              title="Quiz Physique-Chimie"
               date="Vendredi"
               daysLeft="3 jours"
-              color="#4CAF50"
+              color="#E91E63"
             />
           </View>
 
@@ -187,13 +194,13 @@ export default function DashboardScreen() {
             <Text style={[styles.sectionTitle, { color: theme.text }]}>Recommandé pour toi</Text>
             <View style={[styles.recommendationCard, { backgroundColor: theme.surface }]}>
               <Text style={[styles.recommendationTitle, { color: theme.text }]}>
-                Révisions de maths
+                Révisions d'Histoire-Géo
               </Text>
               <Text style={[styles.recommendationSubtitle, { color: theme.text + '60' }]}>
-                10 exercices sur les fractions
+                Les grandes découvertes
               </Text>
               <View style={[styles.trendIcon, { backgroundColor: theme.primary + '20' }]}>
-                <Ionicons name="calculator" size={20} color={theme.primary} />
+                <Ionicons name="globe-outline" size={20} color={theme.primary} />
               </View>
             </View>
           </View>
@@ -282,23 +289,31 @@ export default function DashboardScreen() {
           
           <CourseItem
             icon="calculator-outline"
-            title="Mathématiques: Intégrales"
-            subtitle="65% Complété"
+            title="Mathématiques"
+            subtitle="65% Complété - Intégrales"
             progress={65}
             color="#2196F3"
           />
           <CourseItem
-            icon="flask-outline"
-            title="Physique: Forces"
+            icon="nuclear-outline"
+            title="Physique"
+            subtitle="Nouveau chapitre"
             isNew={true}
             color="#E91E63"
           />
           <CourseItem
-            icon="document-text-outline"
-            title="Littérature: Résumé"
-            subtitle="100% Terminé"
+            icon="flask-outline"
+            title="Chimie"
+            subtitle="100% Terminé - Chimie organique"
             progress={100}
-            color="#FF9800"
+            color="#9C27B0"
+          />
+          <CourseItem
+            icon="bulb-outline"
+            title="Philosophie"
+            subtitle="45% Complété - La conscience"
+            progress={45}
+            color="#795548"
           />
         </View>
 
@@ -312,16 +327,16 @@ export default function DashboardScreen() {
           </View>
           
           <UpcomingItem
-            title="Dissertation: Histoire"
+            title="Dissertation: Philosophie"
             date="25 Mai"
             daysLeft="4 jours"
-            color="#9C27B0"
+            color="#795548"
           />
           <UpcomingItem
-            title="Examen blanc: Philosophie"
+            title="Examen: Mathématiques"
             date="27 Mai"
             daysLeft="6 jours"
-            color="#4CAF50"
+            color="#2196F3"
           />
         </View>
 
@@ -331,9 +346,9 @@ export default function DashboardScreen() {
           
           <SubjectProgress subject="Mathématiques" progress={73} color="#2196F3" />
           <SubjectProgress subject="Physique" progress={58} color="#E91E63" />
-          <SubjectProgress subject="Français" progress={82} color="#FF9800" />
-          <SubjectProgress subject="Histoire" progress={45} color="#9C27B0" />
-          <SubjectProgress subject="Philosophie" progress={29} color="#4CAF50" />
+          <SubjectProgress subject="Chimie" progress={82} color="#9C27B0" />
+          <SubjectProgress subject="Français" progress={45} color="#FF9800" />
+          <SubjectProgress subject="Philosophie" progress={29} color="#795548" />
         </View>
 
         {/* Recommendations */}
@@ -347,10 +362,10 @@ export default function DashboardScreen() {
               </View>
             </View>
             <Text style={[styles.recommendationTitle, { color: theme.text }]}>
-              Exercices à haut impact
+              Révisions intensives Maths
             </Text>
             <Text style={[styles.recommendationSubtitle, { color: theme.text + '60' }]}>
-              15 exercices mathématiques fréquemment au BAC
+              Intégrales et dérivées - Spécial BAC
             </Text>
             <View style={[styles.trendIcon, { backgroundColor: theme.primary + '20' }]}>
               <Ionicons name="trending-up" size={20} color={theme.primary} />
