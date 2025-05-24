@@ -86,34 +86,34 @@ export default function ProfileScreen() {
 
         {/* Profile Items */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>Account</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Compte</Text>
           
           <ProfileItem
             icon="person-outline"
-            title="Edit Profile"
-            onPress={() => console.log('Edit Profile')}
+            title="Modifier le profil"
+            onPress={() => router.push('/edit-profile')}
           />
           
           <ProfileItem
             icon="school-outline"
-            title="Academic Level"
+            title="Niveau académique"
             value={user?.level === 'DEF' ? 'DEUG/Formation' : 'Baccalauréat'}
             onPress={() => console.log('Change Level')}
           />
           
           <ProfileItem
             icon="trophy-outline"
-            title="Achievements"
+            title="Réussites"
             onPress={() => console.log('Achievements')}
           />
         </View>
 
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>Preferences</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Préférences</Text>
           
           <SwitchItem
             icon="moon-outline"
-            title="Dark Mode"
+            title="Mode sombre"
             value={isDarkMode}
             onToggle={toggleTheme}
           />
@@ -126,8 +126,8 @@ export default function ProfileScreen() {
           
           <ProfileItem
             icon="language-outline"
-            title="Language"
-            value="English"
+            title="Langue"
+            value="Français"
             onPress={() => console.log('Language')}
           />
         </View>
@@ -137,13 +137,13 @@ export default function ProfileScreen() {
           
           <ProfileItem
             icon="help-circle-outline"
-            title="Help & Support"
+            title="Aide et support"
             onPress={() => console.log('Help')}
           />
           
           <ProfileItem
             icon="information-circle-outline"
-            title="About"
+            title="À propos"
             onPress={() => console.log('About')}
           />
         </View>
@@ -154,7 +154,7 @@ export default function ProfileScreen() {
           onPress={handleLogout}
         >
           <Ionicons name="log-out-outline" size={20} color="#fff" />
-          <Text style={styles.logoutText}>Logout</Text>
+          <Text style={styles.logoutText}>Se déconnecter</Text>
         </TouchableOpacity>
 
         <View style={styles.bottomPadding} />
