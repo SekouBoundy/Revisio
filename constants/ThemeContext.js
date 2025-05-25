@@ -1,53 +1,74 @@
-// File: constants/ThemeContext.js
-import React, { createContext, useState, useContext } from 'react';
-
-// Light mode palette
-const lightTheme = {
-  primary:      '#4E8CEE', // Lively blue (accents/CTAs)
-  secondary:    '#2E3A59', // Deep navy (brand/headers)
-  accent:       '#F57C00', // Orange (active/highlight)
-  neutralDark:  '#424242', // Charcoal (body text/icons)
-  neutralLight: '#F5F7FA', // Very light gray (background)
-  surface:      '#FFFFFF', // Cards, surfaces
-  background:   '#F6F7FB', // App background
-  text:         '#1B2127', // Main text (almost black)
-  textSecondary:'#52606D', // Subtext, labels
-  success:      '#43A047', // Green
-  warning:      '#FFB300', // Amber
-  error:        '#E53935', // Red
-  info:         '#1976D2', // Blue info
-};
-
-// Dark mode palette
-const darkTheme = {
-  primary:      '#4E8CEE', // Same lively blue (accents)
-  secondary:    '#8FA9C8', // Muted blue (brand/headers)
-  accent:       '#FFA040', // Warm orange (highlights)
-  neutralDark:  '#F5F7FA', // Almost white (body text/icons)
-  neutralLight: '#2E3A59', // Deep navy (background)
-  surface:      '#232A36', // Cards, surfaces (slate)
-  background:   '#19202A', // Main app background
-  text:         '#F5F7FA', // Main text (white-ish)
-  textSecondary:'#B2BFD1', // Subtext
-  success:      '#66BB6A', // Light green
-  warning:      '#FFD54F', // Light amber
-  error:        '#EF5350', // Soft red
-  info:         '#64B5F6', // Lighter blue info
-};
-
-
-
+// constants/ThemeContext.js - Clean implementation
+import React, { createContext, useState, useContext, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const ThemeContext = createContext();
 
 export function ThemeProvider({ children }) {
   const [isDarkMode, setIsDarkMode] = useState(false);
-  
-  const theme = isDarkMode ? darkTheme : lightTheme;
-  
-  const toggleTheme = () => {
-    setIsDarkMode(!isDarkMode);
+
+  // ✅ Only load theme on mount, no navigation
+  useEffect(() => {
+    loadThemePreference();
+  }, []); // Empty dependency array
+
+  const loadThemePreference = async () => {
+    try {
+      const savedTheme = await AsyncStorage.getItem('theme');
+      if (savedTheme) {
+        setIsDarkMode(savedTheme === 'dark');
+      }
+    } catch (error) {
+      console.error('Error loading theme preference:', error);
+    }
   };
+
+  const toggleTheme = async () => {
+    console.log('🎨 Theme toggle - Before:', isDarkMode);
+    const newTheme = !isDarkMode;
+    setIsDarkMode(newTheme);
+    
+    try {
+      await AsyncStorage.setItem('theme', newTheme ? 'dark' : 'light');
+      console.log('🎨 Theme toggle - After:', newTheme);
+    } catch (error) {
+      console.error('Error saving theme preference:', error);
+    }
+  };
+
+  const lightTheme = {
+    primary: '#4E8CEE',
+    secondary: '#2E3A59',
+    accent: '#F57C00',
+    neutralDark: '#424242',
+    neutralLight: '#F5F7FA',
+    surface: '#FFFFFF',
+    background: '#F6F7FB',
+    text: '#1B2127',
+    textSecondary: '#52606D',
+    success: '#43A047',
+    warning: '#FFB300',
+    error: '#E53935',
+    info: '#1976D2',
+  };
+
+  const darkTheme = {
+    primary: '#4E8CEE',
+    secondary: '#8FA9C8',
+    accent: '#FFA040',
+    neutralDark: '#F5F7FA',
+    neutralLight: '#2E3A59',
+    surface: '#232A36',
+    background: '#19202A',
+    text: '#F5F7FA',
+    textSecondary: '#B2BFD1',
+    success: '#66BB6A',
+    warning: '#FFD54F',
+    error: '#EF5350',
+    info: '#64B5F6',
+  };
+
+  const theme = isDarkMode ? darkTheme : lightTheme;
 
   return (
     <ThemeContext.Provider value={{ 
@@ -57,5 +78,27 @@ export function ThemeProvider({ children }) {
     }}>
       {children}
     </ThemeContext.Provider>
+  );
+}
+
+// Clean usage in profile screen:
+// app/(tabs)/profile.js
+export default function ProfileScreen() {
+  const { theme, isDarkMode, toggleTheme } = useContext(ThemeContext);
+  
+  // ✅ No navigation-related useEffect with theme dependency
+  
+  return (
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+      {/* Your profile content */}
+      
+      <SwitchItem
+        icon="moon"
+        title="Mode sombre"
+        value={isDarkMode}
+        onToggle={toggleTheme} // ✅ Direct function reference, no wrapper
+        iconColor={theme.primary}
+      />
+    </SafeAreaView>
   );
 }

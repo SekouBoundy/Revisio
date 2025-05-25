@@ -1,4 +1,4 @@
-// File: app/(tabs)/dashboard.js
+// File: app/(tabs)/dashboard.js - Fixed curved header like schedule
 import React, { useContext } from 'react';
 import {
   View,
@@ -111,6 +111,7 @@ export default function DashboardScreen() {
     </TouchableOpacity>
   );
 
+  // Header Component - exactly like schedule
   const Header = () => (
     <View style={[styles.header, { backgroundColor: theme.primary }]}>
       <View style={styles.headerContent}>
@@ -132,27 +133,51 @@ export default function DashboardScreen() {
     </View>
   );
 
+  // Progress Card - overlapping like schedule day selector
+  const ProgressCard = () => (
+    <View style={[styles.progressCardContainer, { backgroundColor: theme.surface }]}>
+      {isDefLevel ? (
+        <View style={styles.weeklyProgressContent}>
+          <Text style={[styles.progressCardTitle, { color: theme.text }]}>
+            Ma progression cette semaine
+          </Text>
+          <Text style={[styles.progressCardValue, { color: theme.primary }]}>
+            8/12 exercices
+          </Text>
+          <ProgressBar progress={67} color={theme.primary} />
+          <Text style={[styles.progressCardSubtitle, { color: theme.textSecondary }]}>
+            Continue comme ça !
+          </Text>
+        </View>
+      ) : (
+        <View style={styles.countdownContent}>
+          <View style={styles.countdownLeft}>
+            <Text style={[styles.countdownLabel, { color: theme.textSecondary }]}>
+              Temps restant jusqu'au BAC
+            </Text>
+            <Text style={[styles.countdownValue, { color: theme.text }]}>25 jours</Text>
+            <TouchableOpacity 
+              style={[styles.planningButton, { backgroundColor: theme.primary }]}
+              onPress={() => router.push('/(tabs)/schedule')}
+            >
+              <Ionicons name="calendar" size={16} color="#FFFFFF" />
+              <Text style={styles.planningText}>Voir mon planning</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={[styles.countdownIcon, { backgroundColor: theme.primary + '15' }]}>
+            <Ionicons name="time" size={32} color={theme.primary} />
+          </View>
+        </View>
+      )}
+    </View>
+  );
+
   // DEF Dashboard
   if (isDefLevel) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
         <Header />
-        
-        {/* Fixed Progress Card */}
-        <View style={[styles.fixedSection, { backgroundColor: theme.background }]}>
-          <ModernCard style={styles.weeklyProgressCard}>
-            <Text style={[styles.progressCardTitle, { color: theme.text }]}>
-              Ma progression cette semaine
-            </Text>
-            <Text style={[styles.progressCardValue, { color: theme.primary }]}>
-              8/12 exercices
-            </Text>
-            <ProgressBar progress={67} color={theme.primary} />
-            <Text style={[styles.progressCardSubtitle, { color: theme.textSecondary }]}>
-              Continue comme ça !
-            </Text>
-          </ModernCard>
-        </View>
+        <ProgressCard />
 
         <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollContent}>
           {/* Stats Grid */}
@@ -226,28 +251,7 @@ export default function DashboardScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <Header />
-      
-      {/* Fixed Countdown Card */}
-      <View style={[styles.fixedSection, { backgroundColor: theme.background }]}>
-        <ModernCard style={styles.countdownCard}>
-          <View style={styles.countdownContent}>
-            <Text style={[styles.countdownLabel, { color: theme.textSecondary }]}>
-              Temps restant jusqu'au BAC
-            </Text>
-            <Text style={[styles.countdownValue, { color: theme.text }]}>25 jours</Text>
-            <TouchableOpacity 
-              style={[styles.planningButton, { backgroundColor: theme.primary }]}
-              onPress={() => router.push('/(tabs)/schedule')}
-            >
-              <Ionicons name="calendar" size={16} color="#FFFFFF" />
-              <Text style={styles.planningText}>Voir mon planning</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={[styles.countdownIcon, { backgroundColor: theme.primary + '15' }]}>
-            <Ionicons name="time" size={32} color={theme.primary} />
-          </View>
-        </ModernCard>
-      </View>
+      <ProgressCard />
 
       <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollContent}>
         {/* Global Progress */}
@@ -332,8 +336,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  // Header - exactly like schedule
   header: {
-    paddingTop: 20,
+    paddingTop: 60,
     paddingBottom: 30,
     paddingHorizontal: 20,
     borderBottomLeftRadius: 30,
@@ -375,43 +380,19 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
   },
-  scrollContent: {
-    flex: 1,
-  },
-  section: {
-    paddingHorizontal: 20,
-    marginBottom: 24,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-  },
-  seeAllText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  modernCard: {
+  // Progress card - like day selector in schedule
+  progressCardContainer: {
+    marginTop: -15,
+    marginHorizontal: 20,
     borderRadius: 20,
     padding: 20,
-    marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
     shadowRadius: 8,
     elevation: 3,
   },
-  fixedSection: {
-    marginTop: -20,
-    paddingHorizontal: 20,
-    paddingBottom: 10,
-  },
-  weeklyProgressCard: {
+  weeklyProgressContent: {
     alignItems: 'center',
   },
   progressCardTitle: {
@@ -428,6 +409,76 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 12,
     fontWeight: '500',
+  },
+  countdownContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  countdownLeft: {
+    flex: 1,
+  },
+  countdownLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 8,
+  },
+  countdownValue: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    marginBottom: 16,
+  },
+  planningButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    gap: 6,
+  },
+  planningText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  countdownIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  scrollContent: {
+    flex: 1,
+  },
+  section: {
+    paddingHorizontal: 20,
+    marginBottom: 24,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 16,
+  },
+  seeAllText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  modernCard: {
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
   },
   statsGrid: {
     flexDirection: 'row',
@@ -512,45 +563,6 @@ const styles = StyleSheet.create({
   progressBar: {
     height: '100%',
     borderRadius: 3,
-  },
-  countdownCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  countdownContent: {
-    flex: 1,
-  },
-  countdownLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 8,
-  },
-  countdownValue: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    marginBottom: 16,
-  },
-  planningButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    gap: 6,
-  },
-  planningText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  countdownIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   progressOverviewCard: {
     flexDirection: 'row',

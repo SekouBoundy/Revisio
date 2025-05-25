@@ -1,4 +1,4 @@
-// app/(tabs)/quizzes/index.js
+// app/(tabs)/quizzes/index.js - Fixed curved header like schedule
 import React, { useContext } from 'react';
 import {
   View,
@@ -89,6 +89,7 @@ export default function QuizzesIndex() {
     return colorMap[subject] || theme.primary;
   };
 
+  // Header Component - exactly like schedule
   const Header = () => (
     <View style={[styles.header, { backgroundColor: theme.primary }]}>
       <View style={styles.headerContent}>
@@ -100,12 +101,20 @@ export default function QuizzesIndex() {
             Quiz Dashboard
           </Text>
         </View>
-        <TouchableOpacity 
-          style={[styles.filterButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}
-          onPress={() => console.log('Filter')}
-        >
-          <Ionicons name="analytics" size={20} color="#FFFFFF" />
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity 
+            style={[styles.filterButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}
+            onPress={() => console.log('Filter')}
+          >
+            <Ionicons name="analytics" size={18} color="#FFFFFF" />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.searchButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}
+            onPress={() => console.log('Search')}
+          >
+            <Ionicons name="search-outline" size={18} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -140,6 +149,7 @@ export default function QuizzesIndex() {
     </View>
   );
 
+  // Performance Card - overlapping like schedule day selector
   const PerformanceCard = () => (
     <View style={[styles.performanceCard, { backgroundColor: theme.surface }]}>
       <View style={styles.performanceHeader}>
@@ -164,7 +174,7 @@ export default function QuizzesIndex() {
           <View style={styles.statRow}>
             <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Meilleur score</Text>
             <Text style={[styles.statValue, { color: theme.success }]}>
-              {Math.max(...completedQuizzes.map(q => q.score))}%
+              {completedQuizzes.length > 0 ? Math.max(...completedQuizzes.map(q => q.score)) : 0}%
             </Text>
           </View>
         </View>
@@ -231,13 +241,13 @@ export default function QuizzesIndex() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <Header />
+      
+      {/* Performance Overview - overlapping the header */}
+      <View style={styles.performanceSection}>
+        <PerformanceCard />
+      </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Performance Overview */}
-        <View style={styles.section}>
-          <PerformanceCard />
-        </View>
-
         {/* Quick Access */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Accès Rapide</Text>
@@ -294,6 +304,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  // Header - exactly like schedule
   header: {
     paddingTop: 60,
     paddingBottom: 30,
@@ -315,6 +326,10 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
   },
+  headerActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
   filterButton: {
     width: 40,
     height: 40,
@@ -322,29 +337,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  section: {
-    paddingHorizontal: 20,
-    marginBottom: 24,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  searchButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
   },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 16,
-  },
-  seeAllText: {
-    fontSize: 14,
-    fontWeight: '600',
+  // Performance section - like day selector in schedule
+  performanceSection: {
+    paddingHorizontal: 20,
+    marginTop: -15,
+    marginBottom: 10,
   },
   performanceCard: {
     borderRadius: 20,
     padding: 20,
-    marginTop: -20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
@@ -407,6 +415,25 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  section: {
+    paddingHorizontal: 20,
+    marginBottom: 24,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 16,
+  },
+  seeAllText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
   quickQuizGrid: {
     flexDirection: 'row',

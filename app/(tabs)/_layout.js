@@ -1,4 +1,4 @@
-// File: app/(tabs)/_layout.js
+// File: app/(tabs)/_layout.js - Fixed missing icons
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useContext } from 'react';
@@ -28,8 +28,9 @@ export default function TabsLayout() {
         name="dashboard"
         options={{
           title: 'Dashboard',
-          tabBarIcon: ({ color, size }) =>
-            <Ionicons name="grid-outline" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="grid-outline" size={size} color={color} />
+          ),
         }}
       />
 
@@ -38,42 +39,46 @@ export default function TabsLayout() {
         name="courses/index"
         options={{
           title: 'Courses',
-          tabBarIcon: ({ color, size }) =>
-            <Ionicons name="book-outline" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="book-outline" size={size} color={color} />
+          ),
         }}
       />
 
-      {/* 3) Quizzes */}
+      {/* 3) Quizzes - Fixed icon name */}
       <Tabs.Screen
         name="quizzes/index"
         options={{
           title: 'Quizzes',
-          tabBarIcon: ({ color, size }) =>
-            <Ionicons name="help-circle-outline" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="help-circle-outline" size={size} color={color} />
+          ),
         }}
       />
 
-      {/* 4) Schedule */}
+      {/* 4) Schedule - Fixed icon name */}
       <Tabs.Screen
         name="schedule"
         options={{
           title: 'Schedule',
-          tabBarIcon: ({ color, size }) =>
-            <Ionicons name="calendar-outline" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="calendar-outline" size={size} color={color} />
+          ),
         }}
       />
 
-      {/* 5) Profile */}
+      {/* 5) Profile - Fixed icon name */}
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color, size }) =>
-            <Ionicons name="person-outline" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="person-outline" size={size} color={color} />
+          ),
         }}
       />
 
-      {/* Hide ALL dynamic routes from tab bar */}
+      {/* Hide dynamic routes */}
       <Tabs.Screen
         name="courses/[level]/index"
         options={{ href: null }}
