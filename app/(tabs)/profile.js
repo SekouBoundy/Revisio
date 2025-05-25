@@ -9,6 +9,8 @@ import {
   ScrollView,
   Switch,
   Modal,
+  Alert,
+  Share,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -36,6 +38,59 @@ export default function ProfileScreen() {
     { value: 'STG', label: 'Sciences et Technologies de Gestion (STG)' },
   ];
 
+  const handleLogout = () => {
+    Alert.alert(
+      'Déconnexion',
+      'Êtes-vous sûr de vouloir vous déconnecter ?',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        { 
+          text: 'Déconnecter', 
+          style: 'destructive',
+          onPress: () => {
+            logout();
+            router.replace('/login');
+          }
+        }
+      ]
+    );
+  };
+
+  const handleShareProfile = async () => {
+    try {
+      await Share.share({
+        message: `Découvrez le profil de ${user?.name} sur notre plateforme d'apprentissage!`,
+        title: 'Partager le profil'
+      });
+    } catch (error) {
+      console.error('Error sharing profile:', error);
+    }
+  };
+
+  const handleDownloadedFiles = () => {
+    // Navigate to downloaded files screen or show modal with files
+    router.push('/downloaded-files');
+  };
+
+  const handleClearCache = () => {
+    Alert.alert(
+      'Vider le cache',
+      'Cette action supprimera tous les fichiers en cache. Êtes-vous sûr de vouloir continuer ?',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Vider',
+          style: 'destructive',
+          onPress: () => {
+            // Clear cache logic here
+            console.log('Cache cleared');
+            Alert.alert('Succès', 'Le cache a été vidé avec succès');
+          }
+        }
+      ]
+    );
+  };
+
   const handleLevelChange = (value) => {
     if (value === 'BAC') {
       setShowBacOptions(true);
@@ -49,12 +104,7 @@ export default function ProfileScreen() {
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    router.replace('/login');
-  };
-
-  const ProfileItem = ({ icon, title, value, onPress, showArrow = true, iconColor }) => (
+  const ProfileItem = ({ icon, title, value, onPress, showArrow = true, iconColor, badge }) => (
     <TouchableOpacity
       style={[styles.profileItem, { backgroundColor: theme.surface }]}
       onPress={onPress}
@@ -63,6 +113,11 @@ export default function ProfileScreen() {
       <View style={styles.itemLeft}>
         <View style={[styles.iconContainer, { backgroundColor: (iconColor || theme.primary) + '15' }]}>
           <Ionicons name={icon} size={20} color={iconColor || theme.primary} />
+          {badge && (
+            <View style={[styles.badge, { backgroundColor: theme.error }]}>
+              <Text style={styles.badgeText}>{badge}</Text>
+            </View>
+          )}
         </View>
         <Text style={[styles.itemTitle, { color: theme.text }]}>{title}</Text>
       </View>
@@ -223,13 +278,27 @@ export default function ProfileScreen() {
         {/* Header */}
         <View style={[styles.header, { backgroundColor: theme.primary }]}>
           <View style={styles.headerContent}>
+            <TouchableOpacity 
+              style={styles.shareButton}
+              onPress={handleShareProfile}
+            >
+              <Ionicons name="share-outline" size={20} color="#FFFFFF" />
+            </TouchableOpacity>
+            
             <View style={[styles.avatar, { backgroundColor: theme.surface }]}>
               <Text style={[styles.avatarText, { color: theme.primary }]}>
                 {user?.name?.charAt(0)?.toUpperCase() || 'U'}
               </Text>
+              <TouchableOpacity 
+                style={[styles.editAvatarButton, { backgroundColor: theme.primary }]}
+                onPress={() => console.log('Edit avatar')}
+              >
+                <Ionicons name="camera" size={14} color="#FFFFFF" />
+              </TouchableOpacity>
             </View>
+            
             <Text style={[styles.userName, { color: '#FFFFFF' }]}>
-                {user?.name || 'User Name'}
+              {user?.name || 'User Name'}
             </Text>
             <Text style={[styles.userEmail, { color: '#FFFFFF99' }]}>
               {user?.email || 'user@example.com'}
@@ -241,7 +310,7 @@ export default function ProfileScreen() {
             )}
             <View style={[styles.levelBadge, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]}>
               <Text style={[styles.levelText, { color: '#FFFFFF' }]}>
-                Niveau: {user?.level || 'DEF'}
+                Niveau: {user?.level === 'DEF' ? 'DEF (Secondaire)' : `BAC ${user?.level || ''}`}
               </Text>
             </View>
           </View>
@@ -269,7 +338,7 @@ export default function ProfileScreen() {
           />
         </View>
 
-        {/* Profile Items */}
+        {/* Account Section */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Compte</Text>
           
@@ -293,9 +362,25 @@ export default function ProfileScreen() {
             title="Réussites"
             onPress={() => console.log('Achievements')}
             iconColor={theme.accent}
+            badge="3"
+          />
+          
+          <ProfileItem
+            icon="bookmark"
+            title="Favoris"
+            onPress={() => console.log('Bookmarks')}
+            iconColor={theme.warning}
+          />
+          
+          <ProfileItem
+            icon="download"
+            title="Fichiers enregistrés"
+            onPress={() => handleDownloadedFiles()}
+            iconColor={theme.info}
           />
         </View>
 
+        {/* Preferences Section */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Préférences</Text>
           
@@ -321,8 +406,23 @@ export default function ProfileScreen() {
             onPress={() => console.log('Language')}
             iconColor={theme.info}
           />
+          
+          <ProfileItem
+            icon="shield-checkmark"
+            title="Confidentialité"
+            onPress={() => console.log('Privacy')}
+            iconColor={theme.success}
+          />
+          
+          <ProfileItem
+            icon="trash"
+            title="Vider le cache"
+            onPress={() => handleClearCache()}
+            iconColor={theme.error}
+          />
         </View>
 
+        {/* Support Section */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Support</Text>
           
@@ -331,6 +431,13 @@ export default function ProfileScreen() {
             title="Aide et support"
             onPress={() => console.log('Help')}
             iconColor={theme.success}
+          />
+          
+          <ProfileItem
+            icon="document-text"
+            title="Conditions d'utilisation"
+            onPress={() => console.log('Terms')}
+            iconColor={theme.info}
           />
           
           <ProfileItem
@@ -364,12 +471,24 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingTop: 60,
-    paddingBottom: 30,
+    paddingBottom: 40,
     paddingHorizontal: 20,
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
   },
   headerContent: {
+    alignItems: 'center',
+    position: 'relative',
+  },
+  shareButton: {
+    position: 'absolute',
+    top: -10,
+    right: 0,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    justifyContent: 'center',
     alignItems: 'center',
   },
   avatar: {
@@ -384,10 +503,23 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 8,
+    position: 'relative',
   },
   avatarText: {
     fontSize: 36,
     fontWeight: 'bold',
+  },
+  editAvatarButton: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
   },
   userName: {
     fontSize: 28,
@@ -414,10 +546,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
+  section: {
+    marginHorizontal: 20,
+    marginBottom: 24,
+  },
   statsContainer: {
     flexDirection: 'row',
     paddingHorizontal: 20,
-    marginTop: -20,
+    marginTop: -30,
     marginBottom: 20,
     gap: 12,
   },
@@ -427,10 +563,10 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 8,
   },
   statIcon: {
     width: 48,
@@ -448,10 +584,6 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: 12,
     fontWeight: '500',
-  },
-  section: {
-    marginHorizontal: 20,
-    marginBottom: 24,
   },
   sectionTitle: {
     fontSize: 20,
@@ -485,6 +617,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
+    position: 'relative',
+  },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  badgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: 'bold',
   },
   itemTitle: {
     fontSize: 16,

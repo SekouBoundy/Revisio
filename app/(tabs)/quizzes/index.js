@@ -1,4 +1,4 @@
-// app/(tabs)/quizzes/index.js - Fixed curved header like schedule
+// app/(tabs)/quizzes/index.js - Updated with new course structure
 import React, { useContext } from 'react';
 import {
   View,
@@ -26,70 +26,152 @@ export default function QuizzesIndex() {
     return theme.error;
   };
 
+  const getDifficultyColor = (difficulty) => {
+    switch (difficulty) {
+      case 'Facile': return theme.success;
+      case 'Moyen': return theme.warning;
+      case 'Difficile': return theme.error;
+      default: return theme.primary;
+    }
+  };
+
   const getDefQuizzes = () => [
-    { icon: 'calculator', title: 'Fractions', subject: 'Mathématiques', questions: 10, duration: 15, difficulty: 'Facile', score: 85 },
-    { icon: 'flask', title: 'États de la matière', subject: 'Physique-Chimie', questions: 8, duration: 12, difficulty: 'Facile', score: 92 },
-    { icon: 'language', title: 'Conjugaison', subject: 'Français', questions: 15, duration: 18, difficulty: 'Moyen', score: 76 },
-    { icon: 'globe', title: 'Renaissance', subject: 'Histoire-Géographie', questions: 10, duration: 15, difficulty: 'Facile' },
-    { icon: 'calculator', title: 'Géométrie', subject: 'Mathématiques', questions: 12, duration: 20, difficulty: 'Moyen' },
-    { icon: 'leaf', title: 'Les animaux', subject: 'Sciences SVT', questions: 12, duration: 20, difficulty: 'Facile', score: 88 },
+    { icon: 'calculator-outline', title: 'Les Fractions', subject: 'Mathématiques', questions: 10, duration: 15, difficulty: 'Facile', score: 85, color: theme.primary },
+    { icon: 'calculator-outline', title: 'Géométrie', subject: 'Mathématiques', questions: 12, duration: 20, difficulty: 'Moyen', color: theme.primary },
+    { icon: 'flask-outline', title: 'États de la matière', subject: 'Physique-Chimie', questions: 8, duration: 12, difficulty: 'Facile', score: 92, color: theme.accent },
+    { icon: 'language-outline', title: 'Conjugaison', subject: 'Français', questions: 15, duration: 18, difficulty: 'Moyen', score: 76, color: theme.secondary },
+    { icon: 'globe-outline', title: 'La Renaissance', subject: 'Histoire-Géographie', questions: 10, duration: 15, difficulty: 'Facile', color: theme.info },
+    { icon: 'leaf-outline', title: 'Les animaux', subject: 'Sciences de la Vie et de la Terre', questions: 12, duration: 20, difficulty: 'Facile', score: 88, color: theme.success },
+    { icon: 'globe', title: 'Present Simple', subject: 'Anglais', questions: 8, duration: 12, difficulty: 'Facile', color: theme.neutralDark },
+    { icon: 'people-outline', title: 'Droits et devoirs', subject: 'Éducation Civique et Morale', questions: 6, duration: 10, difficulty: 'Facile', score: 94, color: theme.warning }
   ];
 
-  const getBacQuizzes = () => [
-    { icon: 'calculator', title: 'Intégrales', subject: 'Mathématiques', questions: 20, duration: 45, difficulty: 'Difficile', score: 78 },
-    { icon: 'nuclear', title: 'Mécanique quantique', subject: 'Physique', questions: 15, duration: 35, difficulty: 'Difficile' },
-    { icon: 'flask', title: 'Chimie organique', subject: 'Chimie', questions: 18, duration: 40, difficulty: 'Difficile', score: 82 },
-    { icon: 'bulb', title: 'Logique', subject: 'Philosophie', questions: 10, duration: 25, difficulty: 'Moyen', score: 85 },
-    { icon: 'desktop', title: 'Algorithmes', subject: 'Informatique', questions: 12, duration: 30, difficulty: 'Moyen' },
-  ];
-
-  const quizzes = isDefLevel ? getDefQuizzes() : getBacQuizzes();
-  const completedQuizzes = quizzes.filter(q => q.score);
-  const averageScore = completedQuizzes.length > 0 
-    ? Math.round(completedQuizzes.reduce((acc, q) => acc + q.score, 0) / completedQuizzes.length) 
-    : 0;
-
-  const getRecentAttempts = () => [
-    { title: 'Quiz Mathématiques', date: 'Hier', score: 85, correct: 17, total: 20, time: '23 min', improvement: 5 },
-    { title: 'Quiz Sciences', date: 'Il y a 2 jours', score: 92, correct: 23, total: 25, time: '18 min' },
-    { title: 'Quiz Français', date: 'Il y a 3 jours', score: 76, correct: 19, total: 25, time: '28 min', improvement: 8 },
-  ];
-
-  const getSubjectPerformance = () => {
-    const subjects = {};
-    quizzes.forEach(quiz => {
-      if (quiz.score) {
-        if (!subjects[quiz.subject]) {
-          subjects[quiz.subject] = { scores: [], count: 0 };
-        }
-        subjects[quiz.subject].scores.push(quiz.score);
-        subjects[quiz.subject].count++;
-      }
-    });
-
-    return Object.entries(subjects).map(([subject, data]) => ({
-      subject: subject.length > 12 ? subject.substring(0, 12) + '...' : subject,
-      score: Math.round(data.scores.reduce((a, b) => a + b, 0) / data.scores.length),
-      color: getSubjectColor(subject)
-    }));
-  };
-
-  const getSubjectColor = (subject) => {
-    const colorMap = {
-      'Mathématiques': theme.primary,
-      'Physique-Chimie': theme.success,
-      'Sciences SVT': theme.success,
-      'Français': theme.secondary,
-      'Histoire-Géographie': theme.accent,
-      'Physique': theme.warning,
-      'Chimie': theme.accent,
-      'Philosophie': theme.secondary,
-      'Informatique': theme.info
+  const getBacQuizzes = () => {
+    const quizzesByTrack = {
+      TSE: [
+        { icon: 'calculator-outline', title: 'Intégrales', subject: 'Mathématiques', questions: 20, duration: 45, difficulty: 'Difficile', score: 78, color: theme.primary },
+        { icon: 'nuclear-outline', title: 'Mécanique quantique', subject: 'Physique', questions: 15, duration: 35, difficulty: 'Difficile', color: theme.accent },
+        { icon: 'flask-outline', title: 'Chimie organique', subject: 'Chimie', questions: 18, duration: 40, difficulty: 'Difficile', score: 82, color: theme.info },
+        { icon: 'leaf-outline', title: 'Géologie', subject: 'Bio/Geo', questions: 12, duration: 25, difficulty: 'Moyen', color: theme.success },
+        { icon: 'language-outline', title: 'Dissertation', subject: 'Français', questions: 3, duration: 60, difficulty: 'Difficile', color: theme.secondary },
+        { icon: 'bulb-outline', title: 'Logique', subject: 'Philosophie', questions: 10, duration: 25, difficulty: 'Moyen', score: 85, color: theme.warning },
+        { icon: 'globe', title: 'Advanced Grammar', subject: 'Anglais', questions: 15, duration: 20, difficulty: 'Moyen', score: 91, color: theme.neutralDark }
+      ],
+      TSEXP: [
+        { icon: 'calculator-outline', title: 'Statistiques', subject: 'Mathématiques', questions: 16, duration: 35, difficulty: 'Difficile', score: 74, color: theme.primary },
+        { icon: 'flask-outline', title: 'Analyses chimiques', subject: 'Physique/Chimie', questions: 14, duration: 30, difficulty: 'Difficile', color: theme.accent },
+        { icon: 'leaf-outline', title: 'Écologie', subject: 'Bio', questions: 12, duration: 28, difficulty: 'Moyen', score: 88, color: theme.success },
+        { icon: 'globe-outline', title: 'Environnement', subject: 'Geo', questions: 10, duration: 20, difficulty: 'Moyen', color: theme.warning },
+        { icon: 'bulb-outline', title: 'Éthique scientifique', subject: 'Philosophie', questions: 8, duration: 25, difficulty: 'Moyen', color: theme.info },
+        { icon: 'globe', title: 'Scientific English', subject: 'Anglais', questions: 12, duration: 18, difficulty: 'Moyen', score: 89, color: theme.neutralDark }
+      ],
+      TSECO: [
+        { icon: 'trending-up-outline', title: 'Microéconomie', subject: 'Économie', questions: 20, duration: 40, difficulty: 'Moyen', score: 88, color: theme.success },
+        { icon: 'briefcase-outline', title: 'Management', subject: 'Gestion', questions: 15, duration: 30, difficulty: 'Moyen', color: theme.neutralDark },
+        { icon: 'document-text-outline', title: 'Droit commercial', subject: 'Droit', questions: 18, duration: 35, difficulty: 'Moyen', score: 79, color: theme.warning },
+        { icon: 'calculator-outline', title: 'Statistiques économiques', subject: 'Mathématiques appliquées', questions: 14, duration: 25, difficulty: 'Moyen', color: theme.primary },
+        { icon: 'language-outline', title: 'Communication professionnelle', subject: 'Français', questions: 12, duration: 30, difficulty: 'Moyen', score: 85, color: theme.secondary },
+        { icon: 'bulb-outline', title: 'Philosophie politique', subject: 'Philosophie', questions: 10, duration: 25, difficulty: 'Moyen', color: theme.info },
+        { icon: 'globe', title: 'Business English', subject: 'Anglais', questions: 12, duration: 20, difficulty: 'Moyen', score: 87, color: theme.accent },
+        { icon: 'globe-outline', title: 'Géographie économique', subject: 'Histoire-Géographie', questions: 15, duration: 25, difficulty: 'Facile', score: 92, color: theme.error },
+        { icon: 'people-outline', title: 'Citoyenneté', subject: 'Éducation Civique', questions: 8, duration: 15, difficulty: 'Facile', score: 96, color: theme.neutralLight }
+      ],
+      TSS: [
+        { icon: 'people-outline', title: 'Comportements sociaux', subject: 'Sociologie', questions: 18, duration: 35, difficulty: 'Moyen', score: 83, color: theme.info },
+        { icon: 'globe-outline', title: 'Histoire sociale', subject: 'Histoire-Géographie', questions: 16, duration: 30, difficulty: 'Moyen', score: 78, color: theme.warning },
+        { icon: 'bulb-outline', title: 'Philosophie politique', subject: 'Philosophie', questions: 12, duration: 30, difficulty: 'Difficile', color: theme.neutralDark },
+        { icon: 'language-outline', title: 'Argumentation', subject: 'Français', questions: 10, duration: 35, difficulty: 'Moyen', score: 84, color: theme.secondary },
+        { icon: 'globe', title: 'Communication internationale', subject: 'Anglais', questions: 12, duration: 20, difficulty: 'Moyen', score: 89, color: theme.accent },
+        { icon: 'school-outline', title: 'Droits humains', subject: 'Éducation Civique et Morale', questions: 8, duration: 15, difficulty: 'Facile', score: 95, color: theme.success },
+        { icon: 'calculator-outline', title: 'Statistiques sociales', subject: 'Mathématiques adaptées', questions: 10, duration: 20, difficulty: 'Facile', score: 76, color: theme.primary }
+      ],
+      TAL: [
+        { icon: 'book-outline', title: 'Littérature moderne', subject: 'Littérature', questions: 15, duration: 40, difficulty: 'Difficile', score: 76, color: theme.accent },
+        { icon: 'bulb-outline', title: 'Esthétique', subject: 'Philosophie', questions: 12, duration: 35, difficulty: 'Difficile', color: theme.info },
+        { icon: 'color-palette-outline', title: 'Art contemporain', subject: 'Histoire de l\'art', questions: 12, duration: 25, difficulty: 'Moyen', score: 89, color: theme.error },
+        { icon: 'language-outline', title: 'Expression créative', subject: 'Français', questions: 8, duration: 45, difficulty: 'Moyen', score: 82, color: theme.secondary },
+        { icon: 'globe', title: 'Anglais littéraire', subject: 'Anglais', questions: 10, duration: 25, difficulty: 'Moyen', score: 87, color: theme.neutralDark },
+        { icon: 'brush-outline', title: 'Pratique artistique', subject: 'Arts plastiques ou musique', questions: 6, duration: 30, difficulty: 'Moyen', score: 74, color: theme.warning },
+        { icon: 'globe-outline', title: 'Histoire culturelle', subject: 'Histoire-Géographie', questions: 12, duration: 20, difficulty: 'Facile', score: 91, color: theme.success }
+      ],
+      TLL: [
+        { icon: 'language-outline', title: 'Grammaire comparée', subject: 'Langues vivantes', questions: 20, duration: 35, difficulty: 'Difficile', score: 81, color: theme.success },
+        { icon: 'book-outline', title: 'Analyse littéraire', subject: 'Littérature', questions: 14, duration: 30, difficulty: 'Difficile', score: 77, color: theme.accent },
+        { icon: 'bulb-outline', title: 'Philosophie du langage', subject: 'Philosophie', questions: 10, duration: 25, difficulty: 'Difficile', color: theme.info },
+        { icon: 'globe-outline', title: 'Histoire des civilisations', subject: 'Histoire-Géographie', questions: 15, duration: 25, difficulty: 'Moyen', score: 86, color: theme.warning },
+        { icon: 'create-outline', title: 'Linguistique', subject: 'Français', questions: 12, duration: 30, difficulty: 'Moyen', score: 83, color: theme.secondary },
+        { icon: 'people-outline', title: 'Diversité culturelle', subject: 'Éducation Civique', questions: 8, duration: 15, difficulty: 'Facile', score: 92, color: theme.neutralDark }
+      ],
+      STI: [
+        { icon: 'calculator-outline', title: 'Mathématiques industrielles', subject: 'Mathématiques appliquées', questions: 18, duration: 35, difficulty: 'Difficile', score: 73, color: theme.primary },
+        { icon: 'nuclear-outline', title: 'Physique industrielle', subject: 'Physique appliquée', questions: 16, duration: 30, difficulty: 'Difficile', color: theme.accent },
+        { icon: 'construct-outline', title: 'Systèmes industriels', subject: 'Technologie industrielle', questions: 14, duration: 35, difficulty: 'Difficile', score: 81, color: theme.warning },
+        { icon: 'desktop-outline', title: 'Automatisation', subject: 'Informatique industrielle', questions: 12, duration: 25, difficulty: 'Moyen', score: 88, color: theme.neutralDark },
+        { icon: 'language-outline', title: 'Communication technique', subject: 'Français', questions: 10, duration: 20, difficulty: 'Moyen', score: 85, color: theme.secondary },
+        { icon: 'bulb-outline', title: 'Éthique technologique', subject: 'Philosophie', questions: 8, duration: 20, difficulty: 'Moyen', color: theme.info },
+        { icon: 'globe', title: 'Anglais technique', subject: 'Anglais', questions: 10, duration: 18, difficulty: 'Moyen', score: 79, color: theme.success }
+      ],
+      STG: [
+        { icon: 'briefcase-outline', title: 'Gestion d\'entreprise', subject: 'Gestion et administration', questions: 18, duration: 35, difficulty: 'Moyen', score: 84, color: theme.success },
+        { icon: 'calculator-outline', title: 'Comptabilité analytique', subject: 'Comptabilité', questions: 15, duration: 30, difficulty: 'Moyen', score: 79, color: theme.primary },
+        { icon: 'trending-up-outline', title: 'Économie d\'entreprise', subject: 'Économie', questions: 16, duration: 25, difficulty: 'Moyen', score: 86, color: theme.error },
+        { icon: 'stats-chart-outline', title: 'Statistiques de gestion', subject: 'Mathématiques appliquées', questions: 12, duration: 25, difficulty: 'Moyen', color: theme.info },
+        { icon: 'document-text-outline', title: 'Droit des affaires', subject: 'Droit', questions: 14, duration: 30, difficulty: 'Moyen', score: 82, color: theme.warning },
+        { icon: 'language-outline', title: 'Communication d\'entreprise', subject: 'Français', questions: 10, duration: 25, difficulty: 'Moyen', score: 88, color: theme.secondary },
+        { icon: 'bulb-outline', title: 'Éthique des affaires', subject: 'Philosophie', questions: 8, duration: 20, difficulty: 'Moyen', color: theme.neutralDark },
+        { icon: 'globe', title: 'Anglais commercial', subject: 'Anglais', questions: 10, duration: 18, difficulty: 'Moyen', score: 91, color: theme.accent }
+      ]
     };
-    return colorMap[subject] || theme.primary;
+
+    return quizzesByTrack[user?.level] || quizzesByTrack.TSE;
   };
 
-  // Header Component - exactly like schedule
+  const QuizCard = ({ icon, title, subject, questions, duration, difficulty, score, color, onPress }) => (
+    <TouchableOpacity 
+      style={[styles.quizCard, { backgroundColor: theme.surface }]}
+      onPress={onPress}
+    >
+      <View style={[styles.quizIcon, { backgroundColor: color + '20' }]}>
+        <Ionicons name={icon} size={24} color={color} />
+      </View>
+      
+      <View style={styles.quizContent}>
+        <Text style={[styles.quizTitle, { color: theme.text }]}>{title}</Text>
+        <Text style={[styles.quizSubject, { color: theme.text + '80' }]}>{subject}</Text>
+        
+        <View style={styles.quizInfo}>
+          <View style={styles.infoRow}>
+            <View style={styles.infoItem}>
+              <Ionicons name="help-circle-outline" size={14} color={theme.text + '60'} />
+              <Text style={[styles.infoText, { color: theme.text + '60' }]}>{questions} questions</Text>
+            </View>
+            <View style={styles.infoItem}>
+              <Ionicons name="time-outline" size={14} color={theme.text + '60'} />
+              <Text style={[styles.infoText, { color: theme.text + '60' }]}>{duration} min</Text>
+            </View>
+          </View>
+          
+          <View style={styles.quizMeta}>
+            <View style={[styles.difficultyBadge, { backgroundColor: getDifficultyColor(difficulty) + '20' }]}>
+              <Text style={[styles.difficultyText, { color: getDifficultyColor(difficulty) }]}>
+                {difficulty}
+              </Text>
+            </View>
+            {score !== undefined && (
+              <Text style={[styles.scoreText, { color: getPerformanceColor(score) }]}>
+                {score}%
+              </Text>
+            )}
+          </View>
+        </View>
+      </View>
+
+      <Ionicons name="chevron-forward" size={20} color={theme.text + '40'} />
+    </TouchableOpacity>
+  );
+
+  const quizzesData = isDefLevel ? getDefQuizzes() : getBacQuizzes();
+
   const Header = () => (
     <View style={[styles.header, { backgroundColor: theme.primary }]}>
       <View style={styles.headerContent}>
@@ -101,20 +183,12 @@ export default function QuizzesIndex() {
             Quiz Dashboard
           </Text>
         </View>
-        <View style={styles.headerActions}>
-          <TouchableOpacity 
-            style={[styles.filterButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}
-            onPress={() => console.log('Filter')}
-          >
-            <Ionicons name="analytics" size={18} color="#FFFFFF" />
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.searchButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}
-            onPress={() => console.log('Search')}
-          >
-            <Ionicons name="search-outline" size={18} color="#FFFFFF" />
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity 
+          style={[styles.filterButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}
+          onPress={() => console.log('Filter')}
+        >
+          <Ionicons name="analytics" size={20} color="#FFFFFF" />
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -149,150 +223,78 @@ export default function QuizzesIndex() {
     </View>
   );
 
-  // Performance Card - overlapping like schedule day selector
-  const PerformanceCard = () => (
-    <View style={[styles.performanceCard, { backgroundColor: theme.surface }]}>
-      <View style={styles.performanceHeader}>
-        <Text style={[styles.performanceTitle, { color: theme.text }]}>Performance Globale</Text>
-        <TouchableOpacity onPress={() => console.log('Details')}>
-          <Text style={[styles.detailsLink, { color: theme.primary }]}>Détails</Text>
-        </TouchableOpacity>
-      </View>
-      
-      <View style={styles.performanceContent}>
-        <PerformanceRing percentage={averageScore} size={100} />
+  const PerformanceCard = () => {
+    const completedQuizzes = quizzesData.filter(q => q.score);
+    const averageScore = completedQuizzes.length > 0 
+      ? Math.round(completedQuizzes.reduce((acc, q) => acc + q.score, 0) / completedQuizzes.length) 
+      : 0;
+
+    return (
+      <View style={[styles.performanceCard, { backgroundColor: theme.surface }]}>
+        <View style={styles.performanceHeader}>
+          <Text style={[styles.performanceTitle, { color: theme.text }]}>Performance Globale</Text>
+          <TouchableOpacity onPress={() => console.log('Details')}>
+            <Text style={[styles.detailsLink, { color: theme.primary }]}>Détails</Text>
+          </TouchableOpacity>
+        </View>
         
-        <View style={styles.performanceStats}>
-          <View style={styles.statRow}>
-            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Quiz terminés</Text>
-            <Text style={[styles.statValue, { color: theme.text }]}>{completedQuizzes.length}</Text>
-          </View>
-          <View style={styles.statRow}>
-            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Temps moyen</Text>
-            <Text style={[styles.statValue, { color: theme.text }]}>23 min</Text>
-          </View>
-          <View style={styles.statRow}>
-            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Meilleur score</Text>
-            <Text style={[styles.statValue, { color: theme.success }]}>
-              {completedQuizzes.length > 0 ? Math.max(...completedQuizzes.map(q => q.score)) : 0}%
-            </Text>
-          </View>
-        </View>
-      </View>
-    </View>
-  );
-
-  const QuickQuizCard = ({ quiz }) => (
-    <TouchableOpacity 
-      style={[styles.quickQuizCard, { backgroundColor: theme.surface }]}
-      onPress={() => router.push(`/(tabs)/quizzes/${user?.level}/${quiz.title}`)}
-    >
-      <View style={[styles.quickQuizIcon, { backgroundColor: getSubjectColor(quiz.subject) + '15' }]}>
-        <Ionicons name={quiz.icon} size={20} color={getSubjectColor(quiz.subject)} />
-      </View>
-      <Text style={[styles.quickQuizTitle, { color: theme.text }]}>{quiz.title}</Text>
-      <Text style={[styles.quickQuizMeta, { color: theme.textSecondary }]}>
-        {quiz.questions}q • {quiz.duration}min
-      </Text>
-      {quiz.score ? (
-        <Text style={[styles.quickQuizScore, { color: getPerformanceColor(quiz.score) }]}>
-          {quiz.score}%
-        </Text>
-      ) : (
-        <View style={[styles.newBadge, { backgroundColor: theme.accent + '15' }]}>
-          <Text style={[styles.newText, { color: theme.accent }]}>Nouveau</Text>
-        </View>
-      )}
-    </TouchableOpacity>
-  );
-
-  const RecentAttemptCard = ({ attempt }) => (
-    <TouchableOpacity style={[styles.attemptCard, { backgroundColor: theme.surface }]}>
-      <View style={styles.attemptHeader}>
-        <View>
-          <Text style={[styles.attemptTitle, { color: theme.text }]}>{attempt.title}</Text>
-          <Text style={[styles.attemptDate, { color: theme.textSecondary }]}>{attempt.date}</Text>
-        </View>
-        <View style={styles.attemptScore}>
-          <Text style={[styles.attemptScoreText, { color: getPerformanceColor(attempt.score) }]}>
-            {attempt.score}%
-          </Text>
-          {attempt.improvement && (
-            <View style={styles.improvementBadge}>
-              <Ionicons name="trending-up" size={12} color={theme.success} />
-              <Text style={[styles.improvementText, { color: theme.success }]}>
-                +{attempt.improvement}%
+        <View style={styles.performanceContent}>
+          <PerformanceRing percentage={averageScore} size={100} />
+          
+          <View style={styles.performanceStats}>
+            <View style={styles.statRow}>
+              <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Quiz terminés</Text>
+              <Text style={[styles.statValue, { color: theme.text }]}>{completedQuizzes.length}</Text>
+            </View>
+            <View style={styles.statRow}>
+              <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Temps moyen</Text>
+              <Text style={[styles.statValue, { color: theme.text }]}>23 min</Text>
+            </View>
+            <View style={styles.statRow}>
+              <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Meilleur score</Text>
+              <Text style={[styles.statValue, { color: theme.success }]}>
+                {completedQuizzes.length > 0 ? Math.max(...completedQuizzes.map(q => q.score)) : 0}%
               </Text>
             </View>
-          )}
+          </View>
         </View>
       </View>
-      
-      <View style={styles.attemptDetails}>
-        <Text style={[styles.attemptDetail, { color: theme.textSecondary }]}>
-          {attempt.correct}/{attempt.total} correctes • {attempt.time}
-        </Text>
-      </View>
-    </TouchableOpacity>
-  );
-
-  const subjectPerformance = getSubjectPerformance();
+    );
+  };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <Header />
-      
-      {/* Performance Overview - overlapping the header */}
-      <View style={styles.performanceSection}>
-        <PerformanceCard />
-      </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Quick Access */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>Accès Rapide</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View style={styles.quickQuizGrid}>
-              {quizzes.slice(0, 4).map((quiz, index) => (
-                <QuickQuizCard key={index} quiz={quiz} />
-              ))}
-            </View>
-          </ScrollView>
+        {/* Performance Overview */}
+        <View style={styles.performanceSection}>
+          <PerformanceCard />
         </View>
 
-        {/* Recent Attempts */}
+        {/* Quiz List */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>Tentatives Récentes</Text>
-            <TouchableOpacity onPress={() => console.log('History')}>
-              <Text style={[styles.seeAllText, { color: theme.primary }]}>Historique</Text>
-            </TouchableOpacity>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>
+              {isDefLevel ? 'Quiz DEF' : `Quiz ${user?.level}`}
+            </Text>
           </View>
           
-          {getRecentAttempts().map((attempt, index) => (
-            <RecentAttemptCard key={index} attempt={attempt} />
+          {quizzesData.map((quiz, index) => (
+            <QuizCard
+              key={index}
+              icon={quiz.icon}
+              title={quiz.title}
+              subject={quiz.subject}
+              questions={quiz.questions}
+              duration={quiz.duration}
+              difficulty={quiz.difficulty}
+              score={quiz.score}
+              color={quiz.color}
+              onPress={() => console.log(`Start quiz: ${quiz.title}`)}
+            />
           ))}
         </View>
-
-        {/* Subjects Performance */}
-        {subjectPerformance.length > 0 && (
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>Performance par Matière</Text>
-            
-            <View style={styles.subjectPerformanceGrid}>
-              {subjectPerformance.map((item, index) => (
-                <TouchableOpacity 
-                  key={index} 
-                  style={[styles.subjectPerformanceCard, { backgroundColor: theme.surface }]}
-                  onPress={() => console.log('Subject details', item.subject)}
-                >
-                  <PerformanceRing percentage={item.score} size={60} />
-                  <Text style={[styles.subjectName, { color: theme.text }]}>{item.subject}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        )}
 
         <View style={styles.bottomPadding} />
       </ScrollView>
@@ -304,7 +306,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  // Header - exactly like schedule
   header: {
     paddingTop: 60,
     paddingBottom: 30,
@@ -326,10 +327,6 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
   },
-  headerActions: {
-    flexDirection: 'row',
-    gap: 12,
-  },
   filterButton: {
     width: 40,
     height: 40,
@@ -337,27 +334,31 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  searchButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  // Performance section - like day selector in schedule
-  performanceSection: {
+  section: {
     paddingHorizontal: 20,
-    marginTop: -15,
-    marginBottom: 10,
+    marginBottom: 24,
+  },
+  sectionHeader: {
+    marginBottom: 16,
+    marginTop: 20,
+  },
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+  },
+  performanceSection: {
+    marginBottom: 24,
   },
   performanceCard: {
     borderRadius: 20,
     padding: 20,
+    marginTop: -15,
+    marginHorizontal: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
     shadowRadius: 8,
-    elevation: 3,
+    elevation: 8,
   },
   performanceHeader: {
     flexDirection: 'row',
@@ -416,74 +417,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  section: {
-    paddingHorizontal: 20,
-    marginBottom: 24,
-  },
-  sectionHeader: {
+  quizCard: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 16,
-  },
-  seeAllText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  quickQuizGrid: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  quickQuizCard: {
-    width: 120,
     padding: 16,
     borderRadius: 16,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  quickQuizIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  quickQuizTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 4,
-    textAlign: 'center',
-  },
-  quickQuizMeta: {
-    fontSize: 11,
-    marginBottom: 8,
-  },
-  quickQuizScore: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  newBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 10,
-  },
-  newText: {
-    fontSize: 10,
-    fontWeight: '600',
-  },
-  attemptCard: {
-    borderRadius: 16,
-    padding: 16,
     marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -491,66 +429,58 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 1,
   },
-  attemptHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 8,
+  quizIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
   },
-  attemptTitle: {
+  quizContent: {
+    flex: 1,
+  },
+  quizTitle: {
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 2,
   },
-  attemptDate: {
+  quizSubject: {
     fontSize: 12,
-    fontWeight: '500',
+    marginBottom: 8,
   },
-  attemptScore: {
-    alignItems: 'flex-end',
+  quizInfo: {
+    gap: 6,
   },
-  attemptScoreText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 2,
+  infoRow: {
+    flexDirection: 'row',
+    gap: 16,
   },
-  improvementBadge: {
+  infoItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
+    gap: 4,
   },
-  improvementText: {
+  infoText: {
+    fontSize: 11,
+  },
+  quizMeta: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  difficultyBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  difficultyText: {
     fontSize: 10,
     fontWeight: '600',
   },
-  attemptDetails: {
-    marginTop: 4,
-  },
-  attemptDetail: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  subjectPerformanceGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  subjectPerformanceCard: {
-    width: '48%',
-    padding: 16,
-    borderRadius: 16,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  subjectName: {
+  scoreText: {
     fontSize: 14,
-    fontWeight: '600',
-    marginTop: 8,
-    textAlign: 'center',
+    fontWeight: 'bold',
   },
   bottomPadding: {
     height: 40,

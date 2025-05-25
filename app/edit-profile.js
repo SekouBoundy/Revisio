@@ -1,5 +1,5 @@
 // app/edit-profile.js
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -29,11 +30,18 @@ export default function EditProfileScreen() {
     school: user?.school || '',
     phone: user?.phone || '',
     level: user?.level || 'DEF',
+    location: user?.location || '',
+    birthDate: user?.birthDate || '',
+    interests: user?.interests || [],
   });
+  
   const [isLoading, setIsLoading] = useState(false);
   const [showBacOptions, setShowBacOptions] = useState(
     user?.level && user.level !== 'DEF'
   );
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [avatarUri, setAvatarUri] = useState(user?.avatar);
+  const [errors, setErrors] = useState({});
 
   const bacSpecializations = [
     { value: 'TSE', label: 'Sciences Exactes (TSE)' },
@@ -46,32 +54,107 @@ export default function EditProfileScreen() {
     { value: 'STG', label: 'Sciences et Technologies de Gestion (STG)' },
   ];
 
+  const interestOptions = [
+    'Mathématiques', 'Sciences', 'Littérature', 'Histoire', 'Arts',
+    'Sport', 'Musique', 'Technologie', 'Philosophie', 'Langues'
+  ];
+
+  // Check for unsaved changes
+  useEffect(() => {
+    const originalData = {
+      name: user?.name || '',
+      bio: user?.bio || '',
+      school: user?.school || '',
+      phone: user?.phone || '',
+      level: user?.level || 'DEF',
+      location: user?.location || '',
+      birthDate: user?.birthDate || '',
+      interests: user?.interests || [],
+    };
+    
+    const hasChanges = JSON.stringify(formData) !== JSON.stringify(originalData);
+    setHasUnsavedChanges(hasChanges);
+  }, [formData, user]);
+
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: null }));
+    }
   };
 
   const handleCancel = () => {
-    router.back();
+    if (hasUnsavedChanges) {
+      Alert.alert(
+        'Modifications non sauvegardées',
+        'Vous avez des modifications non sauvegardées. Voulez-vous vraiment quitter ?',
+        [
+          { text: 'Rester', style: 'cancel' },
+          { text: 'Quitter', style: 'destructive', onPress: () => router.back() }
+        ]
+      );
+    } else {
+      router.back();
+    }
   };
 
   const handleChangePhoto = () => {
     Alert.alert(
-      'Changer la photo',
+      'Changer la photo de profil',
       'Choisissez une option',
       [
-        { text: 'Appareil photo', onPress: () => console.log('Camera') },
-        { text: 'Galerie', onPress: () => console.log('Gallery') },
+        { 
+          text: 'Appareil photo', 
+          onPress: () => {
+            // Simulate photo capture
+            console.log('Camera selected');
+            // setAvatarUri('captured_photo_uri');
+          }
+        },
+        { 
+          text: 'Galerie', 
+          onPress: () => {
+            // Simulate gallery selection
+            console.log('Gallery selected');
+            // setAvatarUri('selected_photo_uri');
+          }
+        },
+        { 
+          text: 'Supprimer la photo', 
+          style: 'destructive',
+          onPress: () => setAvatarUri(null)
+        },
         { text: 'Annuler', style: 'cancel' }
       ]
     );
   };
 
   const validateForm = () => {
+    const newErrors = {};
+
     if (!formData.name.trim()) {
-      Alert.alert('Erreur', 'Le nom est obligatoire');
-      return false;
+      newErrors.name = 'Le nom est obligatoire';
+    } else if (formData.name.trim().length < 2) {
+      newErrors.name = 'Le nom doit contenir au moins 2 caractères';
     }
-    return true;
+
+    if (formData.phone && !isValidPhoneNumber(formData.phone)) {
+      newErrors.phone = 'Numéro de téléphone invalide';
+    }
+
+    if (formData.bio && formData.bio.length > 150) {
+      newErrors.bio = 'La bio ne peut pas dépasser 150 caractères';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const isValidPhoneNumber = (phone) => {
+    const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+    return phoneRegex.test(phone.replace(/\s/g, ''));
   };
 
   const handleSave = () => {
@@ -79,7 +162,12 @@ export default function EditProfileScreen() {
 
     setIsLoading(true);
     setTimeout(() => {
-      updateUser(formData);
+      const updatedData = { ...formData };
+      if (avatarUri !== user?.avatar) {
+        updatedData.avatar = avatarUri;
+      }
+      
+      updateUser(updatedData);
       setIsLoading(false);
       Alert.alert('Succès', 'Profil mis à jour avec succès', [
         { text: 'OK', onPress: () => router.back() }
@@ -98,21 +186,52 @@ export default function EditProfileScreen() {
     }
   };
 
-  const InputField = ({ label, value, onChangeText, placeholder, multiline = false, keyboardType = 'default', required = false }) => (
+  const toggleInterest = (interest) => {
+    const currentInterests = formData.interests || [];
+    const updatedInterests = currentInterests.includes(interest)
+      ? currentInterests.filter(i => i !== interest)
+      : [...currentInterests, interest];
+    
+    handleChange('interests', updatedInterests);
+  };
+
+  const InputField = React.useCallback(({ 
+    label, 
+    value, 
+    onChangeText, 
+    placeholder, 
+    multiline = false, 
+    keyboardType = 'default', 
+    required = false,
+    error,
+    maxLength,
+    showCharacterCount = false
+  }) => (
     <View style={styles.inputGroup}>
-      <Text style={[styles.label, { color: theme.text }]}>
-        {label} {required && <Text style={{ color: theme.error }}>*</Text>}
-      </Text>
+      <View style={styles.labelContainer}>
+        <Text style={[styles.label, { color: theme.text }]}>
+          {label} {required && <Text style={{ color: theme.error }}>*</Text>}
+        </Text>
+        {showCharacterCount && maxLength && (
+          <Text style={[styles.characterCount, { 
+            color: (value?.length || 0) > maxLength ? theme.error : theme.textSecondary 
+          }]}>
+            {value?.length || 0}/{maxLength}
+          </Text>
+        )}
+      </View>
+      
       <TextInput
         style={[
           multiline ? styles.textArea : styles.input, 
           { 
             backgroundColor: theme.surface, 
             color: theme.text,
-            borderColor: theme.neutralLight
+            borderColor: error ? theme.error : theme.neutralLight,
+            borderWidth: error ? 2 : 1,
           }
         ]}
-        value={value}
+        value={value || ''}
         onChangeText={onChangeText}
         placeholder={placeholder}
         placeholderTextColor={theme.textSecondary}
@@ -120,7 +239,53 @@ export default function EditProfileScreen() {
         numberOfLines={multiline ? 4 : 1}
         textAlignVertical={multiline ? "top" : "center"}
         keyboardType={keyboardType}
+        maxLength={maxLength}
+        autoCorrect={false}
+        autoComplete="off"
       />
+      
+      {error && (
+        <View style={styles.errorContainer}>
+          <Ionicons name="alert-circle" size={16} color={theme.error} />
+          <Text style={[styles.errorText, { color: theme.error }]}>{error}</Text>
+        </View>
+      )}
+    </View>
+  ), [theme]);
+
+  const InterestSelector = () => (
+    <View style={styles.inputGroup}>
+      <Text style={[styles.label, { color: theme.text }]}>Centres d'intérêt</Text>
+      <View style={styles.interestGrid}>
+        {interestOptions.map((interest) => (
+          <TouchableOpacity
+            key={interest}
+            style={[
+              styles.interestChip,
+              {
+                backgroundColor: formData.interests?.includes(interest) 
+                  ? theme.primary 
+                  : theme.surface,
+                borderColor: formData.interests?.includes(interest) 
+                  ? theme.primary 
+                  : theme.neutralLight,
+              }
+            ]}
+            onPress={() => toggleInterest(interest)}
+          >
+            <Text style={[
+              styles.interestText,
+              { 
+                color: formData.interests?.includes(interest) 
+                  ? '#fff' 
+                  : theme.text 
+              }
+            ]}>
+              {interest}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
     </View>
   );
 
@@ -229,8 +394,14 @@ export default function EditProfileScreen() {
           headerRight: () => (
             <TouchableOpacity 
               onPress={handleSave} 
-              style={[styles.saveHeaderButton, { backgroundColor: theme.surface + '20' }]}
-              disabled={isLoading}
+              style={[
+                styles.saveHeaderButton, 
+                { 
+                  backgroundColor: hasUnsavedChanges ? theme.surface + '20' : 'transparent',
+                  opacity: hasUnsavedChanges ? 1 : 0.5
+                }
+              ]}
+              disabled={isLoading || !hasUnsavedChanges}
             >
               <Text style={[styles.saveButton, { color: theme.surface }]}>
                 {isLoading ? 'Saving...' : 'Sauver'}
@@ -245,11 +416,16 @@ export default function EditProfileScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          {/* Avatar Section */}
           <View style={styles.avatarSection}>
             <View style={[styles.avatar, { backgroundColor: theme.primary }]}>
-              <Text style={[styles.avatarText, { color: theme.surface }]}>
-                {formData.name?.charAt(0)?.toUpperCase() || 'U'}
-              </Text>
+              {avatarUri ? (
+                <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
+              ) : (
+                <Text style={[styles.avatarText, { color: theme.surface }]}>
+                  {formData.name?.charAt(0)?.toUpperCase() || 'U'}
+                </Text>
+              )}
             </View>
             <TouchableOpacity 
               style={[styles.changePhotoButton, { backgroundColor: theme.primary + '15' }]}
@@ -257,18 +433,26 @@ export default function EditProfileScreen() {
             >
               <Ionicons name="camera" size={16} color={theme.primary} style={{ marginRight: 6 }} />
               <Text style={[styles.changePhotoText, { color: theme.primary }]}>
-                Changer la photo
+                {avatarUri ? 'Modifier la photo' : 'Ajouter une photo'}
               </Text>
             </TouchableOpacity>
           </View>
 
+          {/* Form */}
           <View style={styles.form}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>
+              Informations personnelles
+            </Text>
+            
             <InputField
               label="Nom complet"
               value={formData.name}
               onChangeText={(text) => handleChange('name', text)}
               placeholder="Entrez votre nom complet"
               required
+              error={errors.name}
+              maxLength={50}
+              showCharacterCount
             />
 
             <View style={styles.inputGroup}>
@@ -293,6 +477,7 @@ export default function EditProfileScreen() {
               onChangeText={(text) => handleChange('phone', text)}
               placeholder="Entrez votre numéro de téléphone"
               keyboardType="phone-pad"
+              error={errors.phone}
             />
 
             <InputField
@@ -300,12 +485,28 @@ export default function EditProfileScreen() {
               value={formData.school}
               onChangeText={(text) => handleChange('school', text)}
               placeholder="Entrez le nom de votre établissement"
+              maxLength={100}
             />
 
+            <InputField
+              label="Ville"
+              value={formData.location}
+              onChangeText={(text) => handleChange('location', text)}
+              placeholder="Entrez votre ville"
+              maxLength={50}
+            />
+
+            <Text style={[styles.sectionTitle, { color: theme.text, marginTop: 32 }]}>
+              Niveau académique
+            </Text>
+            
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: theme.text }]}>Niveau académique</Text>
               <LevelPicker />
             </View>
+
+            <Text style={[styles.sectionTitle, { color: theme.text, marginTop: 32 }]}>
+              À propos de vous
+            </Text>
 
             <InputField
               label="Bio"
@@ -313,16 +514,36 @@ export default function EditProfileScreen() {
               onChangeText={(text) => handleChange('bio', text)}
               placeholder="Parlez-nous de vous..."
               multiline
+              maxLength={150}
+              showCharacterCount
+              error={errors.bio}
             />
+
+            <InterestSelector />
           </View>
 
+          {/* Save Button */}
           <TouchableOpacity
-            style={[styles.saveButtonMobile, { backgroundColor: theme.primary }]}
+            style={[
+              styles.saveButtonMobile, 
+              { 
+                backgroundColor: hasUnsavedChanges ? theme.primary : theme.neutralLight,
+                opacity: hasUnsavedChanges ? 1 : 0.6
+              }
+            ]}
             onPress={handleSave}
-            disabled={isLoading}
+            disabled={isLoading || !hasUnsavedChanges}
           >
-            <Ionicons name="save" size={20} color="#fff" style={{ marginRight: 8 }} />
-            <Text style={styles.saveButtonText}>
+            <Ionicons 
+              name="save" 
+              size={20} 
+              color={hasUnsavedChanges ? "#fff" : theme.textSecondary} 
+              style={{ marginRight: 8 }} 
+            />
+            <Text style={[
+              styles.saveButtonText,
+              { color: hasUnsavedChanges ? "#fff" : theme.textSecondary }
+            ]}>
               {isLoading ? 'Sauvegarde...' : 'Sauvegarder les modifications'}
             </Text>
           </TouchableOpacity>
@@ -370,6 +591,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 8,
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 50,
   },
   avatarText: {
     fontSize: 40,
@@ -389,17 +616,31 @@ const styles = StyleSheet.create({
   form: {
     paddingHorizontal: 20,
   },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
   inputGroup: {
     marginBottom: 24,
+  },
+  labelContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   label: {
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 8,
+  },
+  characterCount: {
+    fontSize: 12,
+    fontWeight: '500',
   },
   input: {
     height: 56,
-    borderWidth: 2,
+    borderWidth: 1,
     borderRadius: 16,
     paddingHorizontal: 16,
     fontSize: 16,
@@ -407,7 +648,7 @@ const styles = StyleSheet.create({
   },
   textArea: {
     minHeight: 120,
-    borderWidth: 2,
+    borderWidth: 1,
     borderRadius: 16,
     paddingHorizontal: 16,
     paddingVertical: 16,
@@ -416,7 +657,7 @@ const styles = StyleSheet.create({
   },
   disabledInput: {
     height: 56,
-    borderWidth: 2,
+    borderWidth: 1,
     borderRadius: 16,
     paddingHorizontal: 16,
     flexDirection: 'row',
@@ -431,6 +672,32 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 8,
     fontStyle: 'italic',
+  },
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  errorText: {
+    fontSize: 12,
+    marginLeft: 4,
+    fontWeight: '500',
+  },
+  interestGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 8,
+  },
+  interestChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  interestText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
   levelPickerContainer: {
     gap: 16,
@@ -493,7 +760,6 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   saveButtonText: {
-    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },
