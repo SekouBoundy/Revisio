@@ -54,37 +54,51 @@ export default function ProfileScreen() {
     router.replace('/login');
   };
 
-  const ProfileItem = ({ icon, title, value, onPress, showArrow = true }) => (
+  const ProfileItem = ({ icon, title, value, onPress, showArrow = true, iconColor }) => (
     <TouchableOpacity
       style={[styles.profileItem, { backgroundColor: theme.surface }]}
       onPress={onPress}
       disabled={!onPress}
     >
       <View style={styles.itemLeft}>
-        <Ionicons name={icon} size={24} color={theme.primary} />
+        <View style={[styles.iconContainer, { backgroundColor: (iconColor || theme.primary) + '15' }]}>
+          <Ionicons name={icon} size={20} color={iconColor || theme.primary} />
+        </View>
         <Text style={[styles.itemTitle, { color: theme.text }]}>{title}</Text>
       </View>
       <View style={styles.itemRight}>
-        {value && <Text style={[styles.itemValue, { color: theme.text }]}>{value}</Text>}
+        {value && <Text style={[styles.itemValue, { color: theme.textSecondary }]}>{value}</Text>}
         {showArrow && onPress && (
-          <Ionicons name="chevron-forward" size={20} color={theme.text} />
+          <Ionicons name="chevron-forward" size={18} color={theme.textSecondary} />
         )}
       </View>
     </TouchableOpacity>
   );
 
-  const SwitchItem = ({ icon, title, value, onToggle }) => (
+  const SwitchItem = ({ icon, title, value, onToggle, iconColor }) => (
     <View style={[styles.profileItem, { backgroundColor: theme.surface }]}>
       <View style={styles.itemLeft}>
-        <Ionicons name={icon} size={24} color={theme.primary} />
+        <View style={[styles.iconContainer, { backgroundColor: (iconColor || theme.primary) + '15' }]}>
+          <Ionicons name={icon} size={20} color={iconColor || theme.primary} />
+        </View>
         <Text style={[styles.itemTitle, { color: theme.text }]}>{title}</Text>
       </View>
       <Switch
         value={value}
         onValueChange={onToggle}
-        trackColor={{ false: '#767577', true: theme.primary }}
-        thumbColor={value ? '#fff' : '#f4f3f4'}
+        trackColor={{ false: theme.neutralLight, true: theme.primary + '40' }}
+        thumbColor={value ? theme.primary : theme.surface}
       />
+    </View>
+  );
+
+  const StatsCard = ({ title, value, icon, color }) => (
+    <View style={[styles.statCard, { backgroundColor: theme.surface }]}>
+      <View style={[styles.statIcon, { backgroundColor: color + '15' }]}>
+        <Ionicons name={icon} size={24} color={color} />
+      </View>
+      <Text style={[styles.statValue, { color: theme.text }]}>{value}</Text>
+      <Text style={[styles.statLabel, { color: theme.textSecondary }]}>{title}</Text>
     </View>
   );
 
@@ -99,7 +113,7 @@ export default function ProfileScreen() {
       >
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { backgroundColor: theme.background }]}>
-            <View style={styles.modalHeader}>
+            <View style={[styles.modalHeader, { borderBottomColor: theme.neutralLight }]}>
               <Text style={[styles.modalTitle, { color: theme.text }]}>
                 Choisir le niveau académique
               </Text>
@@ -108,9 +122,9 @@ export default function ProfileScreen() {
                   setShowLevelModal(false);
                   setShowBacOptions(false);
                 }}
-                style={styles.closeButton}
+                style={[styles.closeButton, { backgroundColor: theme.neutralLight }]}
               >
-                <Ionicons name="close" size={24} color={theme.text} />
+                <Ionicons name="close" size={20} color={theme.textSecondary} />
               </TouchableOpacity>
             </View>
 
@@ -122,7 +136,7 @@ export default function ProfileScreen() {
                       styles.mainLevelOption,
                       { 
                         backgroundColor: user?.level === 'DEF' ? theme.primary : theme.surface,
-                        borderColor: user?.level === 'DEF' ? theme.primary : theme.text + '20'
+                        borderColor: user?.level === 'DEF' ? theme.primary : theme.neutralLight
                       }
                     ]}
                     onPress={() => handleLevelChange('DEF')}
@@ -135,7 +149,7 @@ export default function ProfileScreen() {
                     </Text>
                     <Text style={[
                       styles.mainLevelSubtext,
-                      { color: user?.level === 'DEF' ? '#fff' : theme.text + '80' }
+                      { color: user?.level === 'DEF' ? '#fff' : theme.textSecondary }
                     ]}>
                       Secondaire
                     </Text>
@@ -146,7 +160,7 @@ export default function ProfileScreen() {
                       styles.mainLevelOption,
                       { 
                         backgroundColor: currentLevelIsBac ? theme.primary : theme.surface,
-                        borderColor: currentLevelIsBac ? theme.primary : theme.text + '20'
+                        borderColor: currentLevelIsBac ? theme.primary : theme.neutralLight
                       }
                     ]}
                     onPress={() => handleLevelChange('BAC')}
@@ -159,7 +173,7 @@ export default function ProfileScreen() {
                     </Text>
                     <Text style={[
                       styles.mainLevelSubtext,
-                      { color: currentLevelIsBac ? '#fff' : theme.text + '80' }
+                      { color: currentLevelIsBac ? '#fff' : theme.textSecondary }
                     ]}>
                       Baccalauréat
                     </Text>
@@ -179,7 +193,7 @@ export default function ProfileScreen() {
                             styles.bacOption,
                             { 
                               backgroundColor: user?.level === spec.value ? theme.primary : theme.surface,
-                              borderColor: user?.level === spec.value ? theme.primary : theme.text + '20'
+                              borderColor: user?.level === spec.value ? theme.primary : theme.neutralLight
                             }
                           ]}
                           onPress={() => handleLevelChange(spec.value)}
@@ -207,28 +221,52 @@ export default function ProfileScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header */}
-        <View style={styles.header}>
-          <View style={[styles.avatar, { backgroundColor: theme.primary }]}>
-            <Text style={styles.avatarText}>
-              {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+        <View style={[styles.header, { backgroundColor: theme.primary }]}>
+          <View style={styles.headerContent}>
+            <View style={[styles.avatar, { backgroundColor: theme.surface }]}>
+              <Text style={[styles.avatarText, { color: theme.primary }]}>
+                {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+              </Text>
+            </View>
+            <Text style={[styles.userName, { color: '#FFFFFF' }]}>
+                {user?.name || 'User Name'}
             </Text>
+            <Text style={[styles.userEmail, { color: '#FFFFFF99' }]}>
+              {user?.email || 'user@example.com'}
+            </Text>
+            {user?.bio && (
+              <Text style={[styles.userBio, { color: theme.surface + 'DD' }]}>
+                {user.bio}
+              </Text>
+            )}
+            <View style={[styles.levelBadge, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]}>
+              <Text style={[styles.levelText, { color: '#FFFFFF' }]}>
+                Niveau: {user?.level || 'DEF'}
+              </Text>
+            </View>
           </View>
-          <Text style={[styles.userName, { color: theme.text }]}>
-            {user?.name || 'User Name'}
-          </Text>
-          <Text style={[styles.userEmail, { color: theme.text + '80' }]}>
-            {user?.email || 'user@example.com'}
-          </Text>
-          {user?.bio && (
-            <Text style={[styles.userBio, { color: theme.text + '90' }]}>
-              {user.bio}
-            </Text>
-          )}
-          <View style={[styles.levelBadge, { backgroundColor: theme.primary + '20' }]}>
-            <Text style={[styles.levelText, { color: theme.primary }]}>
-              Niveau: {user?.level || 'DEF'}
-            </Text>
-          </View>
+        </View>
+
+        {/* Stats Cards */}
+        <View style={styles.statsContainer}>
+          <StatsCard 
+            title="Progression" 
+            value="68%" 
+            icon="trending-up" 
+            color={theme.success} 
+          />
+          <StatsCard 
+            title="Quiz" 
+            value="12" 
+            icon="help-circle" 
+            color={theme.info} 
+          />
+          <StatsCard 
+            title="Rang" 
+            value="#3" 
+            icon="trophy" 
+            color={theme.accent} 
+          />
         </View>
 
         {/* Profile Items */}
@@ -236,22 +274,25 @@ export default function ProfileScreen() {
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Compte</Text>
           
           <ProfileItem
-            icon="person-outline"
+            icon="person"
             title="Modifier le profil"
             onPress={() => router.push('/edit-profile')}
+            iconColor={theme.primary}
           />
           
           <ProfileItem
-            icon="school-outline"
+            icon="school"
             title="Niveau académique"
             value={user?.level === 'DEF' ? 'DEF (Secondaire)' : `BAC ${user?.level || ''}`}
             onPress={() => setShowLevelModal(true)}
+            iconColor={theme.secondary}
           />
           
           <ProfileItem
-            icon="trophy-outline"
+            icon="trophy"
             title="Réussites"
             onPress={() => console.log('Achievements')}
+            iconColor={theme.accent}
           />
         </View>
 
@@ -259,23 +300,26 @@ export default function ProfileScreen() {
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Préférences</Text>
           
           <SwitchItem
-            icon="moon-outline"
+            icon="moon"
             title="Mode sombre"
             value={isDarkMode}
             onToggle={toggleTheme}
+            iconColor={theme.primary}
           />
           
           <ProfileItem
-            icon="notifications-outline"
+            icon="notifications"
             title="Notifications"
             onPress={() => console.log('Notifications')}
+            iconColor={theme.warning}
           />
           
           <ProfileItem
-            icon="language-outline"
+            icon="language"
             title="Langue"
             value="Français"
             onPress={() => console.log('Language')}
+            iconColor={theme.info}
           />
         </View>
 
@@ -283,24 +327,26 @@ export default function ProfileScreen() {
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Support</Text>
           
           <ProfileItem
-            icon="help-circle-outline"
+            icon="help-circle"
             title="Aide et support"
             onPress={() => console.log('Help')}
+            iconColor={theme.success}
           />
           
           <ProfileItem
-            icon="information-circle-outline"
+            icon="information-circle"
             title="À propos"
             onPress={() => console.log('About')}
+            iconColor={theme.info}
           />
         </View>
 
         {/* Logout Button */}
         <TouchableOpacity
-          style={[styles.logoutButton, { backgroundColor: '#FF3B30' }]}
+          style={[styles.logoutButton, { backgroundColor: theme.error }]}
           onPress={handleLogout}
         >
-          <Ionicons name="log-out-outline" size={20} color="#fff" />
+          <Ionicons name="log-out" size={20} color="#fff" />
           <Text style={styles.logoutText}>Se déconnecter</Text>
         </TouchableOpacity>
 
@@ -317,25 +363,34 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    alignItems: 'center',
-    paddingVertical: 30,
+    paddingTop: 60,
+    paddingBottom: 30,
     paddingHorizontal: 20,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+  },
+  headerContent: {
+    alignItems: 'center',
   },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 90,
+    height: 90,
+    borderRadius: 45,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 8,
   },
   avatarText: {
-    fontSize: 32,
+    fontSize: 36,
     fontWeight: 'bold',
-    color: '#fff',
   },
   userName: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
     marginBottom: 4,
   },
@@ -351,22 +406,57 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   levelBadge: {
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 20,
   },
   levelText: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    marginTop: -20,
+    marginBottom: 20,
+    gap: 12,
+  },
+  statCard: {
+    flex: 1,
+    padding: 20,
+    borderRadius: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  statIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  statValue: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 12,
+    fontWeight: '500',
   },
   section: {
     marginHorizontal: 20,
     marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 12,
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 16,
     marginLeft: 4,
   },
   profileItem: {
@@ -375,17 +465,30 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 16,
     paddingHorizontal: 16,
-    borderRadius: 12,
+    borderRadius: 16,
     marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   itemLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
   },
+  iconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
   itemTitle: {
     fontSize: 16,
-    marginLeft: 12,
+    fontWeight: '500',
     flex: 1,
   },
   itemRight: {
@@ -395,7 +498,7 @@ const styles = StyleSheet.create({
   itemValue: {
     fontSize: 14,
     marginRight: 8,
-    opacity: 0.7,
+    fontWeight: '500',
   },
   logoutButton: {
     flexDirection: 'row',
@@ -403,8 +506,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginHorizontal: 20,
     paddingVertical: 16,
-    borderRadius: 12,
-    marginTop: 20,
+    borderRadius: 16,
+    marginTop: 10,
   },
   logoutText: {
     color: '#fff',
@@ -421,8 +524,8 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     maxHeight: '80%',
   },
   modalHeader: {
@@ -430,23 +533,26 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
   },
   closeButton: {
-    padding: 4,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   modalBody: {
     paddingHorizontal: 20,
     paddingVertical: 16,
   },
   levelPickerContainer: {
-    gap: 16,
+    gap: 20,
   },
   mainLevelContainer: {
     flexDirection: 'row',
@@ -454,40 +560,40 @@ const styles = StyleSheet.create({
   },
   mainLevelOption: {
     flex: 1,
-    paddingVertical: 16,
+    paddingVertical: 20,
     paddingHorizontal: 16,
-    borderRadius: 12,
-    borderWidth: 1,
+    borderRadius: 16,
+    borderWidth: 2,
     alignItems: 'center',
   },
   mainLevelText: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 2,
+    marginBottom: 4,
   },
   mainLevelSubtext: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '500',
   },
   bacOptionsContainer: {
     marginTop: 8,
   },
   bacOptionsTitle: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 12,
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 16,
   },
   bacOptionsGrid: {
-    gap: 8,
+    gap: 10,
   },
   bacOption: {
-    paddingVertical: 12,
+    paddingVertical: 16,
     paddingHorizontal: 16,
-    borderRadius: 10,
-    borderWidth: 1,
+    borderRadius: 12,
+    borderWidth: 2,
   },
   bacOptionText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '500',
     textAlign: 'center',
   },

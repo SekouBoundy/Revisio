@@ -51,7 +51,7 @@ export default function EditProfileScreen() {
   };
 
   const handleCancel = () => {
-    router.push('/(tabs)/profile');
+    router.back();
   };
 
   const handleChangePhoto = () => {
@@ -98,6 +98,32 @@ export default function EditProfileScreen() {
     }
   };
 
+  const InputField = ({ label, value, onChangeText, placeholder, multiline = false, keyboardType = 'default', required = false }) => (
+    <View style={styles.inputGroup}>
+      <Text style={[styles.label, { color: theme.text }]}>
+        {label} {required && <Text style={{ color: theme.error }}>*</Text>}
+      </Text>
+      <TextInput
+        style={[
+          multiline ? styles.textArea : styles.input, 
+          { 
+            backgroundColor: theme.surface, 
+            color: theme.text,
+            borderColor: theme.neutralLight
+          }
+        ]}
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={theme.textSecondary}
+        multiline={multiline}
+        numberOfLines={multiline ? 4 : 1}
+        textAlignVertical={multiline ? "top" : "center"}
+        keyboardType={keyboardType}
+      />
+    </View>
+  );
+
   const LevelPicker = () => {
     const currentLevelIsBac = formData.level !== 'DEF';
     
@@ -109,7 +135,7 @@ export default function EditProfileScreen() {
               styles.mainLevelOption,
               { 
                 backgroundColor: formData.level === 'DEF' ? theme.primary : theme.surface,
-                borderColor: formData.level === 'DEF' ? theme.primary : theme.text + '20'
+                borderColor: formData.level === 'DEF' ? theme.primary : theme.neutralLight
               }
             ]}
             onPress={() => handleLevelChange('DEF')}
@@ -122,7 +148,7 @@ export default function EditProfileScreen() {
             </Text>
             <Text style={[
               styles.mainLevelSubtext,
-              { color: formData.level === 'DEF' ? '#fff' : theme.text + '80' }
+              { color: formData.level === 'DEF' ? '#fff' : theme.textSecondary }
             ]}>
               Secondaire
             </Text>
@@ -133,7 +159,7 @@ export default function EditProfileScreen() {
               styles.mainLevelOption,
               { 
                 backgroundColor: currentLevelIsBac ? theme.primary : theme.surface,
-                borderColor: currentLevelIsBac ? theme.primary : theme.text + '20'
+                borderColor: currentLevelIsBac ? theme.primary : theme.neutralLight
               }
             ]}
             onPress={() => handleLevelChange('BAC')}
@@ -146,7 +172,7 @@ export default function EditProfileScreen() {
             </Text>
             <Text style={[
               styles.mainLevelSubtext,
-              { color: currentLevelIsBac ? '#fff' : theme.text + '80' }
+              { color: currentLevelIsBac ? '#fff' : theme.textSecondary }
             ]}>
               Baccalauréat
             </Text>
@@ -166,7 +192,7 @@ export default function EditProfileScreen() {
                     styles.bacOption,
                     { 
                       backgroundColor: formData.level === spec.value ? theme.primary : theme.surface,
-                      borderColor: formData.level === spec.value ? theme.primary : theme.text + '20'
+                      borderColor: formData.level === spec.value ? theme.primary : theme.neutralLight
                     }
                   ]}
                   onPress={() => handleLevelChange(spec.value)}
@@ -190,22 +216,24 @@ export default function EditProfileScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <Stack.Screen
         options={{
+          headerShown: true,
           title: 'Modifier le profil',
-          headerStyle: { backgroundColor: theme.background },
-          headerTintColor: theme.text,
+          headerStyle: { backgroundColor: theme.primary },
+          headerTintColor: theme.surface,
+          headerTitleStyle: { fontWeight: 'bold' },
           headerLeft: () => (
             <TouchableOpacity onPress={handleCancel} style={styles.headerButton}>
-              <Ionicons name="close" size={24} color={theme.text} />
+              <Ionicons name="arrow-back" size={24} color={theme.surface} />
             </TouchableOpacity>
           ),
           headerRight: () => (
             <TouchableOpacity 
               onPress={handleSave} 
-              style={styles.headerButton}
+              style={[styles.saveHeaderButton, { backgroundColor: theme.surface + '20' }]}
               disabled={isLoading}
             >
-              <Text style={[styles.saveButton, { color: theme.primary }]}>
-                {isLoading ? 'Sauvegarde...' : 'Sauvegarder'}
+              <Text style={[styles.saveButton, { color: theme.surface }]}>
+                {isLoading ? 'Saving...' : 'Sauver'}
               </Text>
             </TouchableOpacity>
           ),
@@ -219,14 +247,15 @@ export default function EditProfileScreen() {
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           <View style={styles.avatarSection}>
             <View style={[styles.avatar, { backgroundColor: theme.primary }]}>
-              <Text style={styles.avatarText}>
+              <Text style={[styles.avatarText, { color: theme.surface }]}>
                 {formData.name?.charAt(0)?.toUpperCase() || 'U'}
               </Text>
             </View>
             <TouchableOpacity 
-              style={styles.changePhotoButton}
+              style={[styles.changePhotoButton, { backgroundColor: theme.primary + '15' }]}
               onPress={handleChangePhoto}
             >
+              <Ionicons name="camera" size={16} color={theme.primary} style={{ marginRight: 6 }} />
               <Text style={[styles.changePhotoText, { color: theme.primary }]}>
                 Changer la photo
               </Text>
@@ -234,92 +263,57 @@ export default function EditProfileScreen() {
           </View>
 
           <View style={styles.form}>
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: theme.text }]}>Nom complet *</Text>
-              <TextInput
-                style={[styles.input, { 
-                  backgroundColor: theme.surface, 
-                  color: theme.text,
-                  borderColor: theme.text + '20'
-                }]}
-                value={formData.name}
-                onChangeText={(text) => handleChange('name', text)}
-                placeholder="Entrez votre nom complet"
-                placeholderTextColor={theme.text + '60'}
-              />
-            </View>
+            <InputField
+              label="Nom complet"
+              value={formData.name}
+              onChangeText={(text) => handleChange('name', text)}
+              placeholder="Entrez votre nom complet"
+              required
+            />
 
             <View style={styles.inputGroup}>
               <Text style={[styles.label, { color: theme.text }]}>Email</Text>
-              <TextInput
-                style={[styles.input, { 
-                  backgroundColor: theme.text + '10', 
-                  color: theme.text + '60',
-                  borderColor: theme.text + '20'
-                }]}
-                value={user?.email || 'user@example.com'}
-                placeholder="Email non modifiable"
-                placeholderTextColor={theme.text + '40'}
-                editable={false}
-              />
-              <Text style={[styles.helpText, { color: theme.text + '60' }]}>
+              <View style={[styles.disabledInput, { 
+                backgroundColor: theme.neutralLight, 
+                borderColor: theme.neutralLight
+              }]}>
+                <Text style={[styles.disabledText, { color: theme.textSecondary }]}>
+                  {user?.email || 'user@example.com'}
+                </Text>
+                <Ionicons name="lock-closed" size={16} color={theme.textSecondary} />
+              </View>
+              <Text style={[styles.helpText, { color: theme.textSecondary }]}>
                 L'email ne peut pas être modifié
               </Text>
             </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: theme.text }]}>Téléphone</Text>
-              <TextInput
-                style={[styles.input, { 
-                  backgroundColor: theme.surface, 
-                  color: theme.text,
-                  borderColor: theme.text + '20'
-                }]}
-                value={formData.phone}
-                onChangeText={(text) => handleChange('phone', text)}
-                placeholder="Entrez votre numéro de téléphone"
-                placeholderTextColor={theme.text + '60'}
-                keyboardType="phone-pad"
-              />
-            </View>
+            <InputField
+              label="Téléphone"
+              value={formData.phone}
+              onChangeText={(text) => handleChange('phone', text)}
+              placeholder="Entrez votre numéro de téléphone"
+              keyboardType="phone-pad"
+            />
 
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: theme.text }]}>École/Lycée</Text>
-              <TextInput
-                style={[styles.input, { 
-                  backgroundColor: theme.surface, 
-                  color: theme.text,
-                  borderColor: theme.text + '20'
-                }]}
-                value={formData.school}
-                onChangeText={(text) => handleChange('school', text)}
-                placeholder="Entrez le nom de votre établissement"
-                placeholderTextColor={theme.text + '60'}
-              />
-            </View>
+            <InputField
+              label="École/Lycée"
+              value={formData.school}
+              onChangeText={(text) => handleChange('school', text)}
+              placeholder="Entrez le nom de votre établissement"
+            />
 
             <View style={styles.inputGroup}>
               <Text style={[styles.label, { color: theme.text }]}>Niveau académique</Text>
               <LevelPicker />
             </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: theme.text }]}>Bio</Text>
-              <TextInput
-                style={[styles.textArea, { 
-                  backgroundColor: theme.surface, 
-                  color: theme.text,
-                  borderColor: theme.text + '20'
-                }]}
-                value={formData.bio}
-                onChangeText={(text) => handleChange('bio', text)}
-                placeholder="Parlez-nous de vous..."
-                placeholderTextColor={theme.text + '60'}
-                multiline
-                numberOfLines={4}
-                textAlignVertical="top"
-              />
-            </View>
+            <InputField
+              label="Bio"
+              value={formData.bio}
+              onChangeText={(text) => handleChange('bio', text)}
+              placeholder="Parlez-nous de vous..."
+              multiline
+            />
           </View>
 
           <TouchableOpacity
@@ -327,6 +321,7 @@ export default function EditProfileScreen() {
             onPress={handleSave}
             disabled={isLoading}
           >
+            <Ionicons name="save" size={20} color="#fff" style={{ marginRight: 8 }} />
             <Text style={styles.saveButtonText}>
               {isLoading ? 'Sauvegarde...' : 'Sauvegarder les modifications'}
             </Text>
@@ -346,6 +341,11 @@ const styles = StyleSheet.create({
   headerButton: {
     padding: 8,
   },
+  saveHeaderButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
   saveButton: {
     fontSize: 16,
     fontWeight: '600',
@@ -356,6 +356,7 @@ const styles = StyleSheet.create({
   avatarSection: {
     alignItems: 'center',
     paddingVertical: 30,
+    paddingHorizontal: 20,
   },
   avatar: {
     width: 100,
@@ -363,15 +364,23 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 8,
   },
   avatarText: {
     fontSize: 40,
     fontWeight: 'bold',
-    color: '#fff',
   },
   changePhotoButton: {
-    padding: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
   },
   changePhotoText: {
     fontSize: 16,
@@ -381,23 +390,46 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   inputGroup: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   label: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: '600',
     marginBottom: 8,
   },
   input: {
-    height: 50,
-    borderWidth: 1,
-    borderRadius: 12,
+    height: 56,
+    borderWidth: 2,
+    borderRadius: 16,
     paddingHorizontal: 16,
     fontSize: 16,
+    fontWeight: '500',
+  },
+  textArea: {
+    minHeight: 120,
+    borderWidth: 2,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  disabledInput: {
+    height: 56,
+    borderWidth: 2,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  disabledText: {
+    fontSize: 16,
+    fontWeight: '500',
   },
   helpText: {
     fontSize: 12,
-    marginTop: 4,
+    marginTop: 8,
     fontStyle: 'italic',
   },
   levelPickerContainer: {
@@ -409,16 +441,16 @@ const styles = StyleSheet.create({
   },
   mainLevelOption: {
     flex: 1,
-    paddingVertical: 16,
+    paddingVertical: 20,
     paddingHorizontal: 16,
-    borderRadius: 12,
-    borderWidth: 1,
+    borderRadius: 16,
+    borderWidth: 2,
     alignItems: 'center',
   },
   mainLevelText: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 2,
+    marginBottom: 4,
   },
   mainLevelSubtext: {
     fontSize: 12,
@@ -428,38 +460,37 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   bacOptionsTitle: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 12,
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 16,
   },
   bacOptionsGrid: {
-    gap: 8,
+    gap: 10,
   },
   bacOption: {
-    paddingVertical: 12,
+    paddingVertical: 16,
     paddingHorizontal: 16,
-    borderRadius: 10,
-    borderWidth: 1,
+    borderRadius: 12,
+    borderWidth: 2,
   },
   bacOptionText: {
     fontSize: 14,
     fontWeight: '500',
     textAlign: 'center',
   },
-  textArea: {
-    height: 100,
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-  },
   saveButtonMobile: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginHorizontal: 20,
     marginTop: 20,
     paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 8,
   },
   saveButtonText: {
     color: '#fff',
