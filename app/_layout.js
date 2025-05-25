@@ -1,7 +1,7 @@
-// app/_layout.js
-import { Slot } from 'expo-router';
+// File: app/_layout.js
+import { Stack } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { ThemeProvider } from '../constants/ThemeContext';
+import { ThemeProvider } from '../constants/ThemeContext'; // <-- make sure this import is correct!
 import { AuthProvider } from '../constants/AuthContext';
 import { UserProvider } from '../constants/UserContext';
 
@@ -11,7 +11,7 @@ export default function RootLayout() {
       <ThemeProvider>
         <AuthProvider>
           <UserProvider>
-            <Slot />
+            <Stack screenOptions={{ headerShown: false }} />
           </UserProvider>
         </AuthProvider>
       </ThemeProvider>

@@ -1,13 +1,26 @@
-// app/(tabs)/_layout.js
+// File: app/(tabs)/_layout.js
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useContext } from 'react';
+import { ThemeContext } from '../../constants/ThemeContext';
 
 export default function TabsLayout() {
+  const { theme } = useContext(ThemeContext);
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#3366FF',
+        tabBarActiveTintColor: theme.primary,
+        tabBarInactiveTintColor: theme.textSecondary,
+        tabBarStyle: {
+          backgroundColor: theme.surface,
+          borderTopColor: theme.neutralLight,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '500',
+        },
       }}
     >
       {/* 1) Dashboard */}

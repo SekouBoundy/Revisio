@@ -1,4 +1,4 @@
-// app/(tabs)/dashboard.js
+// File: app/(tabs)/dashboard.js
 import React, { useContext } from 'react';
 import {
   View,
@@ -22,7 +22,7 @@ export default function DashboardScreen() {
   const isDefLevel = user?.level === 'DEF';
 
   const ProgressBar = ({ progress, color = theme.primary }) => (
-    <View style={styles.progressBarContainer}>
+    <View style={[styles.progressBarContainer, { backgroundColor: theme.neutralLight }]}>
       <View 
         style={[styles.progressBar, { width: `${progress}%`, backgroundColor: color }]} 
       />
@@ -52,7 +52,7 @@ export default function DashboardScreen() {
       <View style={styles.courseContent}>
         <Text style={[styles.courseTitle, { color: theme.text }]}>{title}</Text>
         {isNew ? (
-          <Text style={[styles.newLabel, { color: '#E91E63' }]}>Nouveau</Text>
+          <Text style={[styles.newLabel, { color: theme.accent }]}>Nouveau</Text>
         ) : (
           <Text style={[styles.courseSubtitle, { color: theme.text + '80' }]}>{subtitle}</Text>
         )}
@@ -87,8 +87,8 @@ export default function DashboardScreen() {
     </View>
   );
 
+  // DEF dashboard
   if (isDefLevel) {
-    // Complete DEF dashboard
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
         <ScrollView showsVerticalScrollIndicator={false}>
@@ -99,13 +99,12 @@ export default function DashboardScreen() {
             </View>
             <TouchableOpacity style={styles.notificationButton}>
               <Ionicons name="notifications-outline" size={24} color={theme.text} />
-              <View style={styles.notificationBadge}>
+              <View style={[styles.notificationBadge, { backgroundColor: theme.error }]}>
                 <Text style={styles.notificationCount}>3</Text>
               </View>
             </TouchableOpacity>
           </View>
 
-          {/* Simple Progress Card */}
           <View style={[styles.simpleProgressCard, { backgroundColor: theme.surface }]}>
             <Text style={[styles.progressTitle, { color: theme.text }]}>Ma progression cette semaine</Text>
             <Text style={[styles.progressValue, { color: theme.primary }]}>8/12 exercices</Text>
@@ -113,26 +112,24 @@ export default function DashboardScreen() {
             <Text style={[styles.progressSubtitle, { color: theme.text + '60' }]}>Continue comme ça !</Text>
           </View>
 
-          {/* Quick Stats */}
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: theme.text }]}>Mes résultats</Text>
             <View style={styles.simpleStatsGrid}>
               <View style={[styles.simpleStatCard, { backgroundColor: theme.surface }]}>
-                <Text style={[styles.simpleStatValue, { color: '#4CAF50' }]}>85%</Text>
+                <Text style={[styles.simpleStatValue, { color: theme.secondary }]}>85%</Text>
                 <Text style={[styles.simpleStatLabel, { color: theme.text + '80' }]}>Réussite</Text>
               </View>
               <View style={[styles.simpleStatCard, { backgroundColor: theme.surface }]}>
-                <Text style={[styles.simpleStatValue, { color: '#2196F3' }]}>24</Text>
+                <Text style={[styles.simpleStatValue, { color: theme.secondary }]}>24</Text>
                 <Text style={[styles.simpleStatLabel, { color: theme.text + '80' }]}>Exercices</Text>
               </View>
               <View style={[styles.simpleStatCard, { backgroundColor: theme.surface }]}>
-                <Text style={[styles.simpleStatValue, { color: '#FF9800' }]}>6</Text>
+                <Text style={[styles.simpleStatValue, { color: theme.accent }]}>6</Text>
                 <Text style={[styles.simpleStatLabel, { color: theme.text + '80' }]}>Matières</Text>
               </View>
             </View>
           </View>
 
-          {/* My Subjects */}
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: theme.text }]}>Mes matières</Text>
             <CourseItem
@@ -140,56 +137,54 @@ export default function DashboardScreen() {
               title="Mathématiques"
               subtitle="45% Complété"
               progress={45}
-              color="#2196F3"
+              color={theme.secondary}
             />
             <CourseItem
               icon="flask-outline"
               title="Physique-Chimie"
               subtitle="60% Complété"
               progress={60}
-              color="#E91E63"
+              color={theme.accent}
             />
             <CourseItem
               icon="language-outline"
               title="Français"
               subtitle="Nouveau chapitre"
               isNew={true}
-              color="#FF9800"
+              color={theme.accent}
             />
             <CourseItem
               icon="globe-outline"
               title="Histoire-Géographie"
               subtitle="75% Complété"
               progress={75}
-              color="#9C27B0"
+              color={theme.neutralDark}
             />
             <CourseItem
               icon="leaf-outline"
               title="Sciences de la Vie et de la Terre"
               subtitle="30% Complété"
               progress={30}
-              color="#4CAF50"
+              color={theme.secondary}
             />
           </View>
 
-          {/* Upcoming Tests */}
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: theme.text }]}>Prochains contrôles</Text>
             <UpcomingItem
               title="Contrôle de Maths"
               date="Demain"
               daysLeft="1 jour"
-              color="#2196F3"
+              color={theme.secondary}
             />
             <UpcomingItem
               title="Quiz Physique-Chimie"
               date="Vendredi"
               daysLeft="3 jours"
-              color="#E91E63"
+              color={theme.accent}
             />
           </View>
 
-          {/* Recommendations */}
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: theme.text }]}>Recommandé pour toi</Text>
             <View style={[styles.recommendationCard, { backgroundColor: theme.surface }]}>
@@ -211,11 +206,10 @@ export default function DashboardScreen() {
     );
   }
 
-  // Advanced BAC dashboard
+  // BAC dashboard
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header */}
         <View style={styles.header}>
           <View>
             <Text style={[styles.greeting, { color: theme.text + '80' }]}>Bonsoir,</Text>
@@ -223,13 +217,12 @@ export default function DashboardScreen() {
           </View>
           <TouchableOpacity style={styles.notificationButton}>
             <Ionicons name="notifications-outline" size={24} color={theme.text} />
-            <View style={styles.notificationBadge}>
+            <View style={[styles.notificationBadge, { backgroundColor: theme.error }]}>
               <Text style={styles.notificationCount}>2</Text>
             </View>
           </TouchableOpacity>
         </View>
 
-        {/* BAC Countdown */}
         <View style={[styles.countdownCard, { backgroundColor: theme.surface }]}>
           <View style={styles.countdownContent}>
             <Text style={[styles.countdownLabel, { color: theme.text + '80' }]}>
@@ -250,7 +243,6 @@ export default function DashboardScreen() {
           </View>
         </View>
 
-        {/* Global Progress */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: theme.text }]}>Progression globale</Text>
@@ -278,7 +270,6 @@ export default function DashboardScreen() {
           </View>
         </View>
 
-        {/* Continue Learning */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: theme.text }]}>Continuer l'apprentissage</Text>
@@ -292,32 +283,31 @@ export default function DashboardScreen() {
             title="Mathématiques"
             subtitle="65% Complété - Intégrales"
             progress={65}
-            color="#2196F3"
+            color={theme.secondary}
           />
           <CourseItem
             icon="nuclear-outline"
             title="Physique"
             subtitle="Nouveau chapitre"
             isNew={true}
-            color="#E91E63"
+            color={theme.accent}
           />
           <CourseItem
             icon="flask-outline"
             title="Chimie"
             subtitle="100% Terminé - Chimie organique"
             progress={100}
-            color="#9C27B0"
+            color={theme.neutralDark}
           />
           <CourseItem
             icon="bulb-outline"
             title="Philosophie"
             subtitle="45% Complété - La conscience"
             progress={45}
-            color="#795548"
+            color={theme.primary}
           />
         </View>
 
-        {/* Upcoming Deadlines */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: theme.text }]}>Échéances à venir</Text>
@@ -330,28 +320,26 @@ export default function DashboardScreen() {
             title="Dissertation: Philosophie"
             date="25 Mai"
             daysLeft="4 jours"
-            color="#795548"
+            color={theme.primary}
           />
           <UpcomingItem
             title="Examen: Mathématiques"
             date="27 Mai"
             daysLeft="6 jours"
-            color="#2196F3"
+            color={theme.secondary}
           />
         </View>
 
-        {/* Subject Progress */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Progression par matière</Text>
           
-          <SubjectProgress subject="Mathématiques" progress={73} color="#2196F3" />
-          <SubjectProgress subject="Physique" progress={58} color="#E91E63" />
-          <SubjectProgress subject="Chimie" progress={82} color="#9C27B0" />
-          <SubjectProgress subject="Français" progress={45} color="#FF9800" />
-          <SubjectProgress subject="Philosophie" progress={29} color="#795548" />
+          <SubjectProgress subject="Mathématiques" progress={73} color={theme.secondary} />
+          <SubjectProgress subject="Physique" progress={58} color={theme.accent} />
+          <SubjectProgress subject="Chimie" progress={82} color={theme.neutralDark} />
+          <SubjectProgress subject="Français" progress={45} color={theme.accent} />
+          <SubjectProgress subject="Philosophie" progress={29} color={theme.primary} />
         </View>
 
-        {/* Recommendations */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Recommandé pour vous</Text>
           
@@ -405,7 +393,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -5,
     right: -5,
-    backgroundColor: '#FF3B30',
     borderRadius: 10,
     width: 20,
     height: 20,
@@ -563,7 +550,6 @@ const styles = StyleSheet.create({
   },
   progressBarContainer: {
     height: 4,
-    backgroundColor: '#f0f0f0',
     borderRadius: 2,
     overflow: 'hidden',
   },
