@@ -136,25 +136,25 @@ export default function DashboardScreen() {
   if (isDefLevel) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <Header />
+        <Header />
+        
+        {/* Fixed Progress Card */}
+        <View style={[styles.fixedSection, { backgroundColor: theme.background }]}>
+          <ModernCard style={styles.weeklyProgressCard}>
+            <Text style={[styles.progressCardTitle, { color: theme.text }]}>
+              Ma progression cette semaine
+            </Text>
+            <Text style={[styles.progressCardValue, { color: theme.primary }]}>
+              8/12 exercices
+            </Text>
+            <ProgressBar progress={67} color={theme.primary} />
+            <Text style={[styles.progressCardSubtitle, { color: theme.textSecondary }]}>
+              Continue comme ça !
+            </Text>
+          </ModernCard>
+        </View>
 
-          {/* Progress Card */}
-          <View style={styles.section}>
-            <ModernCard style={styles.weeklyProgressCard}>
-              <Text style={[styles.progressCardTitle, { color: theme.text }]}>
-                Ma progression cette semaine
-              </Text>
-              <Text style={[styles.progressCardValue, { color: theme.primary }]}>
-                8/12 exercices
-              </Text>
-              <ProgressBar progress={67} color={theme.primary} />
-              <Text style={[styles.progressCardSubtitle, { color: theme.textSecondary }]}>
-                Continue comme ça !
-              </Text>
-            </ModernCard>
-          </View>
-
+        <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollContent}>
           {/* Stats Grid */}
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: theme.text }]}>Mes résultats</Text>
@@ -225,31 +225,31 @@ export default function DashboardScreen() {
   // BAC Dashboard
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <Header />
+      <Header />
+      
+      {/* Fixed Countdown Card */}
+      <View style={[styles.fixedSection, { backgroundColor: theme.background }]}>
+        <ModernCard style={styles.countdownCard}>
+          <View style={styles.countdownContent}>
+            <Text style={[styles.countdownLabel, { color: theme.textSecondary }]}>
+              Temps restant jusqu'au BAC
+            </Text>
+            <Text style={[styles.countdownValue, { color: theme.text }]}>25 jours</Text>
+            <TouchableOpacity 
+              style={[styles.planningButton, { backgroundColor: theme.primary }]}
+              onPress={() => router.push('/(tabs)/schedule')}
+            >
+              <Ionicons name="calendar" size={16} color="#FFFFFF" />
+              <Text style={styles.planningText}>Voir mon planning</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={[styles.countdownIcon, { backgroundColor: theme.primary + '15' }]}>
+            <Ionicons name="time" size={32} color={theme.primary} />
+          </View>
+        </ModernCard>
+      </View>
 
-        {/* Countdown Card */}
-        <View style={styles.section}>
-          <ModernCard style={styles.countdownCard}>
-            <View style={styles.countdownContent}>
-              <Text style={[styles.countdownLabel, { color: theme.textSecondary }]}>
-                Temps restant jusqu'au BAC
-              </Text>
-              <Text style={[styles.countdownValue, { color: theme.text }]}>25 jours</Text>
-              <TouchableOpacity 
-                style={[styles.planningButton, { backgroundColor: theme.primary }]}
-                onPress={() => router.push('/(tabs)/schedule')}
-              >
-                <Ionicons name="calendar" size={16} color="#FFFFFF" />
-                <Text style={styles.planningText}>Voir mon planning</Text>
-              </TouchableOpacity>
-            </View>
-            <View style={[styles.countdownIcon, { backgroundColor: theme.primary + '15' }]}>
-              <Ionicons name="time" size={32} color={theme.primary} />
-            </View>
-          </ModernCard>
-        </View>
-
+      <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollContent}>
         {/* Global Progress */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -333,7 +333,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingTop: 60,
+    paddingTop: 20,
     paddingBottom: 30,
     paddingHorizontal: 20,
     borderBottomLeftRadius: 30,
@@ -375,6 +375,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
   },
+  scrollContent: {
+    flex: 1,
+  },
   section: {
     paddingHorizontal: 20,
     marginBottom: 24,
@@ -403,9 +406,13 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
   },
+  fixedSection: {
+    marginTop: -20,
+    paddingHorizontal: 20,
+    paddingBottom: 10,
+  },
   weeklyProgressCard: {
     alignItems: 'center',
-    marginTop: -20,
   },
   progressCardTitle: {
     fontSize: 18,
@@ -509,7 +516,7 @@ const styles = StyleSheet.create({
   countdownCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: -20,
+    marginTop: 20,
   },
   countdownContent: {
     flex: 1,
