@@ -31,7 +31,7 @@ export default function DashboardScreen() {
 
   const CircularProgress = ({ percentage }) => (
     <View style={styles.circularContainer}>
-      <View style={[styles.circularProgress, { borderColor: theme.surface }]}>
+      <View style={[styles.circularProgress, { borderColor: theme.neutralLight }]}>
         <View style={[styles.circularFill, { 
           borderTopColor: theme.primary,
           borderRightColor: theme.primary,
@@ -44,160 +44,176 @@ export default function DashboardScreen() {
     </View>
   );
 
-  const CourseItem = ({ icon, title, subtitle, progress, color, isNew = false }) => (
-    <TouchableOpacity style={[styles.courseItem, { backgroundColor: theme.surface }]}>
-      <View style={[styles.courseIcon, { backgroundColor: color + '20' }]}>
-        <Ionicons name={icon} size={20} color={color} />
-      </View>
-      <View style={styles.courseContent}>
-        <Text style={[styles.courseTitle, { color: theme.text }]}>{title}</Text>
-        {isNew ? (
-          <Text style={[styles.newLabel, { color: theme.accent }]}>Nouveau</Text>
-        ) : (
-          <Text style={[styles.courseSubtitle, { color: theme.text + '80' }]}>{subtitle}</Text>
-        )}
+  const ModernCard = ({ children, style = {} }) => (
+    <View style={[styles.modernCard, { backgroundColor: theme.surface }, style]}>
+      {children}
+    </View>
+  );
+
+  const CourseCard = ({ icon, title, subtitle, progress, color, isNew = false }) => (
+    <TouchableOpacity>
+      <ModernCard style={styles.courseCard}>
+        <View style={styles.courseHeader}>
+          <View style={[styles.courseIconContainer, { backgroundColor: color + '15' }]}>
+            <Ionicons name={icon} size={24} color={color} />
+          </View>
+          <View style={styles.courseInfo}>
+            <Text style={[styles.courseTitle, { color: theme.text }]}>{title}</Text>
+            {isNew ? (
+              <View style={[styles.newBadge, { backgroundColor: theme.accent + '20' }]}>
+                <Text style={[styles.newText, { color: theme.accent }]}>Nouveau</Text>
+              </View>
+            ) : (
+              <Text style={[styles.courseSubtitle, { color: theme.textSecondary }]}>{subtitle}</Text>
+            )}
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={theme.textSecondary} />
+        </View>
+        
         {progress !== undefined && (
-          <View style={styles.progressContainer}>
+          <View style={styles.progressSection}>
             <ProgressBar progress={progress} color={color} />
+            <Text style={[styles.progressText, { color: theme.textSecondary }]}>{progress}% complété</Text>
           </View>
         )}
-      </View>
-      <Ionicons name="chevron-forward" size={20} color={theme.text + '40'} />
+      </ModernCard>
     </TouchableOpacity>
   );
 
-  const UpcomingItem = ({ title, date, daysLeft, color }) => (
-    <View style={styles.upcomingItem}>
-      <View style={[styles.upcomingIndicator, { backgroundColor: color }]} />
-      <View style={styles.upcomingContent}>
-        <Text style={[styles.upcomingTitle, { color: theme.text }]}>{title}</Text>
-        <Text style={[styles.upcomingDate, { color: theme.text + '60' }]}>{date}</Text>
+  const StatCard = ({ icon, title, value, color, subtitle }) => (
+    <ModernCard style={styles.statCard}>
+      <View style={[styles.statIconContainer, { backgroundColor: color + '15' }]}>
+        <Ionicons name={icon} size={24} color={color} />
       </View>
-      <Text style={[styles.daysLeft, { color: theme.primary }]}>{daysLeft}</Text>
+      <Text style={[styles.statValue, { color: theme.text }]}>{value}</Text>
+      <Text style={[styles.statTitle, { color: theme.text }]}>{title}</Text>
+      {subtitle && (
+        <Text style={[styles.statSubtitle, { color: theme.textSecondary }]}>{subtitle}</Text>
+      )}
+    </ModernCard>
+  );
+
+  const UpcomingCard = ({ title, date, subject, color, type }) => (
+    <TouchableOpacity>
+      <ModernCard style={styles.upcomingCard}>
+        <View style={styles.upcomingHeader}>
+          <View style={[styles.upcomingIndicator, { backgroundColor: color }]} />
+          <View style={styles.upcomingContent}>
+            <Text style={[styles.upcomingTitle, { color: theme.text }]}>{title}</Text>
+            <Text style={[styles.upcomingSubject, { color: theme.textSecondary }]}>{subject}</Text>
+          </View>
+          <View style={styles.upcomingMeta}>
+            <Text style={[styles.upcomingDate, { color: color }]}>{date}</Text>
+            <Text style={[styles.upcomingType, { color: theme.textSecondary }]}>{type}</Text>
+          </View>
+        </View>
+      </ModernCard>
+    </TouchableOpacity>
+  );
+
+  const Header = () => (
+    <View style={[styles.header, { backgroundColor: theme.primary }]}>
+      <View style={styles.headerContent}>
+        <View>
+          <Text style={[styles.greeting, { color: '#FFFFFF99' }]}>
+            {isDefLevel ? 'Bonjour,' : 'Bonsoir,'}
+          </Text>
+          <Text style={[styles.userName, { color: '#FFFFFF' }]}>
+            {user?.name || 'Étudiant'}
+          </Text>
+        </View>
+        <TouchableOpacity style={[styles.notificationButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}>
+          <Ionicons name="notifications" size={20} color="#FFFFFF" />
+          <View style={[styles.notificationBadge, { backgroundColor: theme.error }]}>
+            <Text style={styles.notificationCount}>{isDefLevel ? '3' : '2'}</Text>
+          </View>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
-  const SubjectProgress = ({ subject, progress, color }) => (
-    <View style={styles.subjectItem}>
-      <View style={styles.subjectHeader}>
-        <Text style={[styles.subjectName, { color: theme.text }]}>{subject}</Text>
-        <Text style={[styles.subjectPercentage, { color }]}>{progress}%</Text>
-      </View>
-      <ProgressBar progress={progress} color={color} />
-    </View>
-  );
-
-  // DEF dashboard
+  // DEF Dashboard
   if (isDefLevel) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
         <ScrollView showsVerticalScrollIndicator={false}>
-          <View style={styles.header}>
-            <View>
-              <Text style={[styles.greeting, { color: theme.text + '80' }]}>Bonjour,</Text>
-              <Text style={[styles.userName, { color: theme.text }]}>{user?.name || 'Étudiant'}</Text>
-            </View>
-            <TouchableOpacity style={styles.notificationButton}>
-              <Ionicons name="notifications-outline" size={24} color={theme.text} />
-              <View style={[styles.notificationBadge, { backgroundColor: theme.error }]}>
-                <Text style={styles.notificationCount}>3</Text>
-              </View>
-            </TouchableOpacity>
+          <Header />
+
+          {/* Progress Card */}
+          <View style={styles.section}>
+            <ModernCard style={styles.weeklyProgressCard}>
+              <Text style={[styles.progressCardTitle, { color: theme.text }]}>
+                Ma progression cette semaine
+              </Text>
+              <Text style={[styles.progressCardValue, { color: theme.primary }]}>
+                8/12 exercices
+              </Text>
+              <ProgressBar progress={67} color={theme.primary} />
+              <Text style={[styles.progressCardSubtitle, { color: theme.textSecondary }]}>
+                Continue comme ça !
+              </Text>
+            </ModernCard>
           </View>
 
-          <View style={[styles.simpleProgressCard, { backgroundColor: theme.surface }]}>
-            <Text style={[styles.progressTitle, { color: theme.text }]}>Ma progression cette semaine</Text>
-            <Text style={[styles.progressValue, { color: theme.primary }]}>8/12 exercices</Text>
-            <ProgressBar progress={67} color={theme.primary} />
-            <Text style={[styles.progressSubtitle, { color: theme.text + '60' }]}>Continue comme ça !</Text>
-          </View>
-
+          {/* Stats Grid */}
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: theme.text }]}>Mes résultats</Text>
-            <View style={styles.simpleStatsGrid}>
-              <View style={[styles.simpleStatCard, { backgroundColor: theme.surface }]}>
-                <Text style={[styles.simpleStatValue, { color: theme.secondary }]}>85%</Text>
-                <Text style={[styles.simpleStatLabel, { color: theme.text + '80' }]}>Réussite</Text>
-              </View>
-              <View style={[styles.simpleStatCard, { backgroundColor: theme.surface }]}>
-                <Text style={[styles.simpleStatValue, { color: theme.secondary }]}>24</Text>
-                <Text style={[styles.simpleStatLabel, { color: theme.text + '80' }]}>Exercices</Text>
-              </View>
-              <View style={[styles.simpleStatCard, { backgroundColor: theme.surface }]}>
-                <Text style={[styles.simpleStatValue, { color: theme.accent }]}>6</Text>
-                <Text style={[styles.simpleStatLabel, { color: theme.text + '80' }]}>Matières</Text>
-              </View>
+            <View style={styles.statsGrid}>
+              <StatCard icon="trophy" title="Réussite" value="85%" color={theme.success} />
+              <StatCard icon="book" title="Exercices" value="24" color={theme.primary} />
+              <StatCard icon="school" title="Matières" value="6" color={theme.accent} />
             </View>
           </View>
 
+          {/* Courses Section */}
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>Mes matières</Text>
-            <CourseItem
-              icon="calculator-outline"
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>Mes matières</Text>
+              <TouchableOpacity>
+                <Text style={[styles.seeAllText, { color: theme.primary }]}>Voir tout</Text>
+              </TouchableOpacity>
+            </View>
+            
+            <CourseCard
+              icon="calculator"
               title="Mathématiques"
-              subtitle="45% Complété"
+              subtitle="Géométrie - Chapitre 4"
               progress={45}
-              color={theme.secondary}
+              color={theme.primary}
             />
-            <CourseItem
-              icon="flask-outline"
+            <CourseCard
+              icon="flask"
               title="Physique-Chimie"
-              subtitle="60% Complété"
+              subtitle="États de la matière"
               progress={60}
               color={theme.accent}
             />
-            <CourseItem
-              icon="language-outline"
+            <CourseCard
+              icon="language"
               title="Français"
-              subtitle="Nouveau chapitre"
               isNew={true}
-              color={theme.accent}
-            />
-            <CourseItem
-              icon="globe-outline"
-              title="Histoire-Géographie"
-              subtitle="75% Complété"
-              progress={75}
-              color={theme.neutralDark}
-            />
-            <CourseItem
-              icon="leaf-outline"
-              title="Sciences de la Vie et de la Terre"
-              subtitle="30% Complété"
-              progress={30}
               color={theme.secondary}
             />
           </View>
 
+          {/* Upcoming Section */}
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: theme.text }]}>Prochains contrôles</Text>
-            <UpcomingItem
-              title="Contrôle de Maths"
+            
+            <UpcomingCard
+              title="Contrôle de Mathématiques"
+              subject="Géométrie"
               date="Demain"
-              daysLeft="1 jour"
-              color={theme.secondary}
+              type="Contrôle"
+              color={theme.primary}
             />
-            <UpcomingItem
-              title="Quiz Physique-Chimie"
+            <UpcomingCard
+              title="Quiz Sciences"
+              subject="Physique-Chimie"
               date="Vendredi"
-              daysLeft="3 jours"
+              type="Quiz"
               color={theme.accent}
             />
-          </View>
-
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>Recommandé pour toi</Text>
-            <View style={[styles.recommendationCard, { backgroundColor: theme.surface }]}>
-              <Text style={[styles.recommendationTitle, { color: theme.text }]}>
-                Révisions d'Histoire-Géo
-              </Text>
-              <Text style={[styles.recommendationSubtitle, { color: theme.text + '60' }]}>
-                Les grandes découvertes
-              </Text>
-              <View style={[styles.trendIcon, { backgroundColor: theme.primary + '20' }]}>
-                <Ionicons name="globe-outline" size={20} color={theme.primary} />
-              </View>
-            </View>
           </View>
 
           <View style={styles.bottomPadding} />
@@ -206,70 +222,63 @@ export default function DashboardScreen() {
     );
   }
 
-  // BAC dashboard
+  // BAC Dashboard
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <View>
-            <Text style={[styles.greeting, { color: theme.text + '80' }]}>Bonsoir,</Text>
-            <Text style={[styles.userName, { color: theme.text }]}>{user?.name || 'Étudiant'}</Text>
-          </View>
-          <TouchableOpacity style={styles.notificationButton}>
-            <Ionicons name="notifications-outline" size={24} color={theme.text} />
-            <View style={[styles.notificationBadge, { backgroundColor: theme.error }]}>
-              <Text style={styles.notificationCount}>2</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
+        <Header />
 
-        <View style={[styles.countdownCard, { backgroundColor: theme.surface }]}>
-          <View style={styles.countdownContent}>
-            <Text style={[styles.countdownLabel, { color: theme.text + '80' }]}>
-              Temps restant jusqu'au BAC
-            </Text>
-            <Text style={[styles.countdownValue, { color: theme.text }]}>25 jours</Text>
-            <TouchableOpacity 
-              style={[styles.planningButton, { backgroundColor: theme.primary + '20' }]}
-              onPress={() => router.push('/(tabs)/schedule')}
-            >
-              <Text style={[styles.planningText, { color: theme.primary }]}>
-                Voir mon planning
+        {/* Countdown Card */}
+        <View style={styles.section}>
+          <ModernCard style={styles.countdownCard}>
+            <View style={styles.countdownContent}>
+              <Text style={[styles.countdownLabel, { color: theme.textSecondary }]}>
+                Temps restant jusqu'au BAC
               </Text>
-            </TouchableOpacity>
-          </View>
-          <View style={[styles.calendarIcon, { backgroundColor: theme.primary + '20' }]}>
-            <Ionicons name="calendar-outline" size={32} color={theme.primary} />
-          </View>
+              <Text style={[styles.countdownValue, { color: theme.text }]}>25 jours</Text>
+              <TouchableOpacity 
+                style={[styles.planningButton, { backgroundColor: theme.primary }]}
+                onPress={() => router.push('/(tabs)/schedule')}
+              >
+                <Ionicons name="calendar" size={16} color="#FFFFFF" />
+                <Text style={styles.planningText}>Voir mon planning</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={[styles.countdownIcon, { backgroundColor: theme.primary + '15' }]}>
+              <Ionicons name="time" size={32} color={theme.primary} />
+            </View>
+          </ModernCard>
         </View>
 
+        {/* Global Progress */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: theme.text }]}>Progression globale</Text>
             <TouchableOpacity>
-              <Text style={[styles.detailsText, { color: theme.primary }]}>Détails</Text>
+              <Text style={[styles.seeAllText, { color: theme.primary }]}>Détails</Text>
             </TouchableOpacity>
           </View>
           
-          <View style={[styles.progressCard, { backgroundColor: theme.surface }]}>
+          <ModernCard style={styles.progressOverviewCard}>
             <CircularProgress percentage={68} />
-            <View style={styles.statsRow}>
-              <View style={styles.statItem}>
-                <Text style={[styles.statValue, { color: theme.text }]}>5</Text>
-                <Text style={[styles.statLabel, { color: theme.text + '60' }]}>Cours</Text>
+            <View style={styles.progressStats}>
+              <View style={styles.progressStat}>
+                <Text style={[styles.progressStatValue, { color: theme.text }]}>5</Text>
+                <Text style={[styles.progressStatLabel, { color: theme.textSecondary }]}>Cours</Text>
               </View>
-              <View style={styles.statItem}>
-                <Text style={[styles.statValue, { color: theme.text }]}>23</Text>
-                <Text style={[styles.statLabel, { color: theme.text + '60' }]}>Leçons</Text>
+              <View style={styles.progressStat}>
+                <Text style={[styles.progressStatValue, { color: theme.text }]}>23</Text>
+                <Text style={[styles.progressStatLabel, { color: theme.textSecondary }]}>Leçons</Text>
               </View>
-              <View style={styles.statItem}>
-                <Text style={[styles.statValue, { color: theme.text }]}>12</Text>
-                <Text style={[styles.statLabel, { color: theme.text + '60' }]}>Quiz</Text>
+              <View style={styles.progressStat}>
+                <Text style={[styles.progressStatValue, { color: theme.text }]}>12</Text>
+                <Text style={[styles.progressStatLabel, { color: theme.textSecondary }]}>Quiz</Text>
               </View>
             </View>
-          </View>
+          </ModernCard>
         </View>
 
+        {/* Continue Learning */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: theme.text }]}>Continuer l'apprentissage</Text>
@@ -278,87 +287,39 @@ export default function DashboardScreen() {
             </TouchableOpacity>
           </View>
           
-          <CourseItem
-            icon="calculator-outline"
+          <CourseCard
+            icon="calculator"
             title="Mathématiques"
-            subtitle="65% Complété - Intégrales"
+            subtitle="Intégrales - Chapitre 8"
             progress={65}
-            color={theme.secondary}
+            color={theme.primary}
           />
-          <CourseItem
-            icon="nuclear-outline"
+          <CourseCard
+            icon="nuclear"
             title="Physique"
-            subtitle="Nouveau chapitre"
             isNew={true}
             color={theme.accent}
           />
-          <CourseItem
-            icon="flask-outline"
-            title="Chimie"
-            subtitle="100% Terminé - Chimie organique"
-            progress={100}
-            color={theme.neutralDark}
-          />
-          <CourseItem
-            icon="bulb-outline"
-            title="Philosophie"
-            subtitle="45% Complété - La conscience"
-            progress={45}
-            color={theme.primary}
-          />
         </View>
 
+        {/* Upcoming Exams */}
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>Échéances à venir</Text>
-            <TouchableOpacity>
-              <Text style={[styles.seeAllText, { color: theme.primary }]}>Calendrier</Text>
-            </TouchableOpacity>
-          </View>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Examens à venir</Text>
           
-          <UpcomingItem
-            title="Dissertation: Philosophie"
+          <UpcomingCard
+            title="Dissertation de Philosophie"
+            subject="La conscience"
             date="25 Mai"
-            daysLeft="4 jours"
-            color={theme.primary}
-          />
-          <UpcomingItem
-            title="Examen: Mathématiques"
-            date="27 Mai"
-            daysLeft="6 jours"
+            type="Examen"
             color={theme.secondary}
           />
-        </View>
-
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>Progression par matière</Text>
-          
-          <SubjectProgress subject="Mathématiques" progress={73} color={theme.secondary} />
-          <SubjectProgress subject="Physique" progress={58} color={theme.accent} />
-          <SubjectProgress subject="Chimie" progress={82} color={theme.neutralDark} />
-          <SubjectProgress subject="Français" progress={45} color={theme.accent} />
-          <SubjectProgress subject="Philosophie" progress={29} color={theme.primary} />
-        </View>
-
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>Recommandé pour vous</Text>
-          
-          <View style={[styles.recommendationCard, { backgroundColor: theme.surface }]}>
-            <View style={styles.recommendationHeader}>
-              <View style={[styles.popularBadge, { backgroundColor: theme.primary + '20' }]}>
-                <Text style={[styles.popularText, { color: theme.primary }]}>Populaire</Text>
-              </View>
-            </View>
-            <Text style={[styles.recommendationTitle, { color: theme.text }]}>
-              Révisions intensives Maths
-            </Text>
-            <Text style={[styles.recommendationSubtitle, { color: theme.text + '60' }]}>
-              Intégrales et dérivées - Spécial BAC
-            </Text>
-            <View style={[styles.trendIcon, { backgroundColor: theme.primary + '20' }]}>
-              <Ionicons name="trending-up" size={20} color={theme.primary} />
-            </View>
-          </View>
+          <UpcomingCard
+            title="Examen de Mathématiques"
+            subject="Analyse"
+            date="27 Mai"
+            type="Examen Blanc"
+            color={theme.primary}
+          />
         </View>
 
         <View style={styles.bottomPadding} />
@@ -372,27 +333,37 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
+    paddingTop: 60,
+    paddingBottom: 30,
+    paddingHorizontal: 20,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+  },
+  headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 10,
   },
   greeting: {
     fontSize: 16,
+    fontWeight: '500',
   },
   userName: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
   },
   notificationButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
     position: 'relative',
   },
   notificationBadge: {
     position: 'absolute',
-    top: -5,
-    right: -5,
+    top: -2,
+    right: -2,
     borderRadius: 10,
     width: 20,
     height: 20,
@@ -403,43 +374,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 12,
     fontWeight: 'bold',
-  },
-  countdownCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: 20,
-    marginVertical: 15,
-    padding: 20,
-    borderRadius: 16,
-  },
-  countdownContent: {
-    flex: 1,
-  },
-  countdownLabel: {
-    fontSize: 14,
-    marginBottom: 5,
-  },
-  countdownValue: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    marginBottom: 15,
-  },
-  planningButton: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  planningText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  calendarIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   section: {
     paddingHorizontal: 20,
@@ -452,40 +386,187 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
-  },
-  detailsText: {
-    fontSize: 14,
-    fontWeight: '500',
   },
   seeAllText: {
     fontSize: 14,
+    fontWeight: '600',
+  },
+  modernCard: {
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  weeklyProgressCard: {
+    alignItems: 'center',
+    marginTop: -20,
+  },
+  progressCardTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  progressCardValue: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    marginBottom: 16,
+  },
+  progressCardSubtitle: {
+    fontSize: 14,
+    marginTop: 12,
     fontWeight: '500',
   },
-  progressCard: {
-    padding: 20,
-    borderRadius: 16,
+  statsGrid: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  statCard: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 16,
+  },
+  statIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  statValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  statTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  statSubtitle: {
+    fontSize: 12,
+  },
+  courseCard: {
+    padding: 16,
+  },
+  courseHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  courseIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  courseInfo: {
+    flex: 1,
+  },
+  courseTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  courseSubtitle: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  newBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  newText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  progressSection: {
+    marginTop: 16,
+  },
+  progressText: {
+    fontSize: 12,
+    marginTop: 8,
+    fontWeight: '500',
+  },
+  progressBarContainer: {
+    height: 6,
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  progressBar: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  countdownCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: -20,
+  },
+  countdownContent: {
+    flex: 1,
+  },
+  countdownLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 8,
+  },
+  countdownValue: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    marginBottom: 16,
+  },
+  planningButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    gap: 6,
+  },
+  planningText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  countdownIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  progressOverviewCard: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
   circularContainer: {
-    marginBottom: 20,
+    marginRight: 24,
   },
   circularProgress: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    borderWidth: 8,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 6,
     position: 'relative',
     justifyContent: 'center',
     alignItems: 'center',
   },
   circularFill: {
     position: 'absolute',
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    borderWidth: 8,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 6,
     borderColor: 'transparent',
   },
   circularInner: {
@@ -494,79 +575,38 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   percentageText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-  },
-  statItem: {
-    alignItems: 'center',
-  },
-  statValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 12,
-  },
-  courseItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 8,
-  },
-  courseIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  courseContent: {
-    flex: 1,
-  },
-  courseTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
+    fontWeight: 'bold',
   },
-  courseSubtitle: {
-    fontSize: 12,
-    marginBottom: 8,
+  progressStats: {
+    flex: 1,
+    gap: 16,
   },
-  newLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    marginBottom: 8,
+  progressStat: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  progressContainer: {
-    marginTop: 4,
+  progressStatValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
   },
-  progressBarContainer: {
-    height: 4,
-    borderRadius: 2,
-    overflow: 'hidden',
+  progressStatLabel: {
+    fontSize: 14,
+    fontWeight: '500',
   },
-  progressBar: {
-    height: '100%',
-    borderRadius: 2,
+  upcomingCard: {
+    padding: 16,
   },
-  upcomingItem: {
+  upcomingHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
   },
   upcomingIndicator: {
     width: 4,
-    height: 40,
+    height: 48,
     borderRadius: 2,
-    marginRight: 12,
+    marginRight: 16,
   },
   upcomingContent: {
     flex: 1,
@@ -576,104 +616,21 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 4,
   },
-  upcomingDate: {
-    fontSize: 12,
-  },
-  daysLeft: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  subjectItem: {
-    marginBottom: 16,
-  },
-  subjectHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  subjectName: {
-    fontSize: 16,
+  upcomingSubject: {
+    fontSize: 14,
     fontWeight: '500',
   },
-  subjectPercentage: {
-    fontSize: 16,
+  upcomingMeta: {
+    alignItems: 'flex-end',
+  },
+  upcomingDate: {
+    fontSize: 14,
     fontWeight: 'bold',
+    marginBottom: 2,
   },
-  recommendationCard: {
-    padding: 16,
-    borderRadius: 12,
-    position: 'relative',
-  },
-  recommendationHeader: {
-    marginBottom: 8,
-  },
-  popularBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  popularText: {
-    fontSize: 10,
-    fontWeight: '600',
-  },
-  recommendationTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  recommendationSubtitle: {
+  upcomingType: {
     fontSize: 12,
-  },
-  trendIcon: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  simpleProgressCard: {
-    marginHorizontal: 20,
-    marginVertical: 15,
-    padding: 20,
-    borderRadius: 16,
-    alignItems: 'center',
-  },
-  progressTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  progressValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 12,
-  },
-  progressSubtitle: {
-    fontSize: 12,
-    marginTop: 8,
-  },
-  simpleStatsGrid: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  simpleStatCard: {
-    flex: 1,
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  simpleStatValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  simpleStatLabel: {
-    fontSize: 12,
+    fontWeight: '500',
   },
   bottomPadding: {
     height: 40,
