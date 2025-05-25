@@ -1,5 +1,6 @@
 // services/api/client.ts
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { StateType, ActionType, User, Course, Quiz, ApiResponse } from '../../types/types';
 
 class ApiClient {
   private baseURL: string;
@@ -155,5 +156,5 @@ class ApiClient {
   }
 }
 
-export const apiClient = new ApiClient(process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api');
-
+// export const apiClient = new ApiClient(process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api');
+export const apiClient = new ApiClient('http://YOUR_LOCAL_IP:3000/api');

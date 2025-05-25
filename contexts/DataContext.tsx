@@ -1,8 +1,11 @@
 // contexts/DataContext.tsx - For caching and offline support
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import NetInfo from '@react-native-netinfo/netinfo';
+import NetInfo from '@react-native-community/netinfo';
 import { Course, Quiz, User } from '../services/api/types';
+import { StateType, ActionType } from '../types/types'; // if you put them in types.ts
+
+
 
 interface DataContextType {
   courses: Course[];
