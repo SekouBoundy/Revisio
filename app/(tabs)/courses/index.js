@@ -1,4 +1,4 @@
-// app/(tabs)/quizzes/index.js - Updated with new course structure
+// app/(tabs)/courses/index.js - Updated with new course structure
 import React, { useContext } from 'react';
 import {
   View,
@@ -14,17 +14,57 @@ import { useRouter } from 'expo-router';
 import { ThemeContext } from '../../../constants/ThemeContext';
 import { useUser } from '../../../constants/UserContext';
 
-export default function QuizzesIndex() {
+export default function CoursesScreen() {
   const { theme } = useContext(ThemeContext);
   const { user } = useUser();
   const router = useRouter();
+
   const isDefLevel = user?.level === 'DEF';
 
-  const getPerformanceColor = (score) => {
-    if (score >= 80) return theme.success;
-    if (score >= 60) return theme.warning;
-    return theme.error;
-  };
+  const CourseCard = ({ icon, title, subtitle, progress, color, difficulty, lessons, level, onPress }) => (
+    <TouchableOpacity 
+      style={[styles.courseCard, { backgroundColor: theme.surface }]}
+      onPress={onPress}
+    >
+      <View style={[styles.courseIcon, { backgroundColor: color + '20' }]}>
+        <Ionicons name={icon} size={28} color={color} />
+      </View>
+      
+      <View style={styles.courseContent}>
+        <Text style={[styles.courseTitle, { color: theme.text }]}>{title}</Text>
+        <Text style={[styles.courseSubtitle, { color: theme.text + '80' }]}>{subtitle}</Text>
+        
+        <View style={styles.courseInfo}>
+          <View style={styles.infoItem}>
+            <Ionicons name="book-outline" size={14} color={theme.text + '60'} />
+            <Text style={[styles.infoText, { color: theme.text + '60' }]}>{lessons} leçons</Text>
+          </View>
+          <View style={[styles.difficultyBadge, { backgroundColor: getDifficultyColor(difficulty) + '20' }]}>
+            <Text style={[styles.difficultyText, { color: getDifficultyColor(difficulty) }]}>
+              {difficulty}
+            </Text>
+          </View>
+        </View>
+
+        {progress !== undefined && (
+          <View style={styles.progressSection}>
+            <View style={styles.progressHeader}>
+              <Text style={[styles.progressText, { color: theme.text + '80' }]}>
+                Progression: {progress}%
+              </Text>
+            </View>
+            <View style={styles.progressBarContainer}>
+              <View 
+                style={[styles.progressBar, { width: `${progress}%`, backgroundColor: color }]} 
+              />
+            </View>
+          </View>
+        )}
+      </View>
+
+      <Ionicons name="chevron-forward" size={20} color={theme.text + '40'} />
+    </TouchableOpacity>
+  );
 
   const getDifficultyColor = (difficulty) => {
     switch (difficulty) {
@@ -35,263 +75,251 @@ export default function QuizzesIndex() {
     }
   };
 
-  const getDefQuizzes = () => [
-    { icon: 'calculator-outline', title: 'Les Fractions', subject: 'Mathématiques', questions: 10, duration: 15, difficulty: 'Facile', score: 85, color: theme.primary },
-    { icon: 'calculator-outline', title: 'Géométrie', subject: 'Mathématiques', questions: 12, duration: 20, difficulty: 'Moyen', color: theme.primary },
-    { icon: 'flask-outline', title: 'États de la matière', subject: 'Physique-Chimie', questions: 8, duration: 12, difficulty: 'Facile', score: 92, color: theme.accent },
-    { icon: 'language-outline', title: 'Conjugaison', subject: 'Français', questions: 15, duration: 18, difficulty: 'Moyen', score: 76, color: theme.secondary },
-    { icon: 'globe-outline', title: 'La Renaissance', subject: 'Histoire-Géographie', questions: 10, duration: 15, difficulty: 'Facile', color: theme.info },
-    { icon: 'leaf-outline', title: 'Les animaux', subject: 'Sciences de la Vie et de la Terre', questions: 12, duration: 20, difficulty: 'Facile', score: 88, color: theme.success },
-    { icon: 'globe', title: 'Present Simple', subject: 'Anglais', questions: 8, duration: 12, difficulty: 'Facile', color: theme.neutralDark },
-    { icon: 'people-outline', title: 'Droits et devoirs', subject: 'Éducation Civique et Morale', questions: 6, duration: 10, difficulty: 'Facile', score: 94, color: theme.warning }
+  const getDefCourses = () => [
+    {
+      id: 'def_francais',
+      icon: 'language-outline',
+      title: 'Français',
+      subtitle: 'Grammaire, littérature et expression',
+      progress: 65,
+      color: theme.secondary,
+      difficulty: 'Moyen',
+      lessons: 24,
+      level: 'DEF'
+    },
+    {
+      id: 'def_math',
+      icon: 'calculator-outline',
+      title: 'Mathématiques',
+      subtitle: 'Algèbre, géométrie et calcul',
+      progress: 45,
+      color: theme.primary,
+      difficulty: 'Moyen',
+      lessons: 28,
+      level: 'DEF'
+    },
+    {
+      id: 'def_physique_chimie',
+      icon: 'flask-outline',
+      title: 'Physique-Chimie',
+      subtitle: 'Sciences physiques et chimiques',
+      progress: 30,
+      color: theme.accent,
+      difficulty: 'Moyen',
+      lessons: 20,
+      level: 'DEF'
+    },
+    {
+      id: 'def_histoire_geo',
+      icon: 'globe-outline',
+      title: 'Histoire-Géographie',
+      subtitle: 'Histoire du monde et géographie',
+      progress: 75,
+      color: theme.info,
+      difficulty: 'Facile',
+      lessons: 22,
+      level: 'DEF'
+    },
+    {
+      id: 'def_svt',
+      icon: 'leaf-outline',
+      title: 'Sciences de la Vie et de la Terre',
+      subtitle: 'Biologie et sciences naturelles',
+      progress: 50,
+      color: theme.success,
+      difficulty: 'Facile',
+      lessons: 18,
+      level: 'DEF'
+    },
+    {
+      id: 'def_anglais',
+      icon: 'globe',
+      title: 'Anglais',
+      subtitle: 'Langue anglaise et communication',
+      progress: 40,
+      color: theme.neutralDark,
+      difficulty: 'Moyen',
+      lessons: 16,
+      level: 'DEF'
+    },
+    {
+      id: 'def_civique',
+      icon: 'people-outline',
+      title: 'Éducation Civique et Morale',
+      subtitle: 'Citoyenneté et valeurs',
+      progress: 80,
+      color: theme.warning,
+      difficulty: 'Facile',
+      lessons: 12,
+      level: 'DEF'
+    }
   ];
 
-  const getBacQuizzes = () => {
-    const quizzesByTrack = {
+  const getBacCourses = () => {
+    const coursesByTrack = {
       TSE: [
-        { icon: 'calculator-outline', title: 'Intégrales', subject: 'Mathématiques', questions: 20, duration: 45, difficulty: 'Difficile', score: 78, color: theme.primary },
-        { icon: 'nuclear-outline', title: 'Mécanique quantique', subject: 'Physique', questions: 15, duration: 35, difficulty: 'Difficile', color: theme.accent },
-        { icon: 'flask-outline', title: 'Chimie organique', subject: 'Chimie', questions: 18, duration: 40, difficulty: 'Difficile', score: 82, color: theme.info },
-        { icon: 'leaf-outline', title: 'Géologie', subject: 'Bio/Geo', questions: 12, duration: 25, difficulty: 'Moyen', color: theme.success },
-        { icon: 'language-outline', title: 'Dissertation', subject: 'Français', questions: 3, duration: 60, difficulty: 'Difficile', color: theme.secondary },
-        { icon: 'bulb-outline', title: 'Logique', subject: 'Philosophie', questions: 10, duration: 25, difficulty: 'Moyen', score: 85, color: theme.warning },
-        { icon: 'globe', title: 'Advanced Grammar', subject: 'Anglais', questions: 15, duration: 20, difficulty: 'Moyen', score: 91, color: theme.neutralDark }
+        { id: 'tse_math', icon: 'calculator-outline', title: 'Mathématiques', subtitle: 'Analyse, algèbre et géométrie', color: theme.primary, difficulty: 'Difficile', lessons: 32, progress: 68, level: 'TSE' },
+        { id: 'tse_physique', icon: 'nuclear-outline', title: 'Physique', subtitle: 'Mécanique, thermodynamique, optique', color: theme.accent, difficulty: 'Difficile', lessons: 28, progress: 45, level: 'TSE' },
+        { id: 'tse_chimie', icon: 'flask-outline', title: 'Chimie', subtitle: 'Chimie organique et minérale', color: theme.info, difficulty: 'Difficile', lessons: 24, progress: 72, level: 'TSE' },
+        { id: 'tse_bio_geo', icon: 'leaf-outline', title: 'Bio/Geo', subtitle: 'Biologie et géologie', color: theme.success, difficulty: 'Moyen', lessons: 20, progress: 56, level: 'TSE' },
+        { id: 'tse_francais', icon: 'language-outline', title: 'Français', subtitle: 'Littérature et expression écrite', color: theme.secondary, difficulty: 'Moyen', lessons: 18, progress: 83, level: 'TSE' },
+        { id: 'tse_philo', icon: 'bulb-outline', title: 'Philosophie', subtitle: 'Pensée critique et logique', color: theme.warning, difficulty: 'Moyen', lessons: 14, level: 'TSE' },
+        { id: 'tse_anglais', icon: 'globe', title: 'Anglais', subtitle: 'Communication avancée', color: theme.neutralDark, difficulty: 'Moyen', lessons: 12, progress: 91, level: 'TSE' }
       ],
       TSEXP: [
-        { icon: 'calculator-outline', title: 'Statistiques', subject: 'Mathématiques', questions: 16, duration: 35, difficulty: 'Difficile', score: 74, color: theme.primary },
-        { icon: 'flask-outline', title: 'Analyses chimiques', subject: 'Physique/Chimie', questions: 14, duration: 30, difficulty: 'Difficile', color: theme.accent },
-        { icon: 'leaf-outline', title: 'Écologie', subject: 'Bio', questions: 12, duration: 28, difficulty: 'Moyen', score: 88, color: theme.success },
-        { icon: 'globe-outline', title: 'Environnement', subject: 'Geo', questions: 10, duration: 20, difficulty: 'Moyen', color: theme.warning },
-        { icon: 'bulb-outline', title: 'Éthique scientifique', subject: 'Philosophie', questions: 8, duration: 25, difficulty: 'Moyen', color: theme.info },
-        { icon: 'globe', title: 'Scientific English', subject: 'Anglais', questions: 12, duration: 18, difficulty: 'Moyen', score: 89, color: theme.neutralDark }
+        { id: 'tsexp_math', icon: 'calculator-outline', title: 'Mathématiques', subtitle: 'Statistiques et probabilités', color: theme.primary, difficulty: 'Difficile', lessons: 28, progress: 62, level: 'TSEXP' },
+        { id: 'tsexp_phys_chim', icon: 'flask-outline', title: 'Physique/Chimie', subtitle: 'Sciences expérimentales', color: theme.accent, difficulty: 'Difficile', lessons: 26, progress: 55, level: 'TSEXP' },
+        { id: 'tsexp_bio', icon: 'leaf-outline', title: 'Bio', subtitle: 'Biologie et sciences naturelles', color: theme.success, difficulty: 'Moyen', lessons: 24, progress: 71, level: 'TSEXP' },
+        { id: 'tsexp_geo', icon: 'globe-outline', title: 'Geo', subtitle: 'Géographie et environnement', color: theme.warning, difficulty: 'Moyen', lessons: 16, progress: 64, level: 'TSEXP' },
+        { id: 'tsexp_philo', icon: 'bulb-outline', title: 'Philosophie', subtitle: 'Éthique et sciences', color: theme.info, difficulty: 'Moyen', lessons: 14, level: 'TSEXP' },
+        { id: 'tsexp_anglais', icon: 'globe', title: 'Anglais', subtitle: 'Anglais scientifique', color: theme.neutralDark, difficulty: 'Moyen', lessons: 12, progress: 88, level: 'TSEXP' }
       ],
       TSECO: [
-        { icon: 'trending-up-outline', title: 'Microéconomie', subject: 'Économie', questions: 20, duration: 40, difficulty: 'Moyen', score: 88, color: theme.success },
-        { icon: 'briefcase-outline', title: 'Management', subject: 'Gestion', questions: 15, duration: 30, difficulty: 'Moyen', color: theme.neutralDark },
-        { icon: 'document-text-outline', title: 'Droit commercial', subject: 'Droit', questions: 18, duration: 35, difficulty: 'Moyen', score: 79, color: theme.warning },
-        { icon: 'calculator-outline', title: 'Statistiques économiques', subject: 'Mathématiques appliquées', questions: 14, duration: 25, difficulty: 'Moyen', color: theme.primary },
-        { icon: 'language-outline', title: 'Communication professionnelle', subject: 'Français', questions: 12, duration: 30, difficulty: 'Moyen', score: 85, color: theme.secondary },
-        { icon: 'bulb-outline', title: 'Philosophie politique', subject: 'Philosophie', questions: 10, duration: 25, difficulty: 'Moyen', color: theme.info },
-        { icon: 'globe', title: 'Business English', subject: 'Anglais', questions: 12, duration: 20, difficulty: 'Moyen', score: 87, color: theme.accent },
-        { icon: 'globe-outline', title: 'Géographie économique', subject: 'Histoire-Géographie', questions: 15, duration: 25, difficulty: 'Facile', score: 92, color: theme.error },
-        { icon: 'people-outline', title: 'Citoyenneté', subject: 'Éducation Civique', questions: 8, duration: 15, difficulty: 'Facile', score: 96, color: theme.neutralLight }
+        { id: 'tseco_math', icon: 'calculator-outline', title: 'Mathématiques appliquées', subtitle: 'Statistiques économiques', color: theme.primary, difficulty: 'Moyen', lessons: 24, progress: 58, level: 'TSECO' },
+        { id: 'tseco_eco', icon: 'trending-up-outline', title: 'Économie', subtitle: 'Microéconomie et macroéconomie', color: theme.success, difficulty: 'Moyen', lessons: 28, progress: 73, level: 'TSECO' },
+        { id: 'tseco_gestion', icon: 'briefcase-outline', title: 'Gestion', subtitle: 'Management et organisation', color: theme.neutralDark, difficulty: 'Moyen', lessons: 22, progress: 64, level: 'TSECO' },
+        { id: 'tseco_droit', icon: 'document-text-outline', title: 'Droit', subtitle: 'Droit commercial et civil', color: theme.warning, difficulty: 'Moyen', lessons: 20, level: 'TSECO' },
+        { id: 'tseco_francais', icon: 'language-outline', title: 'Français', subtitle: 'Communication professionnelle', color: theme.secondary, difficulty: 'Moyen', lessons: 16, progress: 81, level: 'TSECO' },
+        { id: 'tseco_philo', icon: 'bulb-outline', title: 'Philosophie', subtitle: 'Philosophie politique', color: theme.info, difficulty: 'Moyen', lessons: 14, level: 'TSECO' },
+        { id: 'tseco_anglais', icon: 'globe', title: 'Anglais', subtitle: 'Anglais des affaires', color: theme.accent, difficulty: 'Moyen', lessons: 12, progress: 87, level: 'TSECO' },
+        { id: 'tseco_hist_geo', icon: 'globe-outline', title: 'Histoire-Géographie', subtitle: 'Géographie économique', color: theme.error, difficulty: 'Facile', lessons: 18, progress: 92, level: 'TSECO' },
+        { id: 'tseco_civique', icon: 'people-outline', title: 'Éducation Civique', subtitle: 'Citoyenneté et société', color: theme.neutralLight, difficulty: 'Facile', lessons: 10, progress: 96, level: 'TSECO' }
       ],
       TSS: [
-        { icon: 'people-outline', title: 'Comportements sociaux', subject: 'Sociologie', questions: 18, duration: 35, difficulty: 'Moyen', score: 83, color: theme.info },
-        { icon: 'globe-outline', title: 'Histoire sociale', subject: 'Histoire-Géographie', questions: 16, duration: 30, difficulty: 'Moyen', score: 78, color: theme.warning },
-        { icon: 'bulb-outline', title: 'Philosophie politique', subject: 'Philosophie', questions: 12, duration: 30, difficulty: 'Difficile', color: theme.neutralDark },
-        { icon: 'language-outline', title: 'Argumentation', subject: 'Français', questions: 10, duration: 35, difficulty: 'Moyen', score: 84, color: theme.secondary },
-        { icon: 'globe', title: 'Communication internationale', subject: 'Anglais', questions: 12, duration: 20, difficulty: 'Moyen', score: 89, color: theme.accent },
-        { icon: 'school-outline', title: 'Droits humains', subject: 'Éducation Civique et Morale', questions: 8, duration: 15, difficulty: 'Facile', score: 95, color: theme.success },
-        { icon: 'calculator-outline', title: 'Statistiques sociales', subject: 'Mathématiques adaptées', questions: 10, duration: 20, difficulty: 'Facile', score: 76, color: theme.primary }
+        { id: 'tss_socio', icon: 'people-outline', title: 'Sociologie', subtitle: 'Société et comportements', color: theme.info, difficulty: 'Moyen', lessons: 26, progress: 67, level: 'TSS' },
+        { id: 'tss_hist_geo', icon: 'globe-outline', title: 'Histoire-Géographie', subtitle: 'Histoire sociale et géographie humaine', color: theme.warning, difficulty: 'Moyen', lessons: 24, progress: 72, level: 'TSS' },
+        { id: 'tss_philo', icon: 'bulb-outline', title: 'Philosophie', subtitle: 'Philosophie sociale et politique', color: theme.neutralDark, difficulty: 'Difficile', lessons: 20, progress: 58, level: 'TSS' },
+        { id: 'tss_francais', icon: 'language-outline', title: 'Français', subtitle: 'Littérature et argumentation', color: theme.secondary, difficulty: 'Moyen', lessons: 18, progress: 84, level: 'TSS' },
+        { id: 'tss_anglais', icon: 'globe', title: 'Anglais', subtitle: 'Communication internationale', color: theme.accent, difficulty: 'Moyen', lessons: 14, progress: 89, level: 'TSS' },
+        { id: 'tss_civique', icon: 'school-outline', title: 'Éducation Civique et Morale', subtitle: 'Citoyenneté et droits humains', color: theme.success, difficulty: 'Facile', lessons: 12, progress: 95, level: 'TSS' },
+        { id: 'tss_math', icon: 'calculator-outline', title: 'Mathématiques adaptées', subtitle: 'Statistiques sociales', color: theme.primary, difficulty: 'Facile', lessons: 16, progress: 76, level: 'TSS' }
       ],
       TAL: [
-        { icon: 'book-outline', title: 'Littérature moderne', subject: 'Littérature', questions: 15, duration: 40, difficulty: 'Difficile', score: 76, color: theme.accent },
-        { icon: 'bulb-outline', title: 'Esthétique', subject: 'Philosophie', questions: 12, duration: 35, difficulty: 'Difficile', color: theme.info },
-        { icon: 'color-palette-outline', title: 'Art contemporain', subject: 'Histoire de l\'art', questions: 12, duration: 25, difficulty: 'Moyen', score: 89, color: theme.error },
-        { icon: 'language-outline', title: 'Expression créative', subject: 'Français', questions: 8, duration: 45, difficulty: 'Moyen', score: 82, color: theme.secondary },
-        { icon: 'globe', title: 'Anglais littéraire', subject: 'Anglais', questions: 10, duration: 25, difficulty: 'Moyen', score: 87, color: theme.neutralDark },
-        { icon: 'brush-outline', title: 'Pratique artistique', subject: 'Arts plastiques ou musique', questions: 6, duration: 30, difficulty: 'Moyen', score: 74, color: theme.warning },
-        { icon: 'globe-outline', title: 'Histoire culturelle', subject: 'Histoire-Géographie', questions: 12, duration: 20, difficulty: 'Facile', score: 91, color: theme.success }
+        { id: 'tal_litterature', icon: 'book-outline', title: 'Littérature', subtitle: 'Littérature classique et moderne', color: theme.accent, difficulty: 'Difficile', lessons: 28, progress: 69, level: 'TAL' },
+        { id: 'tal_philo', icon: 'bulb-outline', title: 'Philosophie', subtitle: 'Esthétique et philosophie de l\'art', color: theme.info, difficulty: 'Difficile', lessons: 22, progress: 61, level: 'TAL' },
+        { id: 'tal_hist_art', icon: 'color-palette-outline', title: 'Histoire de l\'art', subtitle: 'Art et civilisations', color: theme.error, difficulty: 'Moyen', lessons: 20, progress: 78, level: 'TAL' },
+        { id: 'tal_francais', icon: 'language-outline', title: 'Français', subtitle: 'Expression créative et critique', color: theme.secondary, difficulty: 'Moyen', lessons: 24, progress: 82, level: 'TAL' },
+        { id: 'tal_anglais', icon: 'globe', title: 'Anglais', subtitle: 'Anglais littéraire', color: theme.neutralDark, difficulty: 'Moyen', lessons: 16, progress: 87, level: 'TAL' },
+        { id: 'tal_arts', icon: 'brush-outline', title: 'Arts plastiques ou musique', subtitle: 'Pratique artistique', color: theme.warning, difficulty: 'Moyen', lessons: 18, progress: 74, level: 'TAL' },
+        { id: 'tal_hist_geo', icon: 'globe-outline', title: 'Histoire-Géographie', subtitle: 'Histoire culturelle', color: theme.success, difficulty: 'Facile', lessons: 14, progress: 91, level: 'TAL' }
       ],
       TLL: [
-        { icon: 'language-outline', title: 'Grammaire comparée', subject: 'Langues vivantes', questions: 20, duration: 35, difficulty: 'Difficile', score: 81, color: theme.success },
-        { icon: 'book-outline', title: 'Analyse littéraire', subject: 'Littérature', questions: 14, duration: 30, difficulty: 'Difficile', score: 77, color: theme.accent },
-        { icon: 'bulb-outline', title: 'Philosophie du langage', subject: 'Philosophie', questions: 10, duration: 25, difficulty: 'Difficile', color: theme.info },
-        { icon: 'globe-outline', title: 'Histoire des civilisations', subject: 'Histoire-Géographie', questions: 15, duration: 25, difficulty: 'Moyen', score: 86, color: theme.warning },
-        { icon: 'create-outline', title: 'Linguistique', subject: 'Français', questions: 12, duration: 30, difficulty: 'Moyen', score: 83, color: theme.secondary },
-        { icon: 'people-outline', title: 'Diversité culturelle', subject: 'Éducation Civique', questions: 8, duration: 15, difficulty: 'Facile', score: 92, color: theme.neutralDark }
+        { id: 'tll_langues', icon: 'language-outline', title: 'Langues vivantes', subtitle: 'Anglais, Français, Arabe', color: theme.success, difficulty: 'Difficile', lessons: 30, progress: 73, level: 'TLL' },
+        { id: 'tll_litterature', icon: 'book-outline', title: 'Littérature', subtitle: 'Littérature comparée', color: theme.accent, difficulty: 'Difficile', lessons: 26, progress: 65, level: 'TLL' },
+        { id: 'tll_philo', icon: 'bulb-outline', title: 'Philosophie', subtitle: 'Philosophie du langage', color: theme.info, difficulty: 'Difficile', lessons: 18, progress: 59, level: 'TLL' },
+        { id: 'tll_hist_geo', icon: 'globe-outline', title: 'Histoire-Géographie', subtitle: 'Histoire des civilisations', color: theme.warning, difficulty: 'Moyen', lessons: 20, progress: 81, level: 'TLL' },
+        { id: 'tll_francais', icon: 'create-outline', title: 'Français', subtitle: 'Linguistique et stylistique', color: theme.secondary, difficulty: 'Moyen', lessons: 22, progress: 86, level: 'TLL' },
+        { id: 'tll_civique', icon: 'people-outline', title: 'Éducation Civique', subtitle: 'Diversité culturelle', color: theme.neutralDark, difficulty: 'Facile', lessons: 12, progress: 92, level: 'TLL' }
       ],
       STI: [
-        { icon: 'calculator-outline', title: 'Mathématiques industrielles', subject: 'Mathématiques appliquées', questions: 18, duration: 35, difficulty: 'Difficile', score: 73, color: theme.primary },
-        { icon: 'nuclear-outline', title: 'Physique industrielle', subject: 'Physique appliquée', questions: 16, duration: 30, difficulty: 'Difficile', color: theme.accent },
-        { icon: 'construct-outline', title: 'Systèmes industriels', subject: 'Technologie industrielle', questions: 14, duration: 35, difficulty: 'Difficile', score: 81, color: theme.warning },
-        { icon: 'desktop-outline', title: 'Automatisation', subject: 'Informatique industrielle', questions: 12, duration: 25, difficulty: 'Moyen', score: 88, color: theme.neutralDark },
-        { icon: 'language-outline', title: 'Communication technique', subject: 'Français', questions: 10, duration: 20, difficulty: 'Moyen', score: 85, color: theme.secondary },
-        { icon: 'bulb-outline', title: 'Éthique technologique', subject: 'Philosophie', questions: 8, duration: 20, difficulty: 'Moyen', color: theme.info },
-        { icon: 'globe', title: 'Anglais technique', subject: 'Anglais', questions: 10, duration: 18, difficulty: 'Moyen', score: 79, color: theme.success }
+        { id: 'sti_math', icon: 'calculator-outline', title: 'Mathématiques appliquées', subtitle: 'Mathématiques industrielles', color: theme.primary, difficulty: 'Difficile', lessons: 28, progress: 63, level: 'STI' },
+        { id: 'sti_physique', icon: 'nuclear-outline', title: 'Physique appliquée', subtitle: 'Physique industrielle', color: theme.accent, difficulty: 'Difficile', lessons: 26, progress: 57, level: 'STI' },
+        { id: 'sti_techno', icon: 'construct-outline', title: 'Technologie industrielle', subtitle: 'Procédés et systèmes', color: theme.warning, difficulty: 'Difficile', lessons: 24, progress: 71, level: 'STI' },
+        { id: 'sti_info', icon: 'desktop-outline', title: 'Informatique industrielle', subtitle: 'Automatisation et contrôle', color: theme.neutralDark, difficulty: 'Moyen', lessons: 20, progress: 68, level: 'STI' },
+        { id: 'sti_francais', icon: 'language-outline', title: 'Français', subtitle: 'Communication technique', color: theme.secondary, difficulty: 'Moyen', lessons: 16, progress: 83, level: 'STI' },
+        { id: 'sti_philo', icon: 'bulb-outline', title: 'Philosophie', subtitle: 'Éthique et technologie', color: theme.info, difficulty: 'Moyen', lessons: 14, level: 'STI' },
+        { id: 'sti_anglais', icon: 'globe', title: 'Anglais', subtitle: 'Anglais technique', color: theme.success, difficulty: 'Moyen', lessons: 12, progress: 79, level: 'STI' }
       ],
       STG: [
-        { icon: 'briefcase-outline', title: 'Gestion d\'entreprise', subject: 'Gestion et administration', questions: 18, duration: 35, difficulty: 'Moyen', score: 84, color: theme.success },
-        { icon: 'calculator-outline', title: 'Comptabilité analytique', subject: 'Comptabilité', questions: 15, duration: 30, difficulty: 'Moyen', score: 79, color: theme.primary },
-        { icon: 'trending-up-outline', title: 'Économie d\'entreprise', subject: 'Économie', questions: 16, duration: 25, difficulty: 'Moyen', score: 86, color: theme.error },
-        { icon: 'stats-chart-outline', title: 'Statistiques de gestion', subject: 'Mathématiques appliquées', questions: 12, duration: 25, difficulty: 'Moyen', color: theme.info },
-        { icon: 'document-text-outline', title: 'Droit des affaires', subject: 'Droit', questions: 14, duration: 30, difficulty: 'Moyen', score: 82, color: theme.warning },
-        { icon: 'language-outline', title: 'Communication d\'entreprise', subject: 'Français', questions: 10, duration: 25, difficulty: 'Moyen', score: 88, color: theme.secondary },
-        { icon: 'bulb-outline', title: 'Éthique des affaires', subject: 'Philosophie', questions: 8, duration: 20, difficulty: 'Moyen', color: theme.neutralDark },
-        { icon: 'globe', title: 'Anglais commercial', subject: 'Anglais', questions: 10, duration: 18, difficulty: 'Moyen', score: 91, color: theme.accent }
+        { id: 'stg_gestion', icon: 'briefcase-outline', title: 'Gestion et administration', subtitle: 'Management et organisation', color: theme.success, difficulty: 'Moyen', lessons: 26, progress: 75, level: 'STG' },
+        { id: 'stg_compta', icon: 'calculator-outline', title: 'Comptabilité', subtitle: 'Comptabilité générale et analytique', color: theme.primary, difficulty: 'Moyen', lessons: 24, progress: 69, level: 'STG' },
+        { id: 'stg_eco', icon: 'trending-up-outline', title: 'Économie', subtitle: 'Économie d\'entreprise', color: theme.error, difficulty: 'Moyen', lessons: 22, progress: 72, level: 'STG' },
+        { id: 'stg_math', icon: 'stats-chart-outline', title: 'Mathématiques appliquées', subtitle: 'Statistiques de gestion', color: theme.info, difficulty: 'Moyen', lessons: 20, progress: 66, level: 'STG' },
+        { id: 'stg_droit', icon: 'document-text-outline', title: 'Droit', subtitle: 'Droit des affaires', color: theme.warning, difficulty: 'Moyen', lessons: 18, progress: 78, level: 'STG' },
+        { id: 'stg_francais', icon: 'language-outline', title: 'Français', subtitle: 'Communication d\'entreprise', color: theme.secondary, difficulty: 'Moyen', lessons: 16, progress: 84, level: 'STG' },
+        { id: 'stg_philo', icon: 'bulb-outline', title: 'Philosophie', subtitle: 'Éthique des affaires', color: theme.neutralDark, difficulty: 'Moyen', lessons: 14, level: 'STG' },
+        { id: 'stg_anglais', icon: 'globe', title: 'Anglais', subtitle: 'Anglais commercial', color: theme.accent, difficulty: 'Moyen', lessons: 12, progress: 81, level: 'STG' }
       ]
     };
 
-    return quizzesByTrack[user?.level] || quizzesByTrack.TSE;
+    return coursesByTrack[user?.level] || coursesByTrack.TSE;
   };
 
-  const QuizCard = ({ icon, title, subject, questions, duration, difficulty, score, color, onPress }) => (
-    <TouchableOpacity 
-      style={[styles.quizCard, { backgroundColor: theme.surface }]}
-      onPress={onPress}
-    >
-      <View style={[styles.quizIcon, { backgroundColor: color + '20' }]}>
-        <Ionicons name={icon} size={24} color={color} />
-      </View>
-      
-      <View style={styles.quizContent}>
-        <Text style={[styles.quizTitle, { color: theme.text }]}>{title}</Text>
-        <Text style={[styles.quizSubject, { color: theme.text + '80' }]}>{subject}</Text>
-        
-        <View style={styles.quizInfo}>
-          <View style={styles.infoRow}>
-            <View style={styles.infoItem}>
-              <Ionicons name="help-circle-outline" size={14} color={theme.text + '60'} />
-              <Text style={[styles.infoText, { color: theme.text + '60' }]}>{questions} questions</Text>
-            </View>
-            <View style={styles.infoItem}>
-              <Ionicons name="time-outline" size={14} color={theme.text + '60'} />
-              <Text style={[styles.infoText, { color: theme.text + '60' }]}>{duration} min</Text>
-            </View>
-          </View>
-          
-          <View style={styles.quizMeta}>
-            <View style={[styles.difficultyBadge, { backgroundColor: getDifficultyColor(difficulty) + '20' }]}>
-              <Text style={[styles.difficultyText, { color: getDifficultyColor(difficulty) }]}>
-                {difficulty}
-              </Text>
-            </View>
-            {score !== undefined && (
-              <Text style={[styles.scoreText, { color: getPerformanceColor(score) }]}>
-                {score}%
-              </Text>
-            )}
-          </View>
-        </View>
-      </View>
+  const coursesData = isDefLevel ? getDefCourses() : getBacCourses();
 
-      <Ionicons name="chevron-forward" size={20} color={theme.text + '40'} />
-    </TouchableOpacity>
-  );
+  const handleCoursePress = (course) => {
+    router.push(`/(tabs)/courses/${course.level}/${course.title.replace(/\s+/g, '_').replace(/\//g, '_')}`);
+  };
 
-  const quizzesData = isDefLevel ? getDefQuizzes() : getBacQuizzes();
-
+  // Header Component
   const Header = () => (
     <View style={[styles.header, { backgroundColor: theme.primary }]}>
       <View style={styles.headerContent}>
         <View>
           <Text style={[styles.headerSubtitle, { color: '#FFFFFF99' }]}>
-            Performance
+            {isDefLevel ? 'Mes Cours DEF' : `Mes Cours ${user?.level}`}
           </Text>
           <Text style={[styles.headerTitle, { color: '#FFFFFF' }]}>
-            Quiz Dashboard
+            Catalogue de Cours
           </Text>
         </View>
-        <TouchableOpacity 
-          style={[styles.filterButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}
-          onPress={() => console.log('Filter')}
-        >
-          <Ionicons name="analytics" size={20} color="#FFFFFF" />
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-
-  const PerformanceRing = ({ percentage, size = 80 }) => (
-    <View style={[styles.ringContainer, { width: size, height: size }]}>
-      <View style={[styles.ringBackground, { 
-        width: size, 
-        height: size, 
-        borderRadius: size/2,
-        borderColor: theme.neutralLight 
-      }]}>
-        <View style={[styles.ringFill, { 
-          width: size, 
-          height: size, 
-          borderRadius: size/2,
-          borderTopColor: getPerformanceColor(percentage),
-          borderRightColor: getPerformanceColor(percentage),
-          transform: [{ rotate: `${(percentage / 100) * 360}deg` }]
-        }]} />
-        <View style={[styles.ringInner, { 
-          width: size - 16, 
-          height: size - 16, 
-          borderRadius: (size - 16)/2,
-          backgroundColor: theme.surface
-        }]}>
-          <Text style={[styles.ringText, { color: theme.text, fontSize: size * 0.2 }]}>
-            {percentage}%
-          </Text>
-        </View>
-      </View>
-    </View>
-  );
-
-  const PerformanceCard = () => {
-    const completedQuizzes = quizzesData.filter(q => q.score);
-    const averageScore = completedQuizzes.length > 0 
-      ? Math.round(completedQuizzes.reduce((acc, q) => acc + q.score, 0) / completedQuizzes.length) 
-      : 0;
-
-    return (
-      <View style={[styles.performanceCard, { backgroundColor: theme.surface }]}>
-        <View style={styles.performanceHeader}>
-          <Text style={[styles.performanceTitle, { color: theme.text }]}>Performance Globale</Text>
-          <TouchableOpacity onPress={() => console.log('Details')}>
-            <Text style={[styles.detailsLink, { color: theme.primary }]}>Détails</Text>
+        <View style={styles.headerActions}>
+          <TouchableOpacity 
+            style={[styles.filterButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}
+          >
+            <Ionicons name="filter-outline" size={18} color="#FFFFFF" />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.searchButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}
+          >
+            <Ionicons name="search-outline" size={18} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
-        
-        <View style={styles.performanceContent}>
-          <PerformanceRing percentage={averageScore} size={100} />
-          
-          <View style={styles.performanceStats}>
-            <View style={styles.statRow}>
-              <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Quiz terminés</Text>
-              <Text style={[styles.statValue, { color: theme.text }]}>{completedQuizzes.length}</Text>
-            </View>
-            <View style={styles.statRow}>
-              <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Temps moyen</Text>
-              <Text style={[styles.statValue, { color: theme.text }]}>23 min</Text>
-            </View>
-            <View style={styles.statRow}>
-              <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Meilleur score</Text>
-              <Text style={[styles.statValue, { color: theme.success }]}>
-                {completedQuizzes.length > 0 ? Math.max(...completedQuizzes.map(q => q.score)) : 0}%
-              </Text>
-            </View>
-          </View>
+      </View>
+    </View>
+  );
+
+  // Stats Section
+  const StatsSelector = () => (
+    <View style={[styles.statsSelector, { backgroundColor: theme.surface }]}>
+      <View style={styles.statsGrid}>
+        <View style={styles.statCard}>
+          <Text style={[styles.statValue, { color: theme.primary }]}>
+            {coursesData.filter(c => c.progress).length}
+          </Text>
+          <Text style={[styles.statLabel, { color: theme.textSecondary }]}>En cours</Text>
+        </View>
+        <View style={styles.statCard}>
+          <Text style={[styles.statValue, { color: theme.success }]}>
+            {Math.round(coursesData.filter(c => c.progress).reduce((acc, c) => acc + c.progress, 0) / coursesData.filter(c => c.progress).length) || 0}%
+          </Text>
+          <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Progression</Text>
+        </View>
+        <View style={styles.statCard}>
+          <Text style={[styles.statValue, { color: theme.accent }]}>
+            {coursesData.length - coursesData.filter(c => c.progress).length}
+          </Text>
+          <Text style={[styles.statLabel, { color: theme.textSecondary }]}>À commencer</Text>
         </View>
       </View>
-    );
-  };
+    </View>
+  );
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <Header />
+      <StatsSelector />
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Performance Overview */}
-        <View style={styles.performanceSection}>
-          <PerformanceCard />
-        </View>
-
-        {/* Quiz List */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: theme.text }]}>
-              {isDefLevel ? 'Quiz DEF' : `Quiz ${user?.level}`}
+              Tous les cours
             </Text>
           </View>
           
-          {quizzesData.map((quiz, index) => (
-            <QuizCard
-              key={index}
-              icon={quiz.icon}
-              title={quiz.title}
-              subject={quiz.subject}
-              questions={quiz.questions}
-              duration={quiz.duration}
-              difficulty={quiz.difficulty}
-              score={quiz.score}
-              color={quiz.color}
-              onPress={() => console.log(`Start quiz: ${quiz.title}`)}
+          {coursesData.map((course, index) => (
+            <CourseCard
+              key={course.id}
+              icon={course.icon}
+              title={course.title}
+              subtitle={course.subtitle}
+              progress={course.progress}
+              color={course.color}
+              difficulty={course.difficulty}
+              lessons={course.lessons}
+              level={course.level}
+              onPress={() => handleCoursePress(course)}
             />
           ))}
         </View>
@@ -327,12 +355,51 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
   },
+  headerActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
   filterButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  searchButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  statsSelector: {
+    marginTop: -15,
+    marginHorizontal: 20,
+    borderRadius: 20,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  statCard: {
+    alignItems: 'center',
+  },
+  statValue: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 12,
+    fontWeight: '500',
   },
   section: {
     paddingHorizontal: 20,
@@ -346,115 +413,43 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: 'bold',
   },
-  performanceSection: {
-    marginBottom: 24,
-  },
-  performanceCard: {
+  courseCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
     borderRadius: 20,
-    padding: 20,
-    marginTop: -15,
-    marginHorizontal: 20,
+    marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
     shadowRadius: 8,
     elevation: 3,
   },
-  performanceHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  performanceTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  detailsLink: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  performanceContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  ringContainer: {
-    marginRight: 24,
-  },
-  ringBackground: {
-    borderWidth: 8,
-    position: 'relative',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  ringFill: {
-    position: 'absolute',
-    borderWidth: 8,
-    borderColor: 'transparent',
-  },
-  ringInner: {
-    position: 'absolute',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  ringText: {
-    fontWeight: 'bold',
-  },
-  performanceStats: {
-    flex: 1,
-    gap: 12,
-  },
-  statRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  statLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  statValue: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  quizCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  quizIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  courseIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
   },
-  quizContent: {
+  courseContent: {
     flex: 1,
   },
-  quizTitle: {
+  courseTitle: {
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 2,
+    marginBottom: 4,
   },
-  quizSubject: {
-    fontSize: 12,
+  courseSubtitle: {
+    fontSize: 14,
     marginBottom: 8,
   },
-  quizInfo: {
-    gap: 6,
-  },
-  infoRow: {
+  courseInfo: {
     flexDirection: 'row',
-    gap: 16,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
   },
   infoItem: {
     flexDirection: 'row',
@@ -462,25 +457,35 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   infoText: {
-    fontSize: 11,
-  },
-  quizMeta: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    fontSize: 12,
   },
   difficultyBadge: {
-    paddingHorizontal: 6,
+    paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: 8,
+    borderRadius: 10,
   },
   difficultyText: {
     fontSize: 10,
     fontWeight: '600',
   },
-  scoreText: {
-    fontSize: 14,
-    fontWeight: 'bold',
+  progressSection: {
+    marginTop: 4,
+  },
+  progressHeader: {
+    marginBottom: 4,
+  },
+  progressText: {
+    fontSize: 12,
+  },
+  progressBarContainer: {
+    height: 6,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  progressBar: {
+    height: '100%',
+    borderRadius: 3,
   },
   bottomPadding: {
     height: 40,
