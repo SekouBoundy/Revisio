@@ -1,4 +1,4 @@
-// app/(tabs)/courses/index.js - Updated with new course structure
+// app/(tabs)/courses/index.js - CLEAN VERSION
 import React, { useContext } from 'react';
 import {
   View,
@@ -184,51 +184,6 @@ export default function CoursesScreen() {
         { id: 'tseco_anglais', icon: 'globe', title: 'Anglais', subtitle: 'Anglais des affaires', color: theme.accent, difficulty: 'Moyen', lessons: 12, progress: 87, level: 'TSECO' },
         { id: 'tseco_hist_geo', icon: 'globe-outline', title: 'Histoire-Géographie', subtitle: 'Géographie économique', color: theme.error, difficulty: 'Facile', lessons: 18, progress: 92, level: 'TSECO' },
         { id: 'tseco_civique', icon: 'people-outline', title: 'Éducation Civique', subtitle: 'Citoyenneté et société', color: theme.neutralLight, difficulty: 'Facile', lessons: 10, progress: 96, level: 'TSECO' }
-      ],
-      TSS: [
-        { id: 'tss_socio', icon: 'people-outline', title: 'Sociologie', subtitle: 'Société et comportements', color: theme.info, difficulty: 'Moyen', lessons: 26, progress: 67, level: 'TSS' },
-        { id: 'tss_hist_geo', icon: 'globe-outline', title: 'Histoire-Géographie', subtitle: 'Histoire sociale et géographie humaine', color: theme.warning, difficulty: 'Moyen', lessons: 24, progress: 72, level: 'TSS' },
-        { id: 'tss_philo', icon: 'bulb-outline', title: 'Philosophie', subtitle: 'Philosophie sociale et politique', color: theme.neutralDark, difficulty: 'Difficile', lessons: 20, progress: 58, level: 'TSS' },
-        { id: 'tss_francais', icon: 'language-outline', title: 'Français', subtitle: 'Littérature et argumentation', color: theme.secondary, difficulty: 'Moyen', lessons: 18, progress: 84, level: 'TSS' },
-        { id: 'tss_anglais', icon: 'globe', title: 'Anglais', subtitle: 'Communication internationale', color: theme.accent, difficulty: 'Moyen', lessons: 14, progress: 89, level: 'TSS' },
-        { id: 'tss_civique', icon: 'school-outline', title: 'Éducation Civique et Morale', subtitle: 'Citoyenneté et droits humains', color: theme.success, difficulty: 'Facile', lessons: 12, progress: 95, level: 'TSS' },
-        { id: 'tss_math', icon: 'calculator-outline', title: 'Mathématiques adaptées', subtitle: 'Statistiques sociales', color: theme.primary, difficulty: 'Facile', lessons: 16, progress: 76, level: 'TSS' }
-      ],
-      TAL: [
-        { id: 'tal_litterature', icon: 'book-outline', title: 'Littérature', subtitle: 'Littérature classique et moderne', color: theme.accent, difficulty: 'Difficile', lessons: 28, progress: 69, level: 'TAL' },
-        { id: 'tal_philo', icon: 'bulb-outline', title: 'Philosophie', subtitle: 'Esthétique et philosophie de l\'art', color: theme.info, difficulty: 'Difficile', lessons: 22, progress: 61, level: 'TAL' },
-        { id: 'tal_hist_art', icon: 'color-palette-outline', title: 'Histoire de l\'art', subtitle: 'Art et civilisations', color: theme.error, difficulty: 'Moyen', lessons: 20, progress: 78, level: 'TAL' },
-        { id: 'tal_francais', icon: 'language-outline', title: 'Français', subtitle: 'Expression créative et critique', color: theme.secondary, difficulty: 'Moyen', lessons: 24, progress: 82, level: 'TAL' },
-        { id: 'tal_anglais', icon: 'globe', title: 'Anglais', subtitle: 'Anglais littéraire', color: theme.neutralDark, difficulty: 'Moyen', lessons: 16, progress: 87, level: 'TAL' },
-        { id: 'tal_arts', icon: 'brush-outline', title: 'Arts plastiques ou musique', subtitle: 'Pratique artistique', color: theme.warning, difficulty: 'Moyen', lessons: 18, progress: 74, level: 'TAL' },
-        { id: 'tal_hist_geo', icon: 'globe-outline', title: 'Histoire-Géographie', subtitle: 'Histoire culturelle', color: theme.success, difficulty: 'Facile', lessons: 14, progress: 91, level: 'TAL' }
-      ],
-      TLL: [
-        { id: 'tll_langues', icon: 'language-outline', title: 'Langues vivantes', subtitle: 'Anglais, Français, Arabe', color: theme.success, difficulty: 'Difficile', lessons: 30, progress: 73, level: 'TLL' },
-        { id: 'tll_litterature', icon: 'book-outline', title: 'Littérature', subtitle: 'Littérature comparée', color: theme.accent, difficulty: 'Difficile', lessons: 26, progress: 65, level: 'TLL' },
-        { id: 'tll_philo', icon: 'bulb-outline', title: 'Philosophie', subtitle: 'Philosophie du langage', color: theme.info, difficulty: 'Difficile', lessons: 18, progress: 59, level: 'TLL' },
-        { id: 'tll_hist_geo', icon: 'globe-outline', title: 'Histoire-Géographie', subtitle: 'Histoire des civilisations', color: theme.warning, difficulty: 'Moyen', lessons: 20, progress: 81, level: 'TLL' },
-        { id: 'tll_francais', icon: 'create-outline', title: 'Français', subtitle: 'Linguistique et stylistique', color: theme.secondary, difficulty: 'Moyen', lessons: 22, progress: 86, level: 'TLL' },
-        { id: 'tll_civique', icon: 'people-outline', title: 'Éducation Civique', subtitle: 'Diversité culturelle', color: theme.neutralDark, difficulty: 'Facile', lessons: 12, progress: 92, level: 'TLL' }
-      ],
-      STI: [
-        { id: 'sti_math', icon: 'calculator-outline', title: 'Mathématiques appliquées', subtitle: 'Mathématiques industrielles', color: theme.primary, difficulty: 'Difficile', lessons: 28, progress: 63, level: 'STI' },
-        { id: 'sti_physique', icon: 'nuclear-outline', title: 'Physique appliquée', subtitle: 'Physique industrielle', color: theme.accent, difficulty: 'Difficile', lessons: 26, progress: 57, level: 'STI' },
-        { id: 'sti_techno', icon: 'construct-outline', title: 'Technologie industrielle', subtitle: 'Procédés et systèmes', color: theme.warning, difficulty: 'Difficile', lessons: 24, progress: 71, level: 'STI' },
-        { id: 'sti_info', icon: 'desktop-outline', title: 'Informatique industrielle', subtitle: 'Automatisation et contrôle', color: theme.neutralDark, difficulty: 'Moyen', lessons: 20, progress: 68, level: 'STI' },
-        { id: 'sti_francais', icon: 'language-outline', title: 'Français', subtitle: 'Communication technique', color: theme.secondary, difficulty: 'Moyen', lessons: 16, progress: 83, level: 'STI' },
-        { id: 'sti_philo', icon: 'bulb-outline', title: 'Philosophie', subtitle: 'Éthique et technologie', color: theme.info, difficulty: 'Moyen', lessons: 14, level: 'STI' },
-        { id: 'sti_anglais', icon: 'globe', title: 'Anglais', subtitle: 'Anglais technique', color: theme.success, difficulty: 'Moyen', lessons: 12, progress: 79, level: 'STI' }
-      ],
-      STG: [
-        { id: 'stg_gestion', icon: 'briefcase-outline', title: 'Gestion et administration', subtitle: 'Management et organisation', color: theme.success, difficulty: 'Moyen', lessons: 26, progress: 75, level: 'STG' },
-        { id: 'stg_compta', icon: 'calculator-outline', title: 'Comptabilité', subtitle: 'Comptabilité générale et analytique', color: theme.primary, difficulty: 'Moyen', lessons: 24, progress: 69, level: 'STG' },
-        { id: 'stg_eco', icon: 'trending-up-outline', title: 'Économie', subtitle: 'Économie d\'entreprise', color: theme.error, difficulty: 'Moyen', lessons: 22, progress: 72, level: 'STG' },
-        { id: 'stg_math', icon: 'stats-chart-outline', title: 'Mathématiques appliquées', subtitle: 'Statistiques de gestion', color: theme.info, difficulty: 'Moyen', lessons: 20, progress: 66, level: 'STG' },
-        { id: 'stg_droit', icon: 'document-text-outline', title: 'Droit', subtitle: 'Droit des affaires', color: theme.warning, difficulty: 'Moyen', lessons: 18, progress: 78, level: 'STG' },
-        { id: 'stg_francais', icon: 'language-outline', title: 'Français', subtitle: 'Communication d\'entreprise', color: theme.secondary, difficulty: 'Moyen', lessons: 16, progress: 84, level: 'STG' },
-        { id: 'stg_philo', icon: 'bulb-outline', title: 'Philosophie', subtitle: 'Éthique des affaires', color: theme.neutralDark, difficulty: 'Moyen', lessons: 14, level: 'STG' },
-        { id: 'stg_anglais', icon: 'globe', title: 'Anglais', subtitle: 'Anglais commercial', color: theme.accent, difficulty: 'Moyen', lessons: 12, progress: 81, level: 'STG' }
       ]
     };
 

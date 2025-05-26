@@ -1,15 +1,12 @@
-// app/(tabs)/schedule.js
+// app/(tabs)/schedule.js - QUICK FIX VERSION
 import React, { useContext, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  SafeAreaView,
-  Modal,
-  TextInput,
-  Alert,
+import { 
+  SafeAreaView, 
+  ScrollView, 
+  StyleSheet, 
+  View, 
+  Text, 
+  TouchableOpacity 
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -20,39 +17,8 @@ export default function ScheduleScreen() {
   const { theme } = useContext(ThemeContext);
   const { user } = useUser();
   const isDefLevel = user?.level === 'DEF';
-
-  const getDefSchedule = () => ({
-    1: [
-      { time: '08:00-09:00', subject: 'Mathématiques', teacher: 'M. Dubois', room: 'Salle 12', type: 'Cours', color: theme.primary },
-      { time: '09:00-10:00', subject: 'Français', teacher: 'Mme Martin', room: 'Salle 8', type: 'Cours', color: theme.secondary },
-      { time: '10:15-11:15', subject: 'Histoire-Géo', teacher: 'M. Bernard', room: 'Salle 15', type: 'Cours', color: theme.accent },
-      { time: '11:15-12:15', subject: 'Anglais', teacher: 'Mme Smith', room: 'Salle 20', type: 'Cours', color: theme.info },
-      { time: '14:00-15:00', subject: 'Sciences SVT', teacher: 'M. Laurent', room: 'Lab 1', type: 'TP', color: theme.success },
-      { time: '15:00-16:00', subject: 'Physique-Chimie', teacher: 'Mme Durand', room: 'Lab 2', type: 'TP', color: theme.warning }
-    ],
-    2: [
-      { time: '08:00-09:00', subject: 'Français', teacher: 'Mme Martin', room: 'Salle 8', type: 'Cours', color: theme.secondary },
-      { time: '09:00-10:00', subject: 'Mathématiques', teacher: 'M. Dubois', room: 'Salle 12', type: 'Exercices', color: theme.primary },
-      { time: '10:15-11:15', subject: 'Éducation Civique', teacher: 'M. Moreau', room: 'Salle 18', type: 'Cours', color: theme.info },
-      { time: '11:15-12:15', subject: 'Langue Arabe', teacher: 'M. Ahmed', room: 'Salle 25', type: 'Cours', color: theme.accent }
-    ]
-  });
-
-  const getBacSchedule = () => ({
-    1: [
-      { time: '08:00-10:00', subject: 'Mathématiques', teacher: 'Prof. Leroy', room: 'Amphi A', type: 'Cours', color: theme.primary },
-      { time: '10:15-12:15', subject: 'Physique', teacher: 'Dr. Rousseau', room: 'Lab Physique', type: 'TP', color: theme.warning },
-      { time: '14:00-16:00', subject: 'Chimie', teacher: 'Prof. Blanc', room: 'Lab Chimie', type: 'TP', color: theme.accent },
-      { time: '16:15-17:15', subject: 'Philosophie', teacher: 'Prof. Mercier', room: 'Salle 101', type: 'Cours', color: theme.secondary }
-    ],
-    2: [
-      { time: '08:00-10:00', subject: 'Informatique', teacher: 'M. Garcia', room: 'Salle Info', type: 'TP', color: theme.info },
-      { time: '10:15-12:15', subject: 'Sciences SVT', teacher: 'Dr. Petit', room: 'Lab Bio', type: 'TP', color: theme.success },
-      { time: '14:00-15:00', subject: 'Français', teacher: 'Prof. Roux', room: 'Salle 205', type: 'Cours', color: theme.secondary },
-      { time: '15:15-16:15', subject: 'Anglais', teacher: 'Mrs. Johnson', room: 'Salle 210', type: 'Oral', color: theme.primary }
-    ]
-  });
-
+  
+  // INLINE DATE FUNCTION - No import needed!
   const getCurrentWeekDates = () => {
     const today = new Date();
     const currentDay = today.getDay();
@@ -74,99 +40,40 @@ export default function ScheduleScreen() {
   };
 
   const [weekDates] = useState(getCurrentWeekDates());
-  const [selectedDayIndex, setSelectedDayIndex] = useState(() => {
-    const today = new Date();
-    const currentDay = today.getDay();
-    return currentDay === 0 ? 5 : currentDay - 1;
-  });
-
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedDayIndex, setSelectedDayIndex] = useState(0);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showCalendar, setShowCalendar] = useState(false);
-  const [editingClass, setEditingClass] = useState(null);
-  const [schedule, setSchedule] = useState(isDefLevel ? getDefSchedule() : getBacSchedule());
 
-  const [classForm, setClassForm] = useState({
-    time: '',
-    subject: '',
-    teacher: '',
-    room: '',
-    type: 'Cours',
-    color: theme.primary
-  });
-
-  const resetForm = () => {
-    setClassForm({
-      time: '',
-      subject: '',
-      teacher: '',
-      room: '',
-      type: 'Cours',
-      color: theme.primary
-    });
-  };
-
-  const handleEditClass = (classItem, index) => {
-    setEditingClass({ ...classItem, index });
-    setClassForm(classItem);
-    setShowEditModal(true);
-  };
-
-  const handleAddClass = () => {
-    resetForm();
-    setEditingClass(null);
-    setShowEditModal(true);
-  };
-
-  const handleSaveClass = () => {
-    if (!classForm.time || !classForm.subject) {
-      Alert.alert('Erreur', 'Veuillez remplir les champs obligatoires');
-      return;
-    }
-
-    const newSchedule = { ...schedule };
-    if (editingClass) {
-      newSchedule[selectedDayIndex + 1][editingClass.index] = classForm;
+  // SIMPLE SCHEDULE DATA - Inline
+  const getScheduleData = () => {
+    if (isDefLevel) {
+      return {
+        1: [
+          { time: '08:00-09:00', subject: 'Mathématiques', teacher: 'M. Dubois', room: 'Salle 12', type: 'Cours', color: '#2196F3' },
+          { time: '09:00-10:00', subject: 'Français', teacher: 'Mme Martin', room: 'Salle 8', type: 'Cours', color: '#FF9800' },
+          { time: '10:15-11:15', subject: 'Histoire-Géographie', teacher: 'M. Bernard', room: 'Salle 15', type: 'Cours', color: '#9C27B0' }
+        ],
+        2: [
+          { time: '08:00-09:00', subject: 'Français', teacher: 'Mme Martin', room: 'Salle 8', type: 'Cours', color: '#FF9800' },
+          { time: '09:00-10:00', subject: 'Mathématiques', teacher: 'M. Dubois', room: 'Salle 12', type: 'Exercices', color: '#2196F3' }
+        ]
+      };
     } else {
-      if (!newSchedule[selectedDayIndex + 1]) {
-        newSchedule[selectedDayIndex + 1] = [];
-      }
-      newSchedule[selectedDayIndex + 1].push(classForm);
-      newSchedule[selectedDayIndex + 1].sort((a, b) => a.time.localeCompare(b.time));
+      return {
+        1: [
+          { time: '08:00-10:00', subject: 'Mathématiques', teacher: 'Prof. Leroy', room: 'Amphi A', type: 'Cours', color: '#2196F3' },
+          { time: '10:15-12:15', subject: 'Physique', teacher: 'Dr. Rousseau', room: 'Lab Physique', type: 'TP', color: '#E91E63' }
+        ],
+        2: [
+          { time: '08:00-10:00', subject: 'Chimie', teacher: 'Prof. Blanc', room: 'Lab Chimie', type: 'TP', color: '#9C27B0' }
+        ]
+      };
     }
-    
-    setSchedule(newSchedule);
-    setShowEditModal(false);
-    resetForm();
   };
 
-  const handleDeleteClass = (index) => {
-    Alert.alert(
-      'Supprimer le cours',
-      'Êtes-vous sûr de vouloir supprimer ce cours ?',
-      [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'Supprimer',
-          style: 'destructive',
-          onPress: () => {
-            const newSchedule = { ...schedule };
-            newSchedule[selectedDayIndex + 1].splice(index, 1);
-            setSchedule(newSchedule);
-          }
-        }
-      ]
-    );
-  };
+  const scheduleData = getScheduleData();
 
-  const ModernCard = ({ children, style = {} }) => (
-    <View style={[styles.modernCard, { backgroundColor: theme.surface }, style]}>
-      {children}
-    </View>
-  );
-
-  const Header = () => (
+  // INLINE HEADER COMPONENT
+  const ScheduleHeader = () => (
     <View style={[styles.header, { backgroundColor: theme.primary }]}>
       <View style={styles.headerContent}>
         <View>
@@ -192,7 +99,7 @@ export default function ScheduleScreen() {
           </TouchableOpacity>
           <TouchableOpacity 
             style={[styles.calendarButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}
-            onPress={() => setShowCalendar(true)}
+            onPress={() => console.log('Open calendar')}
           >
             <Ionicons name="calendar" size={18} color="#FFFFFF" />
           </TouchableOpacity>
@@ -201,6 +108,7 @@ export default function ScheduleScreen() {
     </View>
   );
 
+  // INLINE DAY SELECTOR COMPONENT
   const DaySelector = () => (
     <View style={[styles.daySelector, { backgroundColor: theme.surface }]}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -240,383 +148,107 @@ export default function ScheduleScreen() {
     </View>
   );
 
-  const ClassCard = ({ time, subject, teacher, room, type, color, index }) => (
-    <ModernCard style={styles.classCard}>
-      <View style={styles.classHeader}>
-        <View style={[styles.classIndicator, { backgroundColor: color }]} />
-        <View style={styles.classContent}>
-          <View style={styles.classTop}>
-            <Text style={[styles.subjectText, { color: theme.text }]}>{subject}</Text>
-            <Text style={[styles.timeText, { color: theme.textSecondary }]}>{time}</Text>
-          </View>
-          <Text style={[styles.teacherText, { color: theme.textSecondary }]}>{teacher}</Text>
-          <View style={styles.classBottom}>
-            <Text style={[styles.roomText, { color: theme.textSecondary }]}>{room}</Text>
-            <View style={[styles.typeBadge, { backgroundColor: color + '15' }]}>
-              <Text style={[styles.typeText, { color }]}>{type}</Text>
-            </View>
-          </View>
+  // CLASS CARD COMPONENT
+  const ClassCard = ({ classItem }) => (
+    <View style={[styles.classCard, { backgroundColor: theme.surface }]}>
+      <View style={[styles.classColorBar, { backgroundColor: classItem.color }]} />
+      
+      <View style={styles.classContent}>
+        <View style={styles.classHeader}>
+          <Text style={[styles.classSubject, { color: theme.text }]}>
+            {classItem.subject}
+          </Text>
+          <Text style={[styles.classType, { 
+            color: classItem.color,
+            backgroundColor: classItem.color + '20'
+          }]}>
+            {classItem.type}
+          </Text>
         </View>
         
-        {isEditMode && (
-          <View style={styles.editActions}>
-            <TouchableOpacity 
-              style={[styles.actionButton, { backgroundColor: theme.primary + '15' }]}
-              onPress={() => handleEditClass({ time, subject, teacher, room, type, color }, index)}
-            >
-              <Ionicons name="pencil" size={16} color={theme.primary} />
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.actionButton, { backgroundColor: theme.error + '15' }]}
-              onPress={() => handleDeleteClass(index)}
-            >
-              <Ionicons name="trash" size={16} color={theme.error} />
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
-    </ModernCard>
-  );
-
-  const ExamCard = ({ date, subject, type, color }) => (
-    <ModernCard style={styles.examCard}>
-      <View style={styles.examHeader}>
-        <View style={[styles.examIndicator, { backgroundColor: color }]} />
-        <View style={styles.examContent}>
-          <Text style={[styles.examSubject, { color: theme.text }]}>{subject}</Text>
-          <Text style={[styles.examType, { color: color }]}>{type}</Text>
-        </View>
-        <Text style={[styles.examDate, { color: theme.textSecondary }]}>{date}</Text>
-      </View>
-    </ModernCard>
-  );
-
-  const getUpcomingExams = () => {
-    if (isDefLevel) {
-      return [
-        { date: 'Demain', subject: 'Contrôle de Maths', type: 'Contrôle', color: theme.primary },
-        { date: 'Vendredi', subject: 'Quiz Sciences', type: 'Quiz', color: theme.success },
-        { date: 'Lundi prochain', subject: 'Dictée Français', type: 'Évaluation', color: theme.secondary }
-      ];
-    } else {
-      return [
-        { date: '25 Mai', subject: 'Dissertation Philosophie', type: 'Examen', color: theme.secondary },
-        { date: '27 Mai', subject: 'Mathématiques', type: 'Examen Blanc', color: theme.primary },
-        { date: '30 Mai', subject: 'Physique-Chimie', type: 'TP Évalué', color: theme.warning }
-      ];
-    }
-  };
-
-  const CalendarModal = () => {
-    const [calendarDate, setCalendarDate] = useState(new Date());
-    
-    const getDaysInMonth = (date) => {
-      const year = date.getFullYear();
-      const month = date.getMonth();
-      const firstDay = new Date(year, month, 1);
-      const lastDay = new Date(year, month + 1, 0);
-      const daysInMonth = lastDay.getDate();
-      const startingDayOfWeek = firstDay.getDay();
-      
-      const days = [];
-      
-      for (let i = 0; i < startingDayOfWeek; i++) {
-        days.push(null);
-      }
-      
-      for (let day = 1; day <= daysInMonth; day++) {
-        days.push(new Date(year, month, day));
-      }
-      
-      return days;
-    };
-
-    const monthNames = [
-      'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
-      'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
-    ];
-    
-    const dayNames = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
-    
-    const navigateMonth = (direction) => {
-      const newDate = new Date(calendarDate);
-      newDate.setMonth(calendarDate.getMonth() + direction);
-      setCalendarDate(newDate);
-    };
-    
-    const selectDate = (date) => {
-      if (date) {
-        setSelectedDate(date);
-        const dayOfWeek = date.getDay();
-        const newDayIndex = dayOfWeek === 0 ? 5 : dayOfWeek - 1;
-        setSelectedDayIndex(newDayIndex);
-        setShowCalendar(false);
-      }
-    };
-
-    return (
-      <Modal visible={showCalendar} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.calendarModalContent, { backgroundColor: theme.background }]}>
-            <View style={[styles.calendarHeader, { borderBottomColor: theme.neutralLight }]}>
-              <TouchableOpacity 
-                onPress={() => navigateMonth(-1)}
-                style={[styles.calendarNavButton, { backgroundColor: theme.neutralLight }]}
-              >
-                <Ionicons name="chevron-back" size={20} color={theme.text} />
-              </TouchableOpacity>
-              
-              <Text style={[styles.calendarTitle, { color: theme.text }]}>
-                {monthNames[calendarDate.getMonth()]} {calendarDate.getFullYear()}
-              </Text>
-              
-              <TouchableOpacity 
-                onPress={() => navigateMonth(1)}
-                style={[styles.calendarNavButton, { backgroundColor: theme.neutralLight }]}
-              >
-                <Ionicons name="chevron-forward" size={20} color={theme.text} />
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                onPress={() => setShowCalendar(false)}
-                style={[styles.closeButton, { backgroundColor: theme.neutralLight }]}
-              >
-                <Ionicons name="close" size={20} color={theme.textSecondary} />
-              </TouchableOpacity>
-            </View>
-            
-            <View style={styles.calendarBody}>
-              <View style={styles.dayNamesRow}>
-                {dayNames.map((dayName) => (
-                  <Text key={dayName} style={[styles.dayName, { color: theme.textSecondary }]}>
-                    {dayName}
-                  </Text>
-                ))}
-              </View>
-              
-              <View style={styles.datesGrid}>
-                {getDaysInMonth(calendarDate).map((date, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={[
-                      styles.dateCell,
-                      date && date.toDateString() === selectedDate.toDateString() && {
-                        backgroundColor: theme.primary
-                      },
-                      date && date.toDateString() === new Date().toDateString() && {
-                        borderColor: theme.primary,
-                        borderWidth: 2
-                      }
-                    ]}
-                    onPress={() => selectDate(date)}
-                    disabled={!date}
-                  >
-                    {date && (
-                      <Text style={[
-                        styles.dateText,
-                        {
-                          color: date.toDateString() === selectedDate.toDateString() 
-                            ? '#FFFFFF' 
-                            : theme.text
-                        }
-                      ]}>
-                        {date.getDate()}
-                      </Text>
-                    )}
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          </View>
-        </View>
-      </Modal>
-    );
-  };
-
-  const EditModal = () => (
-    <Modal visible={showEditModal} animationType="slide" transparent>
-      <View style={styles.modalOverlay}>
-        <View style={[styles.modalContent, { backgroundColor: theme.background }]}>
-          <View style={[styles.modalHeader, { borderBottomColor: theme.neutralLight }]}>
-            <Text style={[styles.modalTitle, { color: theme.text }]}>
-              {editingClass ? 'Modifier le cours' : 'Ajouter un cours'}
+        <Text style={[styles.classTime, { color: theme.textSecondary }]}>
+          {classItem.time}
+        </Text>
+        
+        <View style={styles.classDetails}>
+          <View style={styles.classDetailItem}>
+            <Ionicons name="person-outline" size={14} color={theme.textSecondary} />
+            <Text style={[styles.classDetailText, { color: theme.textSecondary }]}>
+              {classItem.teacher}
             </Text>
-            <TouchableOpacity 
-              style={[styles.closeButton, { backgroundColor: theme.neutralLight }]}
-              onPress={() => setShowEditModal(false)}
-            >
-              <Ionicons name="close" size={20} color={theme.textSecondary} />
-            </TouchableOpacity>
           </View>
-          
-          <ScrollView style={styles.modalBody}>
-            <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: theme.text }]}>Horaire *</Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: theme.surface, color: theme.text, borderColor: theme.neutralLight }]}
-                placeholder="08:00-09:00"
-                placeholderTextColor={theme.textSecondary}
-                value={classForm.time}
-                onChangeText={(text) => setClassForm({...classForm, time: text})}
-              />
-            </View>
-            
-            <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: theme.text }]}>Matière *</Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: theme.surface, color: theme.text, borderColor: theme.neutralLight }]}
-                placeholder="Mathématiques"
-                placeholderTextColor={theme.textSecondary}
-                value={classForm.subject}
-                onChangeText={(text) => setClassForm({...classForm, subject: text})}
-              />
-            </View>
-            
-            <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: theme.text }]}>Professeur</Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: theme.surface, color: theme.text, borderColor: theme.neutralLight }]}
-                placeholder="M. Dupont"
-                placeholderTextColor={theme.textSecondary}
-                value={classForm.teacher}
-                onChangeText={(text) => setClassForm({...classForm, teacher: text})}
-              />
-            </View>
-            
-            <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: theme.text }]}>Salle</Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: theme.surface, color: theme.text, borderColor: theme.neutralLight }]}
-                placeholder="Salle 12"
-                placeholderTextColor={theme.textSecondary}
-                value={classForm.room}
-                onChangeText={(text) => setClassForm({...classForm, room: text})}
-              />
-            </View>
-            
-            <View style={styles.inputGroup}>
-              <Text style={[styles.inputLabel, { color: theme.text }]}>Type</Text>
-              <View style={styles.typeButtons}>
-                {['Cours', 'TP', 'TD', 'Examen', 'Contrôle'].map((type) => (
-                  <TouchableOpacity
-                    key={type}
-                    style={[
-                      styles.typeButton,
-                      { 
-                        backgroundColor: classForm.type === type ? theme.primary : theme.surface,
-                        borderColor: classForm.type === type ? theme.primary : theme.neutralLight
-                      }
-                    ]}
-                    onPress={() => setClassForm({...classForm, type})}
-                  >
-                    <Text style={[
-                      styles.typeButtonText,
-                      { color: classForm.type === type ? '#fff' : theme.text }
-                    ]}>
-                      {type}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          </ScrollView>
-          
-          <View style={styles.modalActions}>
-            <TouchableOpacity
-              style={[styles.cancelButton, { backgroundColor: theme.surface, borderColor: theme.neutralLight }]}
-              onPress={() => setShowEditModal(false)}
-            >
-              <Text style={[styles.cancelButtonText, { color: theme.text }]}>Annuler</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.saveButton, { backgroundColor: theme.primary }]}
-              onPress={handleSaveClass}
-            >
-              <Text style={styles.saveButtonText}>Sauvegarder</Text>
-            </TouchableOpacity>
+          <View style={styles.classDetailItem}>
+            <Ionicons name="location-outline" size={14} color={theme.textSecondary} />
+            <Text style={[styles.classDetailText, { color: theme.textSecondary }]}>
+              {classItem.room}
+            </Text>
           </View>
         </View>
       </View>
-    </Modal>
+
+      {isEditMode && (
+        <TouchableOpacity 
+          style={[styles.editButtonClass, { backgroundColor: theme.error + '20' }]}
+          onPress={() => console.log('Edit class')}
+        >
+          <Ionicons name="pencil" size={16} color={theme.error} />
+        </TouchableOpacity>
+      )}
+    </View>
   );
 
-  const scheduleData = schedule;
-  const currentDaySchedule = scheduleData[selectedDayIndex + 1] || [];
+  const todaysClasses = scheduleData[selectedDayIndex + 1] || [];
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <Header />
+      <ScheduleHeader />
       <DaySelector />
 
       <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Today's Classes */}
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>
-              Cours du {weekDates[selectedDayIndex]?.day} {weekDates[selectedDayIndex]?.date}
-            </Text>
-            {isEditMode && (
-              <TouchableOpacity 
-                style={[styles.addButton, { backgroundColor: theme.primary }]}
-                onPress={handleAddClass}
-              >
-                <Ionicons name="add" size={18} color="#FFFFFF" />
-              </TouchableOpacity>
-            )}
-          </View>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>
+            Classes du jour
+          </Text>
           
-          {currentDaySchedule.length > 0 ? (
-            currentDaySchedule.map((classItem, index) => (
-              <ClassCard
-                key={index}
-                index={index}
-                time={classItem.time}
-                subject={classItem.subject}
-                teacher={classItem.teacher}
-                room={classItem.room}
-                type={classItem.type}
-                color={classItem.color}
-              />
+          {todaysClasses.length > 0 ? (
+            todaysClasses.map((classItem, index) => (
+              <ClassCard key={index} classItem={classItem} />
             ))
           ) : (
-            <ModernCard style={styles.emptyState}>
-              <View style={[styles.emptyIcon, { backgroundColor: theme.neutralLight }]}>
-                <Ionicons name="calendar-outline" size={32} color={theme.textSecondary} />
-              </View>
-              <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
-                Aucun cours prévu
+            <View style={[styles.emptyState, { backgroundColor: theme.surface }]}>
+              <Ionicons name="calendar-outline" size={48} color={theme.textSecondary} />
+              <Text style={[styles.emptyStateText, { color: theme.textSecondary }]}>
+                Aucun cours prévu ce jour
               </Text>
-              {isEditMode && (
-                <TouchableOpacity 
-                  style={[styles.addClassButton, { backgroundColor: theme.primary }]}
-                  onPress={handleAddClass}
-                >
-                  <Text style={styles.addClassButtonText}>Ajouter un cours</Text>
-                </TouchableOpacity>
-              )}
-            </ModernCard>
+            </View>
           )}
         </View>
 
+        {/* Quick Stats */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>
-            {isDefLevel ? 'Prochains contrôles' : 'Examens à venir'}
+            Cette semaine
           </Text>
-          {getUpcomingExams().map((exam, index) => (
-            <ExamCard
-              key={index}
-              date={exam.date}
-              subject={exam.subject}
-              type={exam.type}
-              color={exam.color}
-            />
-          ))}
+          
+          <View style={[styles.statsCard, { backgroundColor: theme.surface }]}>
+            <View style={styles.statItem}>
+              <Text style={[styles.statValue, { color: theme.primary }]}>12</Text>
+              <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Cours</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={[styles.statValue, { color: theme.success }]}>3</Text>
+              <Text style={[styles.statLabel, { color: theme.textSecondary }]}>TP</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={[styles.statValue, { color: theme.warning }]}>2</Text>
+              <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Examens</Text>
+            </View>
+          </View>
         </View>
 
         <View style={styles.bottomPadding} />
       </ScrollView>
-      
-      <CalendarModal />
-      <EditModal />
     </SafeAreaView>
   );
 }
@@ -678,333 +310,132 @@ const styles = StyleSheet.create({
   dayButton: {
     alignItems: 'center',
     paddingVertical: 12,
-    paddingHorizontal: 18,
+    paddingHorizontal: 16,
     marginHorizontal: 4,
-    borderRadius: 16,
+    borderRadius: 12,
+    minWidth: 60,
+    position: 'relative',
   },
   dayText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '500',
     marginBottom: 4,
   },
   dateText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
   },
   todayIndicator: {
+    position: 'absolute',
+    bottom: 4,
     width: 6,
     height: 6,
     borderRadius: 3,
-    marginTop: 2,
   },
   section: {
     paddingHorizontal: 20,
     marginBottom: 24,
   },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-    marginTop: 20,
-  },
   sectionTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: 'bold',
+    marginBottom: 16,
+    marginTop: 8,
   },
-  addButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modernCard: {
-    borderRadius: 20,
-    padding: 16,
+  classCard: {
+    flexDirection: 'row',
+    borderRadius: 16,
     marginBottom: 12,
+    overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
     shadowRadius: 8,
     elevation: 3,
   },
-  classCard: {
+  classColorBar: {
+    width: 4,
+  },
+  classContent: {
+    flex: 1,
     padding: 16,
   },
   classHeader: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  classIndicator: {
-    width: 4,
-    height: 60,
-    borderRadius: 2,
-    marginRight: 16,
-  },
-  classContent: {
-    flex: 1,
-  },
-  classTop: {
-    flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 6,
+    alignItems: 'center',
+    marginBottom: 8,
   },
-  subjectText: {
-    fontSize: 18,
+  classSubject: {
+    fontSize: 16,
     fontWeight: '600',
     flex: 1,
   },
-  timeText: {
-    fontSize: 14,
+  classType: {
+    fontSize: 10,
     fontWeight: '600',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    textAlign: 'center',
+    minWidth: 50,
   },
-  teacherText: {
+  classTime: {
     fontSize: 14,
     fontWeight: '500',
     marginBottom: 8,
   },
-  classBottom: {
+  classDetails: {
+    gap: 4,
+  },
+  classDetailItem: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 6,
   },
-  roomText: {
-    fontSize: 13,
-    fontWeight: '500',
+  classDetailText: {
+    fontSize: 12,
   },
-  typeBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  typeText: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  editActions: {
-    flexDirection: 'row',
-    gap: 8,
-    marginLeft: 12,
-  },
-  actionButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+  editButtonClass: {
+    width: 40,
+    height: 40,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  examCard: {
-    padding: 16,
-  },
-  examHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  examIndicator: {
-    width: 4,
-    height: 40,
-    borderRadius: 2,
-    marginRight: 16,
-  },
-  examContent: {
-    flex: 1,
-  },
-  examSubject: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  examType: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  examDate: {
-    fontSize: 14,
-    fontWeight: '600',
+    alignSelf: 'center',
+    marginRight: 12,
+    borderRadius: 20,
   },
   emptyState: {
     alignItems: 'center',
-    paddingVertical: 40,
+    padding: 40,
+    borderRadius: 16,
   },
-  emptyIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  emptyText: {
-    fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 20,
-  },
-  addClassButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 20,
-  },
-  addClassButtonText: {
-    color: '#FFFFFF',
+  emptyStateText: {
     fontSize: 14,
-    fontWeight: '600',
+    marginTop: 12,
+    textAlign: 'center',
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  calendarModalContent: {
-    margin: 20,
-    borderRadius: 20,
-    paddingBottom: 20,
+  statsCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    padding: 20,
+    borderRadius: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  calendarHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-    borderBottomWidth: 1,
-  },
-  calendarNavButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
+  statItem: {
     alignItems: 'center',
   },
-  calendarTitle: {
-    fontSize: 18,
+  statValue: {
+    fontSize: 24,
     fontWeight: 'bold',
-    flex: 1,
-    textAlign: 'center',
+    marginBottom: 4,
   },
-  calendarBody: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-  },
-  dayNamesRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 10,
-  },
-  dayName: {
-    fontSize: 14,
-    fontWeight: '600',
-    width: 40,
-    textAlign: 'center',
-  },
-  datesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-around',
-  },
-  dateCell: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-    borderRadius: 20,
-  },
-  modalContent: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: '80%',
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-    borderBottomWidth: 1,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  closeButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalBody: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  inputGroup: {
-    marginBottom: 20,
-  },
-  inputLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  input: {
-    height: 50,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    fontSize: 16,
-    borderWidth: 2,
-  },
-  typeButtons: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  typeButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 2,
-  },
-  typeButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  modalActions: {
-    flexDirection: 'row',
-    gap: 12,
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-  },
-  cancelButton: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-    borderWidth: 2,
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  saveButton: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  saveButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
+  statLabel: {
+    fontSize: 12,
   },
   bottomPadding: {
     height: 40,
