@@ -1,4 +1,4 @@
-// File: app/(tabs)/_layout.js - Fixed missing icons
+// app/(tabs)/_layout.js - CLEAN VERSION
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useContext } from 'react';
@@ -34,9 +34,9 @@ export default function TabsLayout() {
         }}
       />
 
-      {/* 2) Courses */}
+      {/* 2) Courses (Now has its own Stack layout) */}
       <Tabs.Screen
-        name="courses/index"
+        name="courses"
         options={{
           title: 'Courses',
           tabBarIcon: ({ color, size }) => (
@@ -45,9 +45,9 @@ export default function TabsLayout() {
         }}
       />
 
-      {/* 3) Quizzes - Fixed icon name */}
+      {/* 3) Quizzes */}
       <Tabs.Screen
-        name="quizzes/index"
+        name="quizzes"
         options={{
           title: 'Quizzes',
           tabBarIcon: ({ color, size }) => (
@@ -56,7 +56,7 @@ export default function TabsLayout() {
         }}
       />
 
-      {/* 4) Schedule - Fixed icon name */}
+      {/* 4) Schedule */}
       <Tabs.Screen
         name="schedule"
         options={{
@@ -67,7 +67,7 @@ export default function TabsLayout() {
         }}
       />
 
-      {/* 5) Profile - Fixed icon name */}
+      {/* 5) Profile */}
       <Tabs.Screen
         name="profile"
         options={{
@@ -76,24 +76,6 @@ export default function TabsLayout() {
             <Ionicons name="person-outline" size={size} color={color} />
           ),
         }}
-      />
-
-      {/* Hide dynamic routes */}
-      <Tabs.Screen
-        name="courses/[level]/index"
-        options={{ href: null }}
-      />
-      <Tabs.Screen
-        name="courses/[level]/[courseName]"
-        options={{ href: null }}
-      />
-      <Tabs.Screen
-        name="quizzes/[level]/index"
-        options={{ href: null }}
-      />
-      <Tabs.Screen
-        name="quizzes/[level]/[quizId]"
-        options={{ href: null }}
       />
     </Tabs>
   );

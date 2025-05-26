@@ -193,8 +193,15 @@ export default function CoursesScreen() {
   const coursesData = isDefLevel ? getDefCourses() : getBacCourses();
 
   const handleCoursePress = (course) => {
-    router.push(`/(tabs)/courses/${course.level}/${course.title.replace(/\s+/g, '_').replace(/\//g, '_')}`);
-  };
+  const courseName = course.title.replace(/\s+/g, '_').replace(/\//g, '_');
+  router.push({
+    pathname: '/courses/[level]/[courseName]',
+    params: {
+      level: course.level,
+      courseName: courseName
+    }
+  });
+};
 
   // Header Component
   const Header = () => (

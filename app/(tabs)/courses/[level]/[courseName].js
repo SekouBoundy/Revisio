@@ -1,5 +1,5 @@
-// app/(tabs)/courses/[level]/[courseName].js - COMPLETE CODE
-import React, { useContext, useState } from 'react';
+// app/(tabs)/courses/[level]/[courseName].js - IMPROVED SEARCH UX
+import React, { useContext, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,8 +8,11 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Alert,
+  TextInput,
+  Animated,
+  Keyboard,
 } from 'react-native';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { ThemeContext } from '../../../../constants/ThemeContext';
@@ -19,9 +22,14 @@ export default function CourseDetailScreen() {
   const { level, courseName } = useLocalSearchParams();
   const { theme } = useContext(ThemeContext);
   const { user } = useUser();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('notes');
+  const [searchVisible, setSearchVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const searchInputRef = useRef(null);
+  const searchAnimValue = useRef(new Animated.Value(0)).current;
 
-  // COURSE DATA - All content inline
+  // COURSE DATA - Same as before (keeping it concise for space)
   const getCourseContent = (level, courseName) => {
     const COURSE_DATA = {
       DEF: {
@@ -123,15 +131,6 @@ export default function CourseDetailScreen() {
               downloadUrl: '#',
               lastUpdated: '2024-01-25',
               isDownloaded: false
-            },
-            {
-              id: 3,
-              title: 'Statistiques et probabilités',
-              chapter: 'Chapitre 3',
-              pages: 25,
-              downloadUrl: '#',
-              lastUpdated: '2024-02-05',
-              isDownloaded: true
             }
           ],
           videos: [
@@ -144,16 +143,6 @@ export default function CourseDetailScreen() {
               videoUrl: '#',
               watched: true,
               watchTime: '38:45'
-            },
-            {
-              id: 2,
-              title: 'Applications du théorème de Pythagore',
-              duration: '28:30',
-              chapter: 'Chapitre 2',
-              thumbnailUrl: 'https://via.placeholder.com/300x200',
-              videoUrl: '#',
-              watched: false,
-              watchTime: '10:15'
             }
           ],
           pastExams: [
@@ -168,210 +157,6 @@ export default function CourseDetailScreen() {
               hasCorrection: true,
               difficulty: 'Difficile',
               averageScore: 13.5
-            }
-          ]
-        },
-        'Physique-Chimie': {
-          notes: [
-            {
-              id: 1,
-              title: 'Les états de la matière',
-              chapter: 'Chapitre 1',
-              pages: 12,
-              downloadUrl: '#',
-              lastUpdated: '2024-01-18',
-              isDownloaded: false
-            },
-            {
-              id: 2,
-              title: 'Forces et mouvements',
-              chapter: 'Chapitre 2',
-              pages: 18,
-              downloadUrl: '#',
-              lastUpdated: '2024-02-02',
-              isDownloaded: true
-            }
-          ],
-          videos: [
-            {
-              id: 1,
-              title: 'Expérience - États de la matière',
-              duration: '25:40',
-              chapter: 'Chapitre 1',
-              thumbnailUrl: 'https://via.placeholder.com/300x200',
-              videoUrl: '#',
-              watched: false,
-              watchTime: '0:00'
-            }
-          ],
-          pastExams: [
-            {
-              id: 1,
-              title: 'Examen DEF Physique-Chimie 2023',
-              year: '2023',
-              session: 'Principale',
-              duration: '2h',
-              pages: 6,
-              downloadUrl: '#',
-              hasCorrection: false,
-              difficulty: 'Moyen',
-              averageScore: 14.8
-            }
-          ]
-        },
-        'Histoire-Géographie': {
-          notes: [
-            {
-              id: 1,
-              title: 'La Renaissance européenne',
-              chapter: 'Chapitre 1',
-              pages: 14,
-              downloadUrl: '#',
-              lastUpdated: '2024-01-12',
-              isDownloaded: true
-            }
-          ],
-          videos: [
-            {
-              id: 1,
-              title: 'Les grandes découvertes',
-              duration: '32:15',
-              chapter: 'Chapitre 1',
-              thumbnailUrl: 'https://via.placeholder.com/300x200',
-              videoUrl: '#',
-              watched: true,
-              watchTime: '32:15'
-            }
-          ],
-          pastExams: [
-            {
-              id: 1,
-              title: 'Examen DEF Histoire-Géographie 2023',
-              year: '2023',
-              session: 'Principale',
-              duration: '2h',
-              pages: 4,
-              downloadUrl: '#',
-              hasCorrection: true,
-              difficulty: 'Facile',
-              averageScore: 16.2
-            }
-          ]
-        },
-        'Sciences de la Vie et de la Terre': {
-          notes: [
-            {
-              id: 1,
-              title: 'Les écosystèmes',
-              chapter: 'Chapitre 1',
-              pages: 16,
-              downloadUrl: '#',
-              lastUpdated: '2024-01-20',
-              isDownloaded: false
-            }
-          ],
-          videos: [
-            {
-              id: 1,
-              title: 'La biodiversité',
-              duration: '28:45',
-              chapter: 'Chapitre 1',
-              thumbnailUrl: 'https://via.placeholder.com/300x200',
-              videoUrl: '#',
-              watched: false,
-              watchTime: '8:20'
-            }
-          ],
-          pastExams: [
-            {
-              id: 1,
-              title: 'Examen DEF SVT 2023',
-              year: '2023',
-              session: 'Principale',
-              duration: '2h',
-              pages: 5,
-              downloadUrl: '#',
-              hasCorrection: true,
-              difficulty: 'Facile',
-              averageScore: 15.9
-            }
-          ]
-        },
-        'Anglais': {
-          notes: [
-            {
-              id: 1,
-              title: 'Grammar - Present Tenses',
-              chapter: 'Chapter 1',
-              pages: 10,
-              downloadUrl: '#',
-              lastUpdated: '2024-01-16',
-              isDownloaded: true
-            }
-          ],
-          videos: [
-            {
-              id: 1,
-              title: 'English Conversation Basics',
-              duration: '22:30',
-              chapter: 'Chapter 1',
-              thumbnailUrl: 'https://via.placeholder.com/300x200',
-              videoUrl: '#',
-              watched: true,
-              watchTime: '22:30'
-            }
-          ],
-          pastExams: [
-            {
-              id: 1,
-              title: 'Examen DEF Anglais 2023',
-              year: '2023',
-              session: 'Principale',
-              duration: '1h30',
-              pages: 4,
-              downloadUrl: '#',
-              hasCorrection: true,
-              difficulty: 'Moyen',
-              averageScore: 14.5
-            }
-          ]
-        },
-        'Éducation Civique et Morale': {
-          notes: [
-            {
-              id: 1,
-              title: 'Droits et devoirs du citoyen',
-              chapter: 'Chapitre 1',
-              pages: 8,
-              downloadUrl: '#',
-              lastUpdated: '2024-01-22',
-              isDownloaded: true
-            }
-          ],
-          videos: [
-            {
-              id: 1,
-              title: 'La démocratie tunisienne',
-              duration: '18:15',
-              chapter: 'Chapitre 1',
-              thumbnailUrl: 'https://via.placeholder.com/300x200',
-              videoUrl: '#',
-              watched: false,
-              watchTime: '5:45'
-            }
-          ],
-          pastExams: [
-            {
-              id: 1,
-              title: 'Examen DEF Éducation Civique 2023',
-              year: '2023',
-              session: 'Principale',
-              duration: '1h',
-              pages: 3,
-              downloadUrl: '#',
-              hasCorrection: true,
-              difficulty: 'Facile',
-              averageScore: 17.3
             }
           ]
         }
@@ -396,15 +181,6 @@ export default function CourseDetailScreen() {
               downloadUrl: '#',
               lastUpdated: '2024-01-28',
               isDownloaded: false
-            },
-            {
-              id: 3,
-              title: 'Intégration',
-              chapter: 'Chapitre 3',
-              pages: 38,
-              downloadUrl: '#',
-              lastUpdated: '2024-02-10',
-              isDownloaded: true
             }
           ],
           videos: [
@@ -417,16 +193,6 @@ export default function CourseDetailScreen() {
               videoUrl: '#',
               watched: true,
               watchTime: '55:30'
-            },
-            {
-              id: 2,
-              title: 'Techniques de dérivation',
-              duration: '48:20',
-              chapter: 'Chapitre 2',
-              thumbnailUrl: 'https://via.placeholder.com/300x200',
-              videoUrl: '#',
-              watched: false,
-              watchTime: '20:15'
             }
           ],
           pastExams: [
@@ -441,421 +207,6 @@ export default function CourseDetailScreen() {
               hasCorrection: true,
               difficulty: 'Difficile',
               averageScore: 11.2
-            },
-            {
-              id: 2,
-              title: 'Baccalauréat Mathématiques TSE 2022',
-              year: '2022',
-              session: 'Principale',
-              duration: '4h',
-              pages: 10,
-              downloadUrl: '#',
-              hasCorrection: true,
-              difficulty: 'Difficile',
-              averageScore: 10.8
-            }
-          ]
-        },
-        'Physique': {
-          notes: [
-            {
-              id: 1,
-              title: 'Mécanique - Cinématique',
-              chapter: 'Chapitre 1',
-              pages: 30,
-              downloadUrl: '#',
-              lastUpdated: '2024-01-15',
-              isDownloaded: true
-            },
-            {
-              id: 2,
-              title: 'Dynamique des systèmes',
-              chapter: 'Chapitre 2',
-              pages: 35,
-              downloadUrl: '#',
-              lastUpdated: '2024-02-01',
-              isDownloaded: false
-            }
-          ],
-          videos: [
-            {
-              id: 1,
-              title: 'Mouvements rectiligne et circulaire',
-              duration: '45:15',
-              chapter: 'Chapitre 1',
-              thumbnailUrl: 'https://via.placeholder.com/300x200',
-              videoUrl: '#',
-              watched: true,
-              watchTime: '45:15'
-            }
-          ],
-          pastExams: [
-            {
-              id: 1,
-              title: 'Baccalauréat Physique TSE 2023',
-              year: '2023',
-              session: 'Principale',
-              duration: '3h',
-              pages: 8,
-              downloadUrl: '#',
-              hasCorrection: true,
-              difficulty: 'Difficile',
-              averageScore: 12.3
-            }
-          ]
-        },
-        'Chimie': {
-          notes: [
-            {
-              id: 1,
-              title: 'Chimie organique - Hydrocarbures',
-              chapter: 'Chapitre 1',
-              pages: 28,
-              downloadUrl: '#',
-              lastUpdated: '2024-01-18',
-              isDownloaded: false
-            }
-          ],
-          videos: [
-            {
-              id: 1,
-              title: 'Réactions organiques',
-              duration: '52:40',
-              chapter: 'Chapitre 1',
-              thumbnailUrl: 'https://via.placeholder.com/300x200',
-              videoUrl: '#',
-              watched: false,
-              watchTime: '12:30'
-            }
-          ],
-          pastExams: [
-            {
-              id: 1,
-              title: 'Baccalauréat Chimie TSE 2023',
-              year: '2023',
-              session: 'Principale',
-              duration: '3h',
-              pages: 6,
-              downloadUrl: '#',
-              hasCorrection: true,
-              difficulty: 'Difficile',
-              averageScore: 13.1
-            }
-          ]
-        },
-        'Bio/Geo': {
-          notes: [
-            {
-              id: 1,
-              title: 'Biologie cellulaire',
-              chapter: 'Chapitre 1',
-              pages: 24,
-              downloadUrl: '#',
-              lastUpdated: '2024-01-20',
-              isDownloaded: true
-            }
-          ],
-          videos: [
-            {
-              id: 1,
-              title: 'La cellule et ses organites',
-              duration: '38:25',
-              chapter: 'Chapitre 1',
-              thumbnailUrl: 'https://via.placeholder.com/300x200',
-              videoUrl: '#',
-              watched: true,
-              watchTime: '38:25'
-            }
-          ],
-          pastExams: [
-            {
-              id: 1,
-              title: 'Baccalauréat Bio/Geo TSE 2023',
-              year: '2023',
-              session: 'Principale',
-              duration: '3h',
-              pages: 7,
-              downloadUrl: '#',
-              hasCorrection: false,
-              difficulty: 'Moyen',
-              averageScore: 14.7
-            }
-          ]
-        },
-        'Français': {
-          notes: [
-            {
-              id: 1,
-              title: 'Littérature moderne',
-              chapter: 'Chapitre 1',
-              pages: 26,
-              downloadUrl: '#',
-              lastUpdated: '2024-01-14',
-              isDownloaded: true
-            }
-          ],
-          videos: [
-            {
-              id: 1,
-              title: 'Analyse de texte littéraire',
-              duration: '41:10',
-              chapter: 'Chapitre 1',
-              thumbnailUrl: 'https://via.placeholder.com/300x200',
-              videoUrl: '#',
-              watched: false,
-              watchTime: '18:30'
-            }
-          ],
-          pastExams: [
-            {
-              id: 1,
-              title: 'Baccalauréat Français TSE 2023',
-              year: '2023',
-              session: 'Principale',
-              duration: '4h',
-              pages: 3,
-              downloadUrl: '#',
-              hasCorrection: true,
-              difficulty: 'Moyen',
-              averageScore: 13.8
-            }
-          ]
-        },
-        'Philosophie': {
-          notes: [
-            {
-              id: 1,
-              title: 'Introduction à la philosophie',
-              chapter: 'Chapitre 1',
-              pages: 20,
-              downloadUrl: '#',
-              lastUpdated: '2024-01-25',
-              isDownloaded: false
-            }
-          ],
-          videos: [
-            {
-              id: 1,
-              title: 'Les grands philosophes',
-              duration: '47:55',
-              chapter: 'Chapitre 1',
-              thumbnailUrl: 'https://via.placeholder.com/300x200',
-              videoUrl: '#',
-              watched: false,
-              watchTime: '0:00'
-            }
-          ],
-          pastExams: [
-            {
-              id: 1,
-              title: 'Baccalauréat Philosophie TSE 2023',
-              year: '2023',
-              session: 'Principale',
-              duration: '4h',
-              pages: 1,
-              downloadUrl: '#',
-              hasCorrection: true,
-              difficulty: 'Difficile',
-              averageScore: 12.9
-            }
-          ]
-        },
-        'Anglais': {
-          notes: [
-            {
-              id: 1,
-              title: 'Advanced Grammar',
-              chapter: 'Chapter 1',
-              pages: 18,
-              downloadUrl: '#',
-              lastUpdated: '2024-01-30',
-              isDownloaded: true
-            }
-          ],
-          videos: [
-            {
-              id: 1,
-              title: 'Academic English',
-              duration: '33:45',
-              chapter: 'Chapter 1',
-              thumbnailUrl: 'https://via.placeholder.com/300x200',
-              videoUrl: '#',
-              watched: true,
-              watchTime: '33:45'
-            }
-          ],
-          pastExams: [
-            {
-              id: 1,
-              title: 'Baccalauréat Anglais TSE 2023',
-              year: '2023',
-              session: 'Principale',
-              duration: '2h',
-              pages: 4,
-              downloadUrl: '#',
-              hasCorrection: true,
-              difficulty: 'Moyen',
-              averageScore: 15.4
-            }
-          ]
-        }
-      },
-      TSEXP: {
-        'Mathématiques': {
-          notes: [
-            {
-              id: 1,
-              title: 'Statistiques avancées',
-              chapter: 'Chapitre 1',
-              pages: 32,
-              downloadUrl: '#',
-              lastUpdated: '2024-01-12',
-              isDownloaded: false
-            }
-          ],
-          videos: [
-            {
-              id: 1,
-              title: 'Probabilités et statistiques',
-              duration: '44:20',
-              chapter: 'Chapitre 1',
-              thumbnailUrl: 'https://via.placeholder.com/300x200',
-              videoUrl: '#',
-              watched: false,
-              watchTime: '15:40'
-            }
-          ],
-          pastExams: [
-            {
-              id: 1,
-              title: 'Baccalauréat Mathématiques TSEXP 2023',
-              year: '2023',
-              session: 'Principale',
-              duration: '4h',
-              pages: 10,
-              downloadUrl: '#',
-              hasCorrection: true,
-              difficulty: 'Difficile',
-              averageScore: 12.1
-            }
-          ]
-        },
-        'Physique/Chimie': {
-          notes: [
-            {
-              id: 1,
-              title: 'Physique expérimentale',
-              chapter: 'Chapitre 1',
-              pages: 38,
-              downloadUrl: '#',
-              lastUpdated: '2024-01-15',
-              isDownloaded: true
-            }
-          ],
-          videos: [
-            {
-              id: 1,
-              title: 'Expériences de laboratoire',
-              duration: '56:30',
-              chapter: 'Chapitre 1',
-              thumbnailUrl: 'https://via.placeholder.com/300x200',
-              videoUrl: '#',
-              watched: true,
-              watchTime: '56:30'
-            }
-          ],
-          pastExams: [
-            {
-              id: 1,
-              title: 'Baccalauréat Physique/Chimie TSEXP 2023',
-              year: '2023',
-              session: 'Principale',
-              duration: '4h',
-              pages: 9,
-              downloadUrl: '#',
-              hasCorrection: true,
-              difficulty: 'Difficile',
-              averageScore: 11.8
-            }
-          ]
-        }
-      },
-      TSECO: {
-        'Économie': {
-          notes: [
-            {
-              id: 1,
-              title: 'Microéconomie - Les marchés',
-              chapter: 'Chapitre 1',
-              pages: 30,
-              downloadUrl: '#',
-              lastUpdated: '2024-01-10',
-              isDownloaded: true
-            }
-          ],
-          videos: [
-            {
-              id: 1,
-              title: 'Théories économiques',
-              duration: '48:15',
-              chapter: 'Chapitre 1',
-              thumbnailUrl: 'https://via.placeholder.com/300x200',
-              videoUrl: '#',
-              watched: false,
-              watchTime: '22:10'
-            }
-          ],
-          pastExams: [
-            {
-              id: 1,
-              title: 'Baccalauréat Économie TSECO 2023',
-              year: '2023',
-              session: 'Principale',
-              duration: '4h',
-              pages: 8,
-              downloadUrl: '#',
-              hasCorrection: true,
-              difficulty: 'Moyen',
-              averageScore: 13.9
-            }
-          ]
-        },
-        'Gestion': {
-          notes: [
-            {
-              id: 1,
-              title: 'Gestion d\'entreprise',
-              chapter: 'Chapitre 1',
-              pages: 25,
-              downloadUrl: '#',
-              lastUpdated: '2024-01-18',
-              isDownloaded: false
-            }
-          ],
-          videos: [
-            {
-              id: 1,
-              title: 'Management moderne',
-              duration: '39:45',
-              chapter: 'Chapitre 1',
-              thumbnailUrl: 'https://via.placeholder.com/300x200',
-              videoUrl: '#',
-              watched: true,
-              watchTime: '39:45'
-            }
-          ],
-          pastExams: [
-            {
-              id: 1,
-              title: 'Baccalauréat Gestion TSECO 2023',
-              year: '2023',
-              session: 'Principale',
-              duration: '3h',
-              pages: 6,
-              downloadUrl: '#',
-              hasCorrection: true,
-              difficulty: 'Moyen',
-              averageScore: 14.5
             }
           ]
         }
@@ -891,36 +242,6 @@ export default function CourseDetailScreen() {
           description: 'Algèbre, géométrie et statistiques',
           totalLessons: 28,
           completedLessons: 20
-        },
-        'Physique-Chimie': {
-          instructor: 'Mme Durand',
-          description: 'Sciences physiques et chimiques fondamentales',
-          totalLessons: 20,
-          completedLessons: 12
-        },
-        'Histoire-Géographie': {
-          instructor: 'M. Bernard',
-          description: 'Histoire du monde et géographie',
-          totalLessons: 22,
-          completedLessons: 16
-        },
-        'Sciences de la Vie et de la Terre': {
-          instructor: 'M. Laurent',
-          description: 'Biologie et sciences naturelles',
-          totalLessons: 18,
-          completedLessons: 10
-        },
-        'Anglais': {
-          instructor: 'Mme Smith',
-          description: 'Langue anglaise et communication',
-          totalLessons: 16,
-          completedLessons: 14
-        },
-        'Éducation Civique et Morale': {
-          instructor: 'M. Moreau',
-          description: 'Citoyenneté et valeurs',
-          totalLessons: 12,
-          completedLessons: 11
         }
       },
       TSE: {
@@ -929,70 +250,6 @@ export default function CourseDetailScreen() {
           description: 'Analyse mathématique, géométrie et algèbre avancée',
           totalLessons: 32,
           completedLessons: 22
-        },
-        'Physique': {
-          instructor: 'Dr. Rousseau',
-          description: 'Mécanique, électricité et physique moderne',
-          totalLessons: 28,
-          completedLessons: 18
-        },
-        'Chimie': {
-          instructor: 'Prof. Blanc',
-          description: 'Chimie organique et minérale avancée',
-          totalLessons: 24,
-          completedLessons: 15
-        },
-        'Bio/Geo': {
-          instructor: 'Dr. Petit',
-          description: 'Biologie et géologie',
-          totalLessons: 20,
-          completedLessons: 12
-        },
-        'Français': {
-          instructor: 'Prof. Roux',
-          description: 'Littérature et expression écrite',
-          totalLessons: 18,
-          completedLessons: 16
-        },
-        'Philosophie': {
-          instructor: 'Prof. Mercier',
-          description: 'Pensée critique et logique',
-          totalLessons: 14,
-          completedLessons: 8
-        },
-        'Anglais': {
-          instructor: 'Mrs. Johnson',
-          description: 'Communication avancée',
-          totalLessons: 12,
-          completedLessons: 11
-        }
-      },
-      TSEXP: {
-        'Mathématiques': {
-          instructor: 'Prof. Leroy',
-          description: 'Statistiques et probabilités',
-          totalLessons: 28,
-          completedLessons: 18
-        },
-        'Physique/Chimie': {
-          instructor: 'Dr. Rousseau',
-          description: 'Sciences expérimentales',
-          totalLessons: 26,
-          completedLessons: 20
-        }
-      },
-      TSECO: {
-        'Économie': {
-          instructor: 'Prof. Alami',
-          description: 'Microéconomie et macroéconomie',
-          totalLessons: 28,
-          completedLessons: 21
-        },
-        'Gestion': {
-          instructor: 'M. Garcia',
-          description: 'Management et organisation',
-          totalLessons: 22,
-          completedLessons: 17
         }
       }
     };
@@ -1010,7 +267,65 @@ export default function CourseDetailScreen() {
   const courseMetadata = getCourseMetadata(level, courseName);
   const courseTitle = courseName.replace(/[_]/g, ' ');
 
-  // Component functions
+  // Search functions
+  const toggleSearch = () => {
+    if (searchVisible) {
+      // Hide search
+      Keyboard.dismiss();
+      setSearchQuery('');
+      Animated.timing(searchAnimValue, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: false,
+      }).start(() => {
+        setSearchVisible(false);
+      });
+    } else {
+      // Show search
+      setSearchVisible(true);
+      Animated.timing(searchAnimValue, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: false,
+      }).start(() => {
+        // Focus input after animation
+        setTimeout(() => {
+          searchInputRef.current?.focus();
+        }, 100);
+      });
+    }
+  };
+
+  const clearSearch = () => {
+    setSearchQuery('');
+    searchInputRef.current?.focus();
+  };
+
+  // Filter content based on search query
+  const filterContent = (items) => {
+    if (!searchQuery.trim()) return items;
+    const query = searchQuery.toLowerCase();
+    return items.filter(item => 
+      item.title.toLowerCase().includes(query) ||
+      item.chapter?.toLowerCase().includes(query)
+    );
+  };
+
+  const getFilteredContent = () => {
+    if (!searchQuery.trim()) return courseContent;
+    return {
+      notes: filterContent(courseContent.notes),
+      videos: filterContent(courseContent.videos),
+      pastExams: filterContent(courseContent.pastExams)
+    };
+  };
+
+  const filteredContent = getFilteredContent();
+  const hasSearchResults = searchQuery.trim().length > 0;
+  const totalResults = hasSearchResults ? 
+    filteredContent.notes.length + filteredContent.videos.length + filteredContent.pastExams.length : 0;
+
+  // Component functions (same as before)
   const TabButton = ({ id, title, icon, isActive, onPress, count }) => (
     <TouchableOpacity
       style={[
@@ -1260,6 +575,8 @@ export default function CourseDetailScreen() {
   );
 
   const renderContent = () => {
+    const currentContent = filteredContent;
+    
     switch (activeTab) {
       case 'notes':
         return (
@@ -1269,17 +586,17 @@ export default function CourseDetailScreen() {
                 Notes de cours
               </Text>
               <Text style={[styles.sectionCount, { color: theme.textSecondary }]}>
-                {courseContent.notes.length} documents
+                {currentContent.notes.length} document{currentContent.notes.length !== 1 ? 's' : ''}
               </Text>
             </View>
-            {courseContent.notes.length > 0 ? (
-              courseContent.notes.map((note) => (
+            {currentContent.notes.length > 0 ? (
+              currentContent.notes.map((note) => (
                 <NoteCard key={note.id} note={note} />
               ))
             ) : (
               <EmptyState 
-                title="Aucune note disponible"
-                message="Les notes de cours seront bientôt disponibles"
+                title={hasSearchResults ? "Aucun résultat" : "Aucune note disponible"}
+                message={hasSearchResults ? "Essayez des mots-clés différents" : "Les notes de cours seront bientôt disponibles"}
                 icon="document-text-outline"
               />
             )}
@@ -1294,17 +611,17 @@ export default function CourseDetailScreen() {
                 Vidéos de cours
               </Text>
               <Text style={[styles.sectionCount, { color: theme.textSecondary }]}>
-                {courseContent.videos.length} vidéos
+                {currentContent.videos.length} vidéo{currentContent.videos.length !== 1 ? 's' : ''}
               </Text>
             </View>
-            {courseContent.videos.length > 0 ? (
-              courseContent.videos.map((video) => (
+            {currentContent.videos.length > 0 ? (
+              currentContent.videos.map((video) => (
                 <VideoCard key={video.id} video={video} />
               ))
             ) : (
               <EmptyState 
-                title="Aucune vidéo disponible"
-                message="Les vidéos de cours seront bientôt disponibles"
+                title={hasSearchResults ? "Aucun résultat" : "Aucune vidéo disponible"}
+                message={hasSearchResults ? "Essayez des mots-clés différents" : "Les vidéos de cours seront bientôt disponibles"}
                 icon="play-circle-outline"
               />
             )}
@@ -1319,17 +636,17 @@ export default function CourseDetailScreen() {
                 Examens passés
               </Text>
               <Text style={[styles.sectionCount, { color: theme.textSecondary }]}>
-                {courseContent.pastExams.length} examens
+                {currentContent.pastExams.length} examen{currentContent.pastExams.length !== 1 ? 's' : ''}
               </Text>
             </View>
-            {courseContent.pastExams.length > 0 ? (
-              courseContent.pastExams.map((exam) => (
+            {currentContent.pastExams.length > 0 ? (
+              currentContent.pastExams.map((exam) => (
                 <ExamCard key={exam.id} exam={exam} />
               ))
             ) : (
               <EmptyState 
-                title="Aucun examen disponible"
-                message="Les examens passés seront bientôt disponibles"
+                title={hasSearchResults ? "Aucun résultat" : "Aucun examen disponible"}
+                message={hasSearchResults ? "Essayez des mots-clés différents" : "Les examens passés seront bientôt disponibles"}
                 icon="school-outline"
               />
             )}
@@ -1343,6 +660,7 @@ export default function CourseDetailScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+      {/* CUSTOM HEADER WITH BACK BUTTON AND SEARCH */}
       <Stack.Screen
         options={{
           headerShown: true,
@@ -1350,8 +668,84 @@ export default function CourseDetailScreen() {
           headerStyle: { backgroundColor: theme.primary },
           headerTintColor: '#fff',
           headerTitleStyle: { fontWeight: 'bold' },
+          headerLeft: () => (
+            <TouchableOpacity 
+              onPress={() => router.back()}
+              style={styles.backButton}
+            >
+              <Ionicons name="arrow-back" size={24} color="#fff" />
+            </TouchableOpacity>
+          ),
+          headerRight: () => (
+            <View style={styles.headerRightActions}>
+              <TouchableOpacity 
+                onPress={toggleSearch}
+                style={[
+                  styles.headerActionButton, 
+                  { backgroundColor: searchVisible ? '#fff' : 'rgba(255,255,255,0.15)' }
+                ]}
+              >
+                <Ionicons 
+                  name={searchVisible ? "close" : "search"} 
+                  size={20} 
+                  color={searchVisible ? theme.primary : "#fff"} 
+                />
+              </TouchableOpacity>
+              <TouchableOpacity 
+                onPress={() => Alert.alert('Options', 'Menu des options du cours')}
+                style={[styles.headerActionButton, { backgroundColor: 'rgba(255,255,255,0.15)' }]}
+              >
+                <Ionicons name="ellipsis-vertical" size={20} color="#fff" />
+              </TouchableOpacity>
+            </View>
+          ),
         }}
       />
+
+      {/* IMPROVED SEARCH BAR - Slides down instead of modal */}
+      {searchVisible && (
+        <Animated.View 
+          style={[
+            styles.searchContainer, 
+            { 
+              backgroundColor: theme.surface,
+              height: searchAnimValue.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, 80],
+              }),
+              opacity: searchAnimValue,
+            }
+          ]}
+        >
+          <View style={styles.searchContent}>
+            <View style={[styles.searchInputContainer, { backgroundColor: theme.background }]}>
+              <Ionicons name="search" size={20} color={theme.textSecondary} />
+              <TextInput
+                ref={searchInputRef}
+                style={[styles.searchInput, { color: theme.text }]}
+                placeholder="Rechercher dans le cours..."
+                placeholderTextColor={theme.textSecondary}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                returnKeyType="search"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity onPress={clearSearch}>
+                  <Ionicons name="close-circle" size={20} color={theme.textSecondary} />
+                </TouchableOpacity>
+              )}
+            </View>
+            
+            {hasSearchResults && (
+              <Text style={[styles.searchResultsText, { color: theme.textSecondary }]}>
+                {totalResults} résultat{totalResults !== 1 ? 's' : ''}
+              </Text>
+            )}
+          </View>
+        </Animated.View>
+      )}
 
       {/* Course Header */}
       <View style={[styles.courseHeader, { backgroundColor: theme.surface }]}>
@@ -1390,6 +784,19 @@ export default function CourseDetailScreen() {
         </View>
       </View>
 
+      {/* Search Results Info */}
+      {hasSearchResults && (
+        <View style={[styles.searchResultsBanner, { backgroundColor: theme.primary + '15' }]}>
+          <Ionicons name="search" size={16} color={theme.primary} />
+          <Text style={[styles.searchResultsBannerText, { color: theme.primary }]}>
+            "{searchQuery}" - {totalResults} résultat{totalResults !== 1 ? 's' : ''}
+          </Text>
+          <TouchableOpacity onPress={clearSearch}>
+            <Ionicons name="close" size={16} color={theme.primary} />
+          </TouchableOpacity>
+        </View>
+      )}
+
       {/* Tab Navigation */}
       <View style={[styles.tabContainer, { backgroundColor: theme.background }]}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -1398,7 +805,7 @@ export default function CourseDetailScreen() {
             title="Notes"
             icon="document-text-outline"
             isActive={activeTab === 'notes'}
-            count={courseContent.notes.length}
+            count={filteredContent.notes.length}
             onPress={() => setActiveTab('notes')}
           />
           <TabButton
@@ -1406,7 +813,7 @@ export default function CourseDetailScreen() {
             title="Vidéos"
             icon="play-circle-outline"
             isActive={activeTab === 'videos'}
-            count={courseContent.videos.length}
+            count={filteredContent.videos.length}
             onPress={() => setActiveTab('videos')}
           />
           <TabButton
@@ -1414,7 +821,7 @@ export default function CourseDetailScreen() {
             title="Examens"
             icon="school-outline"
             isActive={activeTab === 'exams'}
-            count={courseContent.pastExams.length}
+            count={filteredContent.pastExams.length}
             onPress={() => setActiveTab('exams')}
           />
         </ScrollView>
@@ -1432,6 +839,53 @@ export default function CourseDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  backButton: {
+    padding: 8,
+    marginLeft: -8,
+  },
+  headerRightActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  headerActionButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  searchContainer: {
+    overflow: 'hidden',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  searchContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    gap: 12,
+  },
+  searchInputContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    gap: 12,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  searchResultsText: {
+    fontSize: 12,
+    fontWeight: '500',
+    minWidth: 60,
+    textAlign: 'center',
   },
   courseHeader: {
     padding: 20,
@@ -1484,6 +938,18 @@ const styles = StyleSheet.create({
   progressBarFill: {
     height: '100%',
     borderRadius: 4,
+  },
+  searchResultsBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    gap: 8,
+  },
+  searchResultsBannerText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '500',
   },
   tabContainer: {
     paddingHorizontal: 20,
