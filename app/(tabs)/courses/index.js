@@ -1,9 +1,9 @@
-// app/(tabs)/courses/index.js - CLEAN VERSION
+// app/(tabs)/courses/index.js - FIXED VERSION
 import React, { useContext } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
+  StyleSheet,  // ← Make sure this is imported
   ScrollView,
   TouchableOpacity,
   SafeAreaView,
@@ -68,10 +68,10 @@ export default function CoursesScreen() {
 
   const getDifficultyColor = (difficulty) => {
     switch (difficulty) {
-      case 'Facile': return theme.success;
-      case 'Moyen': return theme.warning;
-      case 'Difficile': return theme.error;
-      default: return theme.primary;
+      case 'Facile': return theme.success || '#4CAF50';
+      case 'Moyen': return theme.warning || '#FF9800';
+      case 'Difficile': return theme.error || '#F44336';
+      default: return theme.primary || '#2196F3';
     }
   };
 
@@ -82,7 +82,7 @@ export default function CoursesScreen() {
       title: 'Français',
       subtitle: 'Grammaire, littérature et expression',
       progress: 65,
-      color: theme.secondary,
+      color: theme.secondary || '#FF9800',
       difficulty: 'Moyen',
       lessons: 24,
       level: 'DEF'
@@ -93,7 +93,7 @@ export default function CoursesScreen() {
       title: 'Mathématiques',
       subtitle: 'Algèbre, géométrie et calcul',
       progress: 45,
-      color: theme.primary,
+      color: theme.primary || '#2196F3',
       difficulty: 'Moyen',
       lessons: 28,
       level: 'DEF'
@@ -104,7 +104,7 @@ export default function CoursesScreen() {
       title: 'Physique-Chimie',
       subtitle: 'Sciences physiques et chimiques',
       progress: 30,
-      color: theme.accent,
+      color: theme.accent || '#E91E63',
       difficulty: 'Moyen',
       lessons: 20,
       level: 'DEF'
@@ -115,7 +115,7 @@ export default function CoursesScreen() {
       title: 'Histoire-Géographie',
       subtitle: 'Histoire du monde et géographie',
       progress: 75,
-      color: theme.info,
+      color: theme.info || '#9C27B0',
       difficulty: 'Facile',
       lessons: 22,
       level: 'DEF'
@@ -126,7 +126,7 @@ export default function CoursesScreen() {
       title: 'Sciences de la Vie et de la Terre',
       subtitle: 'Biologie et sciences naturelles',
       progress: 50,
-      color: theme.success,
+      color: theme.success || '#4CAF50',
       difficulty: 'Facile',
       lessons: 18,
       level: 'DEF'
@@ -137,7 +137,7 @@ export default function CoursesScreen() {
       title: 'Anglais',
       subtitle: 'Langue anglaise et communication',
       progress: 40,
-      color: theme.neutralDark,
+      color: theme.neutralDark || '#607D8B',
       difficulty: 'Moyen',
       lessons: 16,
       level: 'DEF'
@@ -148,7 +148,7 @@ export default function CoursesScreen() {
       title: 'Éducation Civique et Morale',
       subtitle: 'Citoyenneté et valeurs',
       progress: 80,
-      color: theme.warning,
+      color: theme.warning || '#795548',
       difficulty: 'Facile',
       lessons: 12,
       level: 'DEF'
@@ -158,32 +158,32 @@ export default function CoursesScreen() {
   const getBacCourses = () => {
     const coursesByTrack = {
       TSE: [
-        { id: 'tse_math', icon: 'calculator-outline', title: 'Mathématiques', subtitle: 'Analyse, algèbre et géométrie', color: theme.primary, difficulty: 'Difficile', lessons: 32, progress: 68, level: 'TSE' },
-        { id: 'tse_physique', icon: 'nuclear-outline', title: 'Physique', subtitle: 'Mécanique, thermodynamique, optique', color: theme.accent, difficulty: 'Difficile', lessons: 28, progress: 45, level: 'TSE' },
-        { id: 'tse_chimie', icon: 'flask-outline', title: 'Chimie', subtitle: 'Chimie organique et minérale', color: theme.info, difficulty: 'Difficile', lessons: 24, progress: 72, level: 'TSE' },
-        { id: 'tse_bio_geo', icon: 'leaf-outline', title: 'Bio/Geo', subtitle: 'Biologie et géologie', color: theme.success, difficulty: 'Moyen', lessons: 20, progress: 56, level: 'TSE' },
-        { id: 'tse_francais', icon: 'language-outline', title: 'Français', subtitle: 'Littérature et expression écrite', color: theme.secondary, difficulty: 'Moyen', lessons: 18, progress: 83, level: 'TSE' },
-        { id: 'tse_philo', icon: 'bulb-outline', title: 'Philosophie', subtitle: 'Pensée critique et logique', color: theme.warning, difficulty: 'Moyen', lessons: 14, level: 'TSE' },
-        { id: 'tse_anglais', icon: 'globe', title: 'Anglais', subtitle: 'Communication avancée', color: theme.neutralDark, difficulty: 'Moyen', lessons: 12, progress: 91, level: 'TSE' }
+        { id: 'tse_math', icon: 'calculator-outline', title: 'Mathématiques', subtitle: 'Analyse, algèbre et géométrie', color: theme.primary || '#2196F3', difficulty: 'Difficile', lessons: 32, progress: 68, level: 'TSE' },
+        { id: 'tse_physique', icon: 'nuclear-outline', title: 'Physique', subtitle: 'Mécanique, thermodynamique, optique', color: theme.accent || '#E91E63', difficulty: 'Difficile', lessons: 28, progress: 45, level: 'TSE' },
+        { id: 'tse_chimie', icon: 'flask-outline', title: 'Chimie', subtitle: 'Chimie organique et minérale', color: theme.info || '#9C27B0', difficulty: 'Difficile', lessons: 24, progress: 72, level: 'TSE' },
+        { id: 'tse_bio_geo', icon: 'leaf-outline', title: 'Bio/Geo', subtitle: 'Biologie et géologie', color: theme.success || '#4CAF50', difficulty: 'Moyen', lessons: 20, progress: 56, level: 'TSE' },
+        { id: 'tse_francais', icon: 'language-outline', title: 'Français', subtitle: 'Littérature et expression écrite', color: theme.secondary || '#FF9800', difficulty: 'Moyen', lessons: 18, progress: 83, level: 'TSE' },
+        { id: 'tse_philo', icon: 'bulb-outline', title: 'Philosophie', subtitle: 'Pensée critique et logique', color: theme.warning || '#795548', difficulty: 'Moyen', lessons: 14, level: 'TSE' },
+        { id: 'tse_anglais', icon: 'globe', title: 'Anglais', subtitle: 'Communication avancée', color: theme.neutralDark || '#607D8B', difficulty: 'Moyen', lessons: 12, progress: 91, level: 'TSE' }
       ],
       TSEXP: [
-        { id: 'tsexp_math', icon: 'calculator-outline', title: 'Mathématiques', subtitle: 'Statistiques et probabilités', color: theme.primary, difficulty: 'Difficile', lessons: 28, progress: 62, level: 'TSEXP' },
-        { id: 'tsexp_phys_chim', icon: 'flask-outline', title: 'Physique/Chimie', subtitle: 'Sciences expérimentales', color: theme.accent, difficulty: 'Difficile', lessons: 26, progress: 55, level: 'TSEXP' },
-        { id: 'tsexp_bio', icon: 'leaf-outline', title: 'Bio', subtitle: 'Biologie et sciences naturelles', color: theme.success, difficulty: 'Moyen', lessons: 24, progress: 71, level: 'TSEXP' },
-        { id: 'tsexp_geo', icon: 'globe-outline', title: 'Geo', subtitle: 'Géographie et environnement', color: theme.warning, difficulty: 'Moyen', lessons: 16, progress: 64, level: 'TSEXP' },
-        { id: 'tsexp_philo', icon: 'bulb-outline', title: 'Philosophie', subtitle: 'Éthique et sciences', color: theme.info, difficulty: 'Moyen', lessons: 14, level: 'TSEXP' },
-        { id: 'tsexp_anglais', icon: 'globe', title: 'Anglais', subtitle: 'Anglais scientifique', color: theme.neutralDark, difficulty: 'Moyen', lessons: 12, progress: 88, level: 'TSEXP' }
+        { id: 'tsexp_math', icon: 'calculator-outline', title: 'Mathématiques', subtitle: 'Statistiques et probabilités', color: theme.primary || '#2196F3', difficulty: 'Difficile', lessons: 28, progress: 62, level: 'TSEXP' },
+        { id: 'tsexp_phys_chim', icon: 'flask-outline', title: 'Physique/Chimie', subtitle: 'Sciences expérimentales', color: theme.accent || '#E91E63', difficulty: 'Difficile', lessons: 26, progress: 55, level: 'TSEXP' },
+        { id: 'tsexp_bio', icon: 'leaf-outline', title: 'Bio', subtitle: 'Biologie et sciences naturelles', color: theme.success || '#4CAF50', difficulty: 'Moyen', lessons: 24, progress: 71, level: 'TSEXP' },
+        { id: 'tsexp_geo', icon: 'globe-outline', title: 'Geo', subtitle: 'Géographie et environnement', color: theme.warning || '#FF9800', difficulty: 'Moyen', lessons: 16, progress: 64, level: 'TSEXP' },
+        { id: 'tsexp_philo', icon: 'bulb-outline', title: 'Philosophie', subtitle: 'Éthique et sciences', color: theme.info || '#9C27B0', difficulty: 'Moyen', lessons: 14, level: 'TSEXP' },
+        { id: 'tsexp_anglais', icon: 'globe', title: 'Anglais', subtitle: 'Anglais scientifique', color: theme.neutralDark || '#607D8B', difficulty: 'Moyen', lessons: 12, progress: 88, level: 'TSEXP' }
       ],
       TSECO: [
-        { id: 'tseco_math', icon: 'calculator-outline', title: 'Mathématiques appliquées', subtitle: 'Statistiques économiques', color: theme.primary, difficulty: 'Moyen', lessons: 24, progress: 58, level: 'TSECO' },
-        { id: 'tseco_eco', icon: 'trending-up-outline', title: 'Économie', subtitle: 'Microéconomie et macroéconomie', color: theme.success, difficulty: 'Moyen', lessons: 28, progress: 73, level: 'TSECO' },
-        { id: 'tseco_gestion', icon: 'briefcase-outline', title: 'Gestion', subtitle: 'Management et organisation', color: theme.neutralDark, difficulty: 'Moyen', lessons: 22, progress: 64, level: 'TSECO' },
-        { id: 'tseco_droit', icon: 'document-text-outline', title: 'Droit', subtitle: 'Droit commercial et civil', color: theme.warning, difficulty: 'Moyen', lessons: 20, level: 'TSECO' },
-        { id: 'tseco_francais', icon: 'language-outline', title: 'Français', subtitle: 'Communication professionnelle', color: theme.secondary, difficulty: 'Moyen', lessons: 16, progress: 81, level: 'TSECO' },
-        { id: 'tseco_philo', icon: 'bulb-outline', title: 'Philosophie', subtitle: 'Philosophie politique', color: theme.info, difficulty: 'Moyen', lessons: 14, level: 'TSECO' },
-        { id: 'tseco_anglais', icon: 'globe', title: 'Anglais', subtitle: 'Anglais des affaires', color: theme.accent, difficulty: 'Moyen', lessons: 12, progress: 87, level: 'TSECO' },
-        { id: 'tseco_hist_geo', icon: 'globe-outline', title: 'Histoire-Géographie', subtitle: 'Géographie économique', color: theme.error, difficulty: 'Facile', lessons: 18, progress: 92, level: 'TSECO' },
-        { id: 'tseco_civique', icon: 'people-outline', title: 'Éducation Civique', subtitle: 'Citoyenneté et société', color: theme.neutralLight, difficulty: 'Facile', lessons: 10, progress: 96, level: 'TSECO' }
+        { id: 'tseco_math', icon: 'calculator-outline', title: 'Mathématiques appliquées', subtitle: 'Statistiques économiques', color: theme.primary || '#2196F3', difficulty: 'Moyen', lessons: 24, progress: 58, level: 'TSECO' },
+        { id: 'tseco_eco', icon: 'trending-up-outline', title: 'Économie', subtitle: 'Microéconomie et macroéconomie', color: theme.success || '#4CAF50', difficulty: 'Moyen', lessons: 28, progress: 73, level: 'TSECO' },
+        { id: 'tseco_gestion', icon: 'briefcase-outline', title: 'Gestion', subtitle: 'Management et organisation', color: theme.neutralDark || '#607D8B', difficulty: 'Moyen', lessons: 22, progress: 64, level: 'TSECO' },
+        { id: 'tseco_droit', icon: 'document-text-outline', title: 'Droit', subtitle: 'Droit commercial et civil', color: theme.warning || '#795548', difficulty: 'Moyen', lessons: 20, level: 'TSECO' },
+        { id: 'tseco_francais', icon: 'language-outline', title: 'Français', subtitle: 'Communication professionnelle', color: theme.secondary || '#FF9800', difficulty: 'Moyen', lessons: 16, progress: 81, level: 'TSECO' },
+        { id: 'tseco_philo', icon: 'bulb-outline', title: 'Philosophie', subtitle: 'Philosophie politique', color: theme.info || '#9C27B0', difficulty: 'Moyen', lessons: 14, level: 'TSECO' },
+        { id: 'tseco_anglais', icon: 'globe', title: 'Anglais', subtitle: 'Anglais des affaires', color: theme.accent || '#E91E63', difficulty: 'Moyen', lessons: 12, progress: 87, level: 'TSECO' },
+        { id: 'tseco_hist_geo', icon: 'globe-outline', title: 'Histoire-Géographie', subtitle: 'Géographie économique', color: theme.error || '#F44336', difficulty: 'Facile', lessons: 18, progress: 92, level: 'TSECO' },
+        { id: 'tseco_civique', icon: 'people-outline', title: 'Éducation Civique', subtitle: 'Citoyenneté et société', color: theme.neutralLight || '#9E9E9E', difficulty: 'Facile', lessons: 10, progress: 96, level: 'TSECO' }
       ]
     };
 
@@ -232,19 +232,19 @@ export default function CoursesScreen() {
           <Text style={[styles.statValue, { color: theme.primary }]}>
             {coursesData.filter(c => c.progress).length}
           </Text>
-          <Text style={[styles.statLabel, { color: theme.textSecondary }]}>En cours</Text>
+          <Text style={[styles.statLabel, { color: theme.textSecondary || theme.text + '80' }]}>En cours</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={[styles.statValue, { color: theme.success }]}>
+          <Text style={[styles.statValue, { color: theme.success || '#4CAF50' }]}>
             {Math.round(coursesData.filter(c => c.progress).reduce((acc, c) => acc + c.progress, 0) / coursesData.filter(c => c.progress).length) || 0}%
           </Text>
-          <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Progression</Text>
+          <Text style={[styles.statLabel, { color: theme.textSecondary || theme.text + '80' }]}>Progression</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={[styles.statValue, { color: theme.accent }]}>
+          <Text style={[styles.statValue, { color: theme.accent || '#E91E63' }]}>
             {coursesData.length - coursesData.filter(c => c.progress).length}
           </Text>
-          <Text style={[styles.statLabel, { color: theme.textSecondary }]}>À commencer</Text>
+          <Text style={[styles.statLabel, { color: theme.textSecondary || theme.text + '80' }]}>À commencer</Text>
         </View>
       </View>
     </View>
@@ -285,6 +285,7 @@ export default function CoursesScreen() {
   );
 }
 
+// ✅ FIXED STYLESHEET - No syntax errors
 const styles = StyleSheet.create({
   container: {
     flex: 1,
