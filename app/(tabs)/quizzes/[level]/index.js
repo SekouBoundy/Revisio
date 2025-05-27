@@ -1,5 +1,5 @@
-// app/(tabs)/quizzes/[level]/index.js
-import React, { useContext } from 'react';
+// app/(tabs)/quizzes/[level]/index.js - Updated with navigation to quiz taking
+import React, { useContext, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,9 @@ import {
   ScrollView,
   TouchableOpacity,
   SafeAreaView,
+  TextInput,
+  Animated,
+  Keyboard,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -19,8 +22,45 @@ export default function LevelQuizzesScreen() {
   const { theme } = useContext(ThemeContext);
   const { user } = useUser();
   const router = useRouter();
+  
+  // Search state
+  const [searchVisible, setSearchVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const searchInputRef = useRef(null);
+  const searchAnimValue = useRef(new Animated.Value(0)).current;
 
   const isDefLevel = level === 'DEF';
+
+  // Toggle search functionality
+  const toggleSearch = () => {
+    if (searchVisible) {
+      Keyboard.dismiss();
+      setSearchQuery('');
+      Animated.timing(searchAnimValue, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: false,
+      }).start(() => {
+        setSearchVisible(false);
+      });
+    } else {
+      setSearchVisible(true);
+      Animated.timing(searchAnimValue, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: false,
+      }).start(() => {
+        setTimeout(() => {
+          searchInputRef.current?.focus();
+        }, 100);
+      });
+    }
+  };
+
+  const clearSearch = () => {
+    setSearchQuery('');
+    searchInputRef.current?.focus();
+  };
 
   const QuizCard = ({ icon, title, subject, questions, duration, difficulty, score, color, onPress }) => (
     <TouchableOpacity 
@@ -279,57 +319,171 @@ export default function LevelQuizzesScreen() {
     return quizzesByTrack[level] || quizzesByTrack.TSE;
   };
 
+  // Filter quizzes based on search
+  const filterQuizzes = (quizzes) => {
+    if (!searchQuery.trim()) return quizzes;
+    const query = searchQuery.toLowerCase();
+    return quizzes.filter(quiz => 
+      quiz.title.toLowerCase().includes(query) ||
+      quiz.subject.toLowerCase().includes(query) ||
+      quiz.difficulty.toLowerCase().includes(query)
+    );
+  };
+
   const quizzesData = isDefLevel ? getDefQuizzes() : getBacQuizzes();
+  const filteredQuizzes = filterQuizzes(quizzesData);
+  const hasSearchResults = searchQuery.trim().length > 0;
+
+  // Header Component
+  const Header = () => (
+    <View style={[styles.header, { backgroundColor: theme.primary }]}>
+      <View style={styles.headerContent}>
+        <View>
+          <Text style={[styles.headerSubtitle, { color: '#FFFFFF99' }]}>
+            {isDefLevel ? 'Quiz DEF' : `Quiz ${level}`}
+          </Text>
+          <Text style={[styles.headerTitle, { color: '#FFFFFF' }]}>
+            Quiz Challenge
+          </Text>
+        </View>
+        <View style={styles.headerActions}>
+          <TouchableOpacity 
+            style={[
+              styles.searchButton, 
+              { backgroundColor: searchVisible ? '#FFFFFF' : 'rgba(255, 255, 255, 0.15)' }
+            ]}
+            onPress={toggleSearch}
+          >
+            <Ionicons 
+              name={searchVisible ? "close" : "search"} 
+              size={20} 
+              color={searchVisible ? theme.primary : "#FFFFFF"} 
+            />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.filterButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}
+            onPress={() => console.log('Filter')}
+          >
+            <Ionicons name="filter-outline" size={20} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
+  );
+
+  // Stats Card
+  const StatsCard = () => (
+    <View style={[styles.statsCard, { backgroundColor: theme.surface }]}>
+      <View style={styles.statItem}>
+        <Text style={[styles.statValue, { color: theme.primary }]}>
+          {quizzesData.filter(q => q.score).length}
+        </Text>
+        <Text style={[styles.statLabel, { color: theme.text + '80' }]}>Terminés</Text>
+      </View>
+      <View style={styles.statItem}>
+        <Text style={[styles.statValue, { color: '#4CAF50' }]}>
+          {Math.round(quizzesData.filter(q => q.score).reduce((acc, q) => acc + q.score, 0) / quizzesData.filter(q => q.score).length) || 0}%
+        </Text>
+        <Text style={[styles.statLabel, { color: theme.text + '80' }]}>Moyenne</Text>
+      </View>
+      <View style={styles.statItem}>
+        <Text style={[styles.statValue, { color: '#FF9800' }]}>
+          {quizzesData.length - quizzesData.filter(q => q.score).length}
+        </Text>
+        <Text style={[styles.statLabel, { color: theme.text + '80' }]}>À faire</Text>
+      </View>
+    </View>
+  );
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <View style={styles.header}>
-        <Text style={[styles.headerTitle, { color: theme.text }]}>
-          {isDefLevel ? 'Quiz DEF' : `Quiz ${level}`}
-        </Text>
-        <TouchableOpacity style={styles.filterButton}>
-          <Ionicons name="filter-outline" size={24} color={theme.text} />
-        </TouchableOpacity>
-      </View>
+      <Header />
+      <StatsCard />
 
-      {/* Stats Section */}
-      <View style={[styles.statsCard, { backgroundColor: theme.surface }]}>
-        <View style={styles.statItem}>
-          <Text style={[styles.statValue, { color: theme.primary }]}>
-            {quizzesData.filter(q => q.score).length}
+      {/* Search Bar */}
+      {searchVisible && (
+        <Animated.View 
+          style={[
+            styles.searchContainer, 
+            { 
+              backgroundColor: theme.surface,
+              height: searchAnimValue.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, 80],
+              }),
+              opacity: searchAnimValue,
+            }
+          ]}
+        >
+          <View style={styles.searchContent}>
+            <View style={[styles.searchInputContainer, { backgroundColor: theme.background }]}>
+              <Ionicons name="search" size={20} color={theme.textSecondary} />
+              <TextInput
+                ref={searchInputRef}
+                style={[styles.searchInput, { color: theme.text }]}
+                placeholder="Rechercher un quiz..."
+                placeholderTextColor={theme.textSecondary}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                returnKeyType="search"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity onPress={clearSearch}>
+                  <Ionicons name="close-circle" size={20} color={theme.textSecondary} />
+                </TouchableOpacity>
+              )}
+            </View>
+            
+            {hasSearchResults && (
+              <Text style={[styles.searchResultsText, { color: theme.textSecondary }]}>
+                {filteredQuizzes.length} résultat{filteredQuizzes.length !== 1 ? 's' : ''}
+              </Text>
+            )}
+          </View>
+        </Animated.View>
+      )}
+
+      {/* Search Results Banner */}
+      {hasSearchResults && (
+        <View style={[styles.searchResultsBanner, { backgroundColor: theme.primary + '15' }]}>
+          <Ionicons name="search" size={16} color={theme.primary} />
+          <Text style={[styles.searchResultsBannerText, { color: theme.primary }]}>
+            "{searchQuery}" - {filteredQuizzes.length} résultat{filteredQuizzes.length !== 1 ? 's' : ''}
           </Text>
-          <Text style={[styles.statLabel, { color: theme.text + '80' }]}>Terminés</Text>
+          <TouchableOpacity onPress={clearSearch}>
+            <Ionicons name="close" size={16} color={theme.primary} />
+          </TouchableOpacity>
         </View>
-        <View style={styles.statItem}>
-          <Text style={[styles.statValue, { color: '#4CAF50' }]}>
-            {Math.round(quizzesData.filter(q => q.score).reduce((acc, q) => acc + q.score, 0) / quizzesData.filter(q => q.score).length) || 0}%
-          </Text>
-          <Text style={[styles.statLabel, { color: theme.text + '80' }]}>Moyenne</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={[styles.statValue, { color: '#FF9800' }]}>
-            {quizzesData.length - quizzesData.filter(q => q.score).length}
-          </Text>
-          <Text style={[styles.statLabel, { color: theme.text + '80' }]}>À faire</Text>
-        </View>
-      </View>
+      )}
 
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.section}>
-          {quizzesData.map((quiz, index) => (
-            <QuizCard
-              key={index}
-              icon={quiz.icon}
-              title={quiz.title}
-              subject={quiz.subject}
-              questions={quiz.questions}
-              duration={quiz.duration}
-              difficulty={quiz.difficulty}
-              score={quiz.score}
-              color={quiz.color}
-              onPress={() => console.log(`Start quiz: ${quiz.title}`)}
-            />
-          ))}
+          {filteredQuizzes.length > 0 ? (
+            filteredQuizzes.map((quiz, index) => (
+              <QuizCard
+                key={index}
+                icon={quiz.icon}
+                title={quiz.title}
+                subject={quiz.subject}
+                questions={quiz.questions}
+                duration={quiz.duration}
+                difficulty={quiz.difficulty}
+                score={quiz.score}
+                color={quiz.color}
+                onPress={() => router.push(`/quizzes/${level}/${quiz.title.replace(/\s+/g, '_')}`)}
+              />
+            ))
+          ) : hasSearchResults ? (
+            <View style={[styles.emptyState, { backgroundColor: theme.surface }]}>
+              <Ionicons name="search-outline" size={48} color={theme.textSecondary} />
+              <Text style={[styles.emptyTitle, { color: theme.text }]}>Aucun résultat</Text>
+              <Text style={[styles.emptyMessage, { color: theme.textSecondary }]}>
+                Essayez des mots-clés différents
+              </Text>
+            </View>
+          ) : null}
         </View>
 
         <View style={styles.bottomPadding} />
@@ -343,26 +497,57 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
+    paddingTop: 60,
+    paddingBottom: 30,
+    paddingHorizontal: 20,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+  },
+  headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 4,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
   },
+  headerActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  searchButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   filterButton: {
-    padding: 8,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   statsCard: {
     flexDirection: 'row',
+    marginTop: -15,
     marginHorizontal: 20,
     marginBottom: 20,
     padding: 20,
-    borderRadius: 16,
+    borderRadius: 20,
     justifyContent: 'space-around',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
   },
   statItem: {
     alignItems: 'center',
@@ -375,6 +560,50 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: 12,
   },
+  searchContainer: {
+    overflow: 'hidden',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  searchContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    gap: 12,
+  },
+  searchInputContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    gap: 12,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  searchResultsText: {
+    fontSize: 12,
+    fontWeight: '500',
+    minWidth: 60,
+    textAlign: 'center',
+  },
+  searchResultsBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    gap: 8,
+  },
+  searchResultsBannerText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '500',
+  },
   section: {
     paddingHorizontal: 20,
   },
@@ -384,6 +613,11 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 16,
     marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
   },
   quizIcon: {
     width: 48,
@@ -437,6 +671,23 @@ const styles = StyleSheet.create({
   scoreText: {
     fontSize: 14,
     fontWeight: 'bold',
+  },
+  emptyState: {
+    alignItems: 'center',
+    padding: 40,
+    borderRadius: 16,
+    marginVertical: 20,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyMessage: {
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
   },
   bottomPadding: {
     height: 40,

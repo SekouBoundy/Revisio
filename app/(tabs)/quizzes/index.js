@@ -1,5 +1,5 @@
-// app/(tabs)/quizzes/index.js - Updated with new course structure
-import React, { useContext } from 'react';
+// app/(tabs)/quizzes/index.js - Updated with curved header and search
+import React, { useContext, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,9 @@ import {
   ScrollView,
   TouchableOpacity,
   SafeAreaView,
+  TextInput,
+  Animated,
+  Keyboard,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -19,6 +22,43 @@ export default function QuizzesIndex() {
   const { user } = useUser();
   const router = useRouter();
   const isDefLevel = user?.level === 'DEF';
+  
+  // Search state
+  const [searchVisible, setSearchVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const searchInputRef = useRef(null);
+  const searchAnimValue = useRef(new Animated.Value(0)).current;
+
+  // Toggle search functionality
+  const toggleSearch = () => {
+    if (searchVisible) {
+      Keyboard.dismiss();
+      setSearchQuery('');
+      Animated.timing(searchAnimValue, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: false,
+      }).start(() => {
+        setSearchVisible(false);
+      });
+    } else {
+      setSearchVisible(true);
+      Animated.timing(searchAnimValue, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: false,
+      }).start(() => {
+        setTimeout(() => {
+          searchInputRef.current?.focus();
+        }, 100);
+      });
+    }
+  };
+
+  const clearSearch = () => {
+    setSearchQuery('');
+    searchInputRef.current?.focus();
+  };
 
   const getPerformanceColor = (score) => {
     if (score >= 80) return theme.success;
@@ -75,55 +115,21 @@ export default function QuizzesIndex() {
         { icon: 'globe', title: 'Business English', subject: 'Anglais', questions: 12, duration: 20, difficulty: 'Moyen', score: 87, color: theme.accent },
         { icon: 'globe-outline', title: 'Géographie économique', subject: 'Histoire-Géographie', questions: 15, duration: 25, difficulty: 'Facile', score: 92, color: theme.error },
         { icon: 'people-outline', title: 'Citoyenneté', subject: 'Éducation Civique', questions: 8, duration: 15, difficulty: 'Facile', score: 96, color: theme.neutralLight }
-      ],
-      TSS: [
-        { icon: 'people-outline', title: 'Comportements sociaux', subject: 'Sociologie', questions: 18, duration: 35, difficulty: 'Moyen', score: 83, color: theme.info },
-        { icon: 'globe-outline', title: 'Histoire sociale', subject: 'Histoire-Géographie', questions: 16, duration: 30, difficulty: 'Moyen', score: 78, color: theme.warning },
-        { icon: 'bulb-outline', title: 'Philosophie politique', subject: 'Philosophie', questions: 12, duration: 30, difficulty: 'Difficile', color: theme.neutralDark },
-        { icon: 'language-outline', title: 'Argumentation', subject: 'Français', questions: 10, duration: 35, difficulty: 'Moyen', score: 84, color: theme.secondary },
-        { icon: 'globe', title: 'Communication internationale', subject: 'Anglais', questions: 12, duration: 20, difficulty: 'Moyen', score: 89, color: theme.accent },
-        { icon: 'school-outline', title: 'Droits humains', subject: 'Éducation Civique et Morale', questions: 8, duration: 15, difficulty: 'Facile', score: 95, color: theme.success },
-        { icon: 'calculator-outline', title: 'Statistiques sociales', subject: 'Mathématiques adaptées', questions: 10, duration: 20, difficulty: 'Facile', score: 76, color: theme.primary }
-      ],
-      TAL: [
-        { icon: 'book-outline', title: 'Littérature moderne', subject: 'Littérature', questions: 15, duration: 40, difficulty: 'Difficile', score: 76, color: theme.accent },
-        { icon: 'bulb-outline', title: 'Esthétique', subject: 'Philosophie', questions: 12, duration: 35, difficulty: 'Difficile', color: theme.info },
-        { icon: 'color-palette-outline', title: 'Art contemporain', subject: 'Histoire de l\'art', questions: 12, duration: 25, difficulty: 'Moyen', score: 89, color: theme.error },
-        { icon: 'language-outline', title: 'Expression créative', subject: 'Français', questions: 8, duration: 45, difficulty: 'Moyen', score: 82, color: theme.secondary },
-        { icon: 'globe', title: 'Anglais littéraire', subject: 'Anglais', questions: 10, duration: 25, difficulty: 'Moyen', score: 87, color: theme.neutralDark },
-        { icon: 'brush-outline', title: 'Pratique artistique', subject: 'Arts plastiques ou musique', questions: 6, duration: 30, difficulty: 'Moyen', score: 74, color: theme.warning },
-        { icon: 'globe-outline', title: 'Histoire culturelle', subject: 'Histoire-Géographie', questions: 12, duration: 20, difficulty: 'Facile', score: 91, color: theme.success }
-      ],
-      TLL: [
-        { icon: 'language-outline', title: 'Grammaire comparée', subject: 'Langues vivantes', questions: 20, duration: 35, difficulty: 'Difficile', score: 81, color: theme.success },
-        { icon: 'book-outline', title: 'Analyse littéraire', subject: 'Littérature', questions: 14, duration: 30, difficulty: 'Difficile', score: 77, color: theme.accent },
-        { icon: 'bulb-outline', title: 'Philosophie du langage', subject: 'Philosophie', questions: 10, duration: 25, difficulty: 'Difficile', color: theme.info },
-        { icon: 'globe-outline', title: 'Histoire des civilisations', subject: 'Histoire-Géographie', questions: 15, duration: 25, difficulty: 'Moyen', score: 86, color: theme.warning },
-        { icon: 'create-outline', title: 'Linguistique', subject: 'Français', questions: 12, duration: 30, difficulty: 'Moyen', score: 83, color: theme.secondary },
-        { icon: 'people-outline', title: 'Diversité culturelle', subject: 'Éducation Civique', questions: 8, duration: 15, difficulty: 'Facile', score: 92, color: theme.neutralDark }
-      ],
-      STI: [
-        { icon: 'calculator-outline', title: 'Mathématiques industrielles', subject: 'Mathématiques appliquées', questions: 18, duration: 35, difficulty: 'Difficile', score: 73, color: theme.primary },
-        { icon: 'nuclear-outline', title: 'Physique industrielle', subject: 'Physique appliquée', questions: 16, duration: 30, difficulty: 'Difficile', color: theme.accent },
-        { icon: 'construct-outline', title: 'Systèmes industriels', subject: 'Technologie industrielle', questions: 14, duration: 35, difficulty: 'Difficile', score: 81, color: theme.warning },
-        { icon: 'desktop-outline', title: 'Automatisation', subject: 'Informatique industrielle', questions: 12, duration: 25, difficulty: 'Moyen', score: 88, color: theme.neutralDark },
-        { icon: 'language-outline', title: 'Communication technique', subject: 'Français', questions: 10, duration: 20, difficulty: 'Moyen', score: 85, color: theme.secondary },
-        { icon: 'bulb-outline', title: 'Éthique technologique', subject: 'Philosophie', questions: 8, duration: 20, difficulty: 'Moyen', color: theme.info },
-        { icon: 'globe', title: 'Anglais technique', subject: 'Anglais', questions: 10, duration: 18, difficulty: 'Moyen', score: 79, color: theme.success }
-      ],
-      STG: [
-        { icon: 'briefcase-outline', title: 'Gestion d\'entreprise', subject: 'Gestion et administration', questions: 18, duration: 35, difficulty: 'Moyen', score: 84, color: theme.success },
-        { icon: 'calculator-outline', title: 'Comptabilité analytique', subject: 'Comptabilité', questions: 15, duration: 30, difficulty: 'Moyen', score: 79, color: theme.primary },
-        { icon: 'trending-up-outline', title: 'Économie d\'entreprise', subject: 'Économie', questions: 16, duration: 25, difficulty: 'Moyen', score: 86, color: theme.error },
-        { icon: 'stats-chart-outline', title: 'Statistiques de gestion', subject: 'Mathématiques appliquées', questions: 12, duration: 25, difficulty: 'Moyen', color: theme.info },
-        { icon: 'document-text-outline', title: 'Droit des affaires', subject: 'Droit', questions: 14, duration: 30, difficulty: 'Moyen', score: 82, color: theme.warning },
-        { icon: 'language-outline', title: 'Communication d\'entreprise', subject: 'Français', questions: 10, duration: 25, difficulty: 'Moyen', score: 88, color: theme.secondary },
-        { icon: 'bulb-outline', title: 'Éthique des affaires', subject: 'Philosophie', questions: 8, duration: 20, difficulty: 'Moyen', color: theme.neutralDark },
-        { icon: 'globe', title: 'Anglais commercial', subject: 'Anglais', questions: 10, duration: 18, difficulty: 'Moyen', score: 91, color: theme.accent }
       ]
     };
 
     return quizzesByTrack[user?.level] || quizzesByTrack.TSE;
+  };
+
+  // Filter quizzes based on search
+  const filterQuizzes = (quizzes) => {
+    if (!searchQuery.trim()) return quizzes;
+    const query = searchQuery.toLowerCase();
+    return quizzes.filter(quiz => 
+      quiz.title.toLowerCase().includes(query) ||
+      quiz.subject.toLowerCase().includes(query) ||
+      quiz.difficulty.toLowerCase().includes(query)
+    );
   };
 
   const QuizCard = ({ icon, title, subject, questions, duration, difficulty, score, color, onPress }) => (
@@ -171,6 +177,8 @@ export default function QuizzesIndex() {
   );
 
   const quizzesData = isDefLevel ? getDefQuizzes() : getBacQuizzes();
+  const filteredQuizzes = filterQuizzes(quizzesData);
+  const hasSearchResults = searchQuery.trim().length > 0;
 
   const Header = () => (
     <View style={[styles.header, { backgroundColor: theme.primary }]}>
@@ -183,12 +191,27 @@ export default function QuizzesIndex() {
             Quiz Dashboard
           </Text>
         </View>
-        <TouchableOpacity 
-          style={[styles.filterButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}
-          onPress={() => console.log('Filter')}
-        >
-          <Ionicons name="analytics" size={20} color="#FFFFFF" />
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity 
+            style={[
+              styles.searchButton, 
+              { backgroundColor: searchVisible ? '#FFFFFF' : 'rgba(255, 255, 255, 0.15)' }
+            ]}
+            onPress={toggleSearch}
+          >
+            <Ionicons 
+              name={searchVisible ? "close" : "search"} 
+              size={20} 
+              color={searchVisible ? theme.primary : "#FFFFFF"} 
+            />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.filterButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}
+            onPress={() => console.log('Filter')}
+          >
+            <Ionicons name="analytics" size={20} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -266,6 +289,64 @@ export default function QuizzesIndex() {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <Header />
 
+      {/* Search Bar */}
+      {searchVisible && (
+        <Animated.View 
+          style={[
+            styles.searchContainer, 
+            { 
+              backgroundColor: theme.surface,
+              height: searchAnimValue.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, 80],
+              }),
+              opacity: searchAnimValue,
+            }
+          ]}
+        >
+          <View style={styles.searchContent}>
+            <View style={[styles.searchInputContainer, { backgroundColor: theme.background }]}>
+              <Ionicons name="search" size={20} color={theme.textSecondary} />
+              <TextInput
+                ref={searchInputRef}
+                style={[styles.searchInput, { color: theme.text }]}
+                placeholder="Rechercher un quiz..."
+                placeholderTextColor={theme.textSecondary}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                returnKeyType="search"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity onPress={clearSearch}>
+                  <Ionicons name="close-circle" size={20} color={theme.textSecondary} />
+                </TouchableOpacity>
+              )}
+            </View>
+            
+            {hasSearchResults && (
+              <Text style={[styles.searchResultsText, { color: theme.textSecondary }]}>
+                {filteredQuizzes.length} résultat{filteredQuizzes.length !== 1 ? 's' : ''}
+              </Text>
+            )}
+          </View>
+        </Animated.View>
+      )}
+
+      {/* Search Results Banner */}
+      {hasSearchResults && (
+        <View style={[styles.searchResultsBanner, { backgroundColor: theme.primary + '15' }]}>
+          <Ionicons name="search" size={16} color={theme.primary} />
+          <Text style={[styles.searchResultsBannerText, { color: theme.primary }]}>
+            "{searchQuery}" - {filteredQuizzes.length} résultat{filteredQuizzes.length !== 1 ? 's' : ''}
+          </Text>
+          <TouchableOpacity onPress={clearSearch}>
+            <Ionicons name="close" size={16} color={theme.primary} />
+          </TouchableOpacity>
+        </View>
+      )}
+
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Performance Overview */}
         <View style={styles.performanceSection}>
@@ -280,20 +361,30 @@ export default function QuizzesIndex() {
             </Text>
           </View>
           
-          {quizzesData.map((quiz, index) => (
-            <QuizCard
-              key={index}
-              icon={quiz.icon}
-              title={quiz.title}
-              subject={quiz.subject}
-              questions={quiz.questions}
-              duration={quiz.duration}
-              difficulty={quiz.difficulty}
-              score={quiz.score}
-              color={quiz.color}
-              onPress={() => console.log(`Start quiz: ${quiz.title}`)}
-            />
-          ))}
+          {filteredQuizzes.length > 0 ? (
+            filteredQuizzes.map((quiz, index) => (
+              <QuizCard
+                key={index}
+                icon={quiz.icon}
+                title={quiz.title}
+                subject={quiz.subject}
+                questions={quiz.questions}
+                duration={quiz.duration}
+                difficulty={quiz.difficulty}
+                score={quiz.score}
+                color={quiz.color}
+                onPress={() => console.log(`Start quiz: ${quiz.title}`)}
+              />
+            ))
+          ) : hasSearchResults ? (
+            <View style={[styles.emptyState, { backgroundColor: theme.surface }]}>
+              <Ionicons name="search-outline" size={48} color={theme.textSecondary} />
+              <Text style={[styles.emptyTitle, { color: theme.text }]}>Aucun résultat</Text>
+              <Text style={[styles.emptyMessage, { color: theme.textSecondary }]}>
+                Essayez des mots-clés différents
+              </Text>
+            </View>
+          ) : null}
         </View>
 
         <View style={styles.bottomPadding} />
@@ -327,12 +418,67 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
   },
+  headerActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  searchButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   filterButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  searchContainer: {
+    overflow: 'hidden',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  searchContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    gap: 12,
+  },
+  searchInputContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    gap: 12,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  searchResultsText: {
+    fontSize: 12,
+    fontWeight: '500',
+    minWidth: 60,
+    textAlign: 'center',
+  },
+  searchResultsBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    gap: 8,
+  },
+  searchResultsBannerText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '500',
   },
   section: {
     paddingHorizontal: 20,
@@ -482,6 +628,23 @@ const styles = StyleSheet.create({
   scoreText: {
     fontSize: 14,
     fontWeight: 'bold',
+  },
+  emptyState: {
+    alignItems: 'center',
+    padding: 40,
+    borderRadius: 16,
+    marginVertical: 20,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyMessage: {
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
   },
   bottomPadding: {
     height: 40,
