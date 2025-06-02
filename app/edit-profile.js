@@ -1,4 +1,5 @@
-// app/edit-profile.js
+// app/edit-profile.js - FIXED VERSION
+
 import React, { useState, useContext, useEffect } from 'react';
 import {
   View,
@@ -12,6 +13,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Image,
+  Modal,
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -32,16 +34,14 @@ export default function EditProfileScreen() {
     level: user?.level || 'DEF',
     location: user?.location || '',
     birthDate: user?.birthDate || '',
-    interests: user?.interests || [],
   });
-  
+
   const [isLoading, setIsLoading] = useState(false);
-  const [showBacOptions, setShowBacOptions] = useState(
-    user?.level && user.level !== 'DEF'
-  );
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [avatarUri, setAvatarUri] = useState(user?.avatar);
   const [errors, setErrors] = useState({});
+  const [showLevelModal, setShowLevelModal] = useState(false);
+  const [showBacOptions, setShowBacOptions] = useState(false);
 
   const bacSpecializations = [
     { value: 'TSE', label: 'Sciences Exactes (TSE)' },
@@ -54,11 +54,6 @@ export default function EditProfileScreen() {
     { value: 'STG', label: 'Sciences et Technologies de Gestion (STG)' },
   ];
 
-  const interestOptions = [
-    'Mathématiques', 'Sciences', 'Littérature', 'Histoire', 'Arts',
-    'Sport', 'Musique', 'Technologie', 'Philosophie', 'Langues'
-  ];
-
   // Check for unsaved changes
   useEffect(() => {
     const originalData = {
@@ -69,20 +64,36 @@ export default function EditProfileScreen() {
       level: user?.level || 'DEF',
       location: user?.location || '',
       birthDate: user?.birthDate || '',
-      interests: user?.interests || [],
     };
-    
     const hasChanges = JSON.stringify(formData) !== JSON.stringify(originalData);
     setHasUnsavedChanges(hasChanges);
   }, [formData, user]);
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    
-    // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: null }));
     }
+  };
+
+  const handleLevelChange = (value) => {
+    if (value === 'BAC') {
+      setShowBacOptions(true);
+    } else if (value === 'DEF') {
+      setShowBacOptions(false);
+      handleChange('level', 'DEF');
+      setShowLevelModal(false);
+    } else {
+      handleChange('level', value);
+      setShowLevelModal(false);
+      setShowBacOptions(false);
+    }
+  };
+
+  const getLevelDisplayName = (level) => {
+    if (level === 'DEF') return 'DEF (Secondaire)';
+    const spec = bacSpecializations.find(s => s.value === level);
+    return spec ? `BAC ${spec.label}` : `BAC ${level}`;
   };
 
   const handleCancel = () => {
@@ -105,27 +116,9 @@ export default function EditProfileScreen() {
       'Changer la photo de profil',
       'Choisissez une option',
       [
-        { 
-          text: 'Appareil photo', 
-          onPress: () => {
-            // Simulate photo capture
-            console.log('Camera selected');
-            // setAvatarUri('captured_photo_uri');
-          }
-        },
-        { 
-          text: 'Galerie', 
-          onPress: () => {
-            // Simulate gallery selection
-            console.log('Gallery selected');
-            // setAvatarUri('selected_photo_uri');
-          }
-        },
-        { 
-          text: 'Supprimer la photo', 
-          style: 'destructive',
-          onPress: () => setAvatarUri(null)
-        },
+        { text: 'Appareil photo', onPress: () => console.log('Camera') },
+        { text: 'Galerie', onPress: () => console.log('Gallery') },
+        { text: 'Supprimer la photo', style: 'destructive', onPress: () => setAvatarUri(null) },
         { text: 'Annuler', style: 'cancel' }
       ]
     );
@@ -139,11 +132,9 @@ export default function EditProfileScreen() {
     } else if (formData.name.trim().length < 2) {
       newErrors.name = 'Le nom doit contenir au moins 2 caractères';
     }
-
     if (formData.phone && !isValidPhoneNumber(formData.phone)) {
       newErrors.phone = 'Numéro de téléphone invalide';
     }
-
     if (formData.bio && formData.bio.length > 150) {
       newErrors.bio = 'La bio ne peut pas dépasser 150 caractères';
     }
@@ -166,7 +157,6 @@ export default function EditProfileScreen() {
       if (avatarUri !== user?.avatar) {
         updatedData.avatar = avatarUri;
       }
-      
       updateUser(updatedData);
       setIsLoading(false);
       Alert.alert('Succès', 'Profil mis à jour avec succès', [
@@ -175,26 +165,7 @@ export default function EditProfileScreen() {
     }, 1000);
   };
 
-  const handleLevelChange = (value) => {
-    if (value === 'BAC') {
-      setShowBacOptions(true);
-    } else if (value === 'DEF') {
-      setShowBacOptions(false);
-      handleChange('level', 'DEF');
-    } else {
-      handleChange('level', value);
-    }
-  };
-
-  const toggleInterest = (interest) => {
-    const currentInterests = formData.interests || [];
-    const updatedInterests = currentInterests.includes(interest)
-      ? currentInterests.filter(i => i !== interest)
-      : [...currentInterests, interest];
-    
-    handleChange('interests', updatedInterests);
-  };
-
+  // Input field reusable component
   const InputField = React.useCallback(({ 
     label, 
     value, 
@@ -220,7 +191,6 @@ export default function EditProfileScreen() {
           </Text>
         )}
       </View>
-      
       <TextInput
         style={[
           multiline ? styles.textArea : styles.input, 
@@ -243,7 +213,6 @@ export default function EditProfileScreen() {
         autoCorrect={false}
         autoComplete="off"
       />
-      
       {error && (
         <View style={styles.errorContainer}>
           <Ionicons name="alert-circle" size={16} color={theme.error} />
@@ -253,127 +222,119 @@ export default function EditProfileScreen() {
     </View>
   ), [theme]);
 
-  const InterestSelector = () => (
-    <View style={styles.inputGroup}>
-      <Text style={[styles.label, { color: theme.text }]}>Centres d'intérêt</Text>
-      <View style={styles.interestGrid}>
-        {interestOptions.map((interest) => (
-          <TouchableOpacity
-            key={interest}
-            style={[
-              styles.interestChip,
-              {
-                backgroundColor: formData.interests?.includes(interest) 
-                  ? theme.primary 
-                  : theme.surface,
-                borderColor: formData.interests?.includes(interest) 
-                  ? theme.primary 
-                  : theme.neutralLight,
-              }
-            ]}
-            onPress={() => toggleInterest(interest)}
-          >
-            <Text style={[
-              styles.interestText,
-              { 
-                color: formData.interests?.includes(interest) 
-                  ? '#fff' 
-                  : theme.text 
-              }
-            ]}>
-              {interest}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    </View>
-  );
-
-  const LevelPicker = () => {
+  // Level Picker Modal
+  const LevelPickerModal = () => {
     const currentLevelIsBac = formData.level !== 'DEF';
     
     return (
-      <View style={styles.levelPickerContainer}>
-        <View style={styles.mainLevelContainer}>
-          <TouchableOpacity
-            style={[
-              styles.mainLevelOption,
-              { 
-                backgroundColor: formData.level === 'DEF' ? theme.primary : theme.surface,
-                borderColor: formData.level === 'DEF' ? theme.primary : theme.neutralLight
-              }
-            ]}
-            onPress={() => handleLevelChange('DEF')}
-          >
-            <Text style={[
-              styles.mainLevelText,
-              { color: formData.level === 'DEF' ? '#fff' : theme.text }
-            ]}>
-              DEF
-            </Text>
-            <Text style={[
-              styles.mainLevelSubtext,
-              { color: formData.level === 'DEF' ? '#fff' : theme.textSecondary }
-            ]}>
-              Secondaire
-            </Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={[
-              styles.mainLevelOption,
-              { 
-                backgroundColor: currentLevelIsBac ? theme.primary : theme.surface,
-                borderColor: currentLevelIsBac ? theme.primary : theme.neutralLight
-              }
-            ]}
-            onPress={() => handleLevelChange('BAC')}
-          >
-            <Text style={[
-              styles.mainLevelText,
-              { color: currentLevelIsBac ? '#fff' : theme.text }
-            ]}>
-              BAC
-            </Text>
-            <Text style={[
-              styles.mainLevelSubtext,
-              { color: currentLevelIsBac ? '#fff' : theme.textSecondary }
-            ]}>
-              Baccalauréat
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {(showBacOptions || currentLevelIsBac) && (
-          <View style={styles.bacOptionsContainer}>
-            <Text style={[styles.bacOptionsTitle, { color: theme.text }]}>
-              Choisissez votre spécialisation :
-            </Text>
-            <View style={styles.bacOptionsGrid}>
-              {bacSpecializations.map((spec) => (
-                <TouchableOpacity
-                  key={spec.value}
-                  style={[
-                    styles.bacOption,
-                    { 
-                      backgroundColor: formData.level === spec.value ? theme.primary : theme.surface,
-                      borderColor: formData.level === spec.value ? theme.primary : theme.neutralLight
-                    }
-                  ]}
-                  onPress={() => handleLevelChange(spec.value)}
-                >
-                  <Text style={[
-                    styles.bacOptionText,
-                    { color: formData.level === spec.value ? '#fff' : theme.text }
-                  ]}>
-                    {spec.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+      <Modal
+        visible={showLevelModal}
+        transparent={true}
+        animationType="slide"
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: theme.background }]}>
+            <View style={[styles.modalHeader, { borderBottomColor: theme.neutralLight }]}>
+              <Text style={[styles.modalTitle, { color: theme.text }]}>
+                Choisir le niveau académique
+              </Text>
+              <TouchableOpacity 
+                onPress={() => {
+                  setShowLevelModal(false);
+                  setShowBacOptions(false);
+                }}
+                style={[styles.closeButton, { backgroundColor: theme.neutralLight }]}
+              >
+                <Ionicons name="close" size={20} color={theme.textSecondary} />
+              </TouchableOpacity>
             </View>
+
+            <ScrollView style={styles.modalBody}>
+              <View style={styles.levelPickerContainer}>
+                <View style={styles.mainLevelContainer}>
+                  <TouchableOpacity
+                    style={[
+                      styles.mainLevelOption,
+                      { 
+                        backgroundColor: formData.level === 'DEF' ? theme.primary : theme.surface,
+                        borderColor: formData.level === 'DEF' ? theme.primary : theme.neutralLight
+                      }
+                    ]}
+                    onPress={() => handleLevelChange('DEF')}
+                  >
+                    <Text style={[
+                      styles.mainLevelText,
+                      { color: formData.level === 'DEF' ? '#fff' : theme.text }
+                    ]}>
+                      DEF
+                    </Text>
+                    <Text style={[
+                      styles.mainLevelSubtext,
+                      { color: formData.level === 'DEF' ? '#fff' : theme.textSecondary }
+                    ]}>
+                      Secondaire
+                    </Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity
+                    style={[
+                      styles.mainLevelOption,
+                      { 
+                        backgroundColor: currentLevelIsBac ? theme.primary : theme.surface,
+                        borderColor: currentLevelIsBac ? theme.primary : theme.neutralLight
+                      }
+                    ]}
+                    onPress={() => handleLevelChange('BAC')}
+                  >
+                    <Text style={[
+                      styles.mainLevelText,
+                      { color: currentLevelIsBac ? '#fff' : theme.text }
+                    ]}>
+                      BAC
+                    </Text>
+                    <Text style={[
+                      styles.mainLevelSubtext,
+                      { color: currentLevelIsBac ? '#fff' : theme.textSecondary }
+                    ]}>
+                      Baccalauréat
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {(showBacOptions || currentLevelIsBac) && (
+                  <View style={styles.bacOptionsContainer}>
+                    <Text style={[styles.bacOptionsTitle, { color: theme.text }]}>
+                      Choisissez votre spécialisation :
+                    </Text>
+                    <View style={styles.bacOptionsGrid}>
+                      {bacSpecializations.map((spec) => (
+                        <TouchableOpacity
+                          key={spec.value}
+                          style={[
+                            styles.bacOption,
+                            { 
+                              backgroundColor: formData.level === spec.value ? theme.primary : theme.surface,
+                              borderColor: formData.level === spec.value ? theme.primary : theme.neutralLight
+                            }
+                          ]}
+                          onPress={() => handleLevelChange(spec.value)}
+                        >
+                          <Text style={[
+                            styles.bacOptionText,
+                            { color: formData.level === spec.value ? '#fff' : theme.text }
+                          ]}>
+                            {spec.label}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </View>
+                )}
+              </View>
+            </ScrollView>
           </View>
-        )}
-      </View>
+        </View>
+      </Modal>
     );
   };
 
@@ -496,13 +457,25 @@ export default function EditProfileScreen() {
               maxLength={50}
             />
 
+            {/* Level Picker */}
             <Text style={[styles.sectionTitle, { color: theme.text, marginTop: 32 }]}>
               Niveau académique
             </Text>
             
-            <View style={styles.inputGroup}>
-              <LevelPicker />
-            </View>
+            <TouchableOpacity
+              style={[styles.levelPickerButton, { 
+                backgroundColor: theme.surface,
+                borderColor: theme.neutralLight 
+              }]}
+              onPress={() => setShowLevelModal(true)}
+            >
+              <View style={styles.levelPickerContent}>
+                <Text style={[styles.levelPickerText, { color: theme.text }]}>
+                  {getLevelDisplayName(formData.level)}
+                </Text>
+                <Ionicons name="chevron-down" size={20} color={theme.textSecondary} />
+              </View>
+            </TouchableOpacity>
 
             <Text style={[styles.sectionTitle, { color: theme.text, marginTop: 32 }]}>
               À propos de vous
@@ -518,8 +491,6 @@ export default function EditProfileScreen() {
               showCharacterCount
               error={errors.bio}
             />
-
-            <InterestSelector />
           </View>
 
           {/* Save Button */}
@@ -551,6 +522,8 @@ export default function EditProfileScreen() {
           <View style={styles.bottomPadding} />
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <LevelPickerModal />
     </SafeAreaView>
   );
 }
@@ -683,67 +656,22 @@ const styles = StyleSheet.create({
     marginLeft: 4,
     fontWeight: '500',
   },
-  interestGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 8,
-  },
-  interestChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
+  levelPickerButton: {
+    height: 56,
     borderWidth: 1,
-  },
-  interestText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  levelPickerContainer: {
-    gap: 16,
-  },
-  mainLevelContainer: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  mainLevelOption: {
-    flex: 1,
-    paddingVertical: 20,
-    paddingHorizontal: 16,
     borderRadius: 16,
-    borderWidth: 2,
+    paddingHorizontal: 16,
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+  levelPickerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
-  mainLevelText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  mainLevelSubtext: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  bacOptionsContainer: {
-    marginTop: 8,
-  },
-  bacOptionsTitle: {
+  levelPickerText: {
     fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 16,
-  },
-  bacOptionsGrid: {
-    gap: 10,
-  },
-  bacOption: {
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    borderWidth: 2,
-  },
-  bacOptionText: {
-    fontSize: 14,
     fontWeight: '500',
-    textAlign: 'center',
   },
   saveButtonMobile: {
     flexDirection: 'row',
@@ -765,5 +693,84 @@ const styles = StyleSheet.create({
   },
   bottomPadding: {
     height: 40,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    borderBottomWidth: 1,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  closeButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalBody: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  levelPickerContainer: {
+    gap: 20,
+  },
+  mainLevelContainer: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  mainLevelOption: {
+    flex: 1,
+    paddingVertical: 20,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    borderWidth: 2,
+    alignItems: 'center',
+  },
+  mainLevelText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  mainLevelSubtext: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  bacOptionsContainer: {
+    marginTop: 8,
+  },
+  bacOptionsTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 16,
+  },
+  bacOptionsGrid: {
+    gap: 10,
+  },
+  bacOption: {
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 2,
+  },
+  bacOptionText: {
+    fontSize: 15,
+    fontWeight: '500',
+    textAlign: 'center',
   },
 });
