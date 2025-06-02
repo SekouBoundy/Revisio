@@ -160,13 +160,19 @@ export default function DashboardScreen() {
           </Text>
         </View>
         <View style={styles.headerActions}>
-          <TouchableOpacity style={[styles.notificationButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}>
+          <TouchableOpacity 
+            style={[styles.notificationButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}
+            onPress={() => router.push('/(tabs)/profile')}
+          >
             <Ionicons name="notifications" size={20} color="#FFFFFF" />
             <View style={[styles.notificationBadge, { backgroundColor: theme.error }]}>
               <Text style={styles.notificationCount}>3</Text>
             </View>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.timeButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}>
+          <TouchableOpacity 
+            style={[styles.timeButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}
+            onPress={() => router.push('/(tabs)/schedule')}
+          >
             <Ionicons name="time" size={20} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
@@ -186,13 +192,19 @@ export default function DashboardScreen() {
           </Text>
         </View>
         <View style={styles.headerActions}>
-          <TouchableOpacity style={[styles.notificationButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}>
+          <TouchableOpacity 
+            style={[styles.notificationButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}
+            onPress={() => router.push('/(tabs)/profile')}
+          >
             <Ionicons name="notifications" size={20} color="#FFFFFF" />
             <View style={[styles.notificationBadge, { backgroundColor: theme.error }]}>
               <Text style={styles.notificationCount}>2</Text>
             </View>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.analyticsButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}>
+          <TouchableOpacity 
+            style={[styles.analyticsButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}
+            onPress={() => router.push('/(tabs)/quizzes')}
+          >
             <Ionicons name="analytics" size={20} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
@@ -306,7 +318,7 @@ export default function DashboardScreen() {
                 icon="trophy"
                 title="Récompenses"
                 color={theme.warning}
-                onPress={() => console.log('Rewards')}
+                onPress={() => router.push('/(tabs)/profile')}
                 badge="!"
               />
             </View>
@@ -356,21 +368,21 @@ export default function DashboardScreen() {
               subject="Mathématiques"
               dueDate="Demain"
               priority="high"
-              onPress={() => console.log('Open task')}
+              onPress={() => router.push('/courses/DEF/Mathématiques')}
             />
             <DefTaskCard
               title="Lecture - Le Petit Prince"
               subject="Français"
               dueDate="Vendredi"
               priority="medium"
-              onPress={() => console.log('Open task')}
+              onPress={() => router.push('/courses/DEF/Français')}
             />
             <DefTaskCard
               title="Expérience sur les mélanges"
               subject="Physique-Chimie"
               dueDate="Lundi prochain"
               priority="low"
-              onPress={() => console.log('Open task')}
+              onPress={() => router.push('/courses/DEF/Physique-Chimie')}
             />
           </View>
 
@@ -391,7 +403,7 @@ export default function DashboardScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: theme.text }]}>Performance</Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => router.push('/(tabs)/quizzes')}>
               <Text style={[styles.seeAllText, { color: theme.primary }]}>Détails</Text>
             </TouchableOpacity>
           </View>
@@ -424,6 +436,40 @@ export default function DashboardScreen() {
           </View>
         </View>
 
+        {/* Quick Course Access */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Mes cours prioritaires</Text>
+            <TouchableOpacity onPress={() => router.push('/(tabs)/courses')}>
+              <Text style={[styles.seeAllText, { color: theme.primary }]}>Voir tout</Text>
+            </TouchableOpacity>
+          </View>
+          
+          <View style={styles.bacCoursesGrid}>
+            <TouchableOpacity 
+              style={[styles.bacCourseCard, { backgroundColor: theme.surface }]}
+              onPress={() => router.push('/courses/' + user?.level + '/Mathématiques')}
+            >
+              <View style={[styles.bacCourseIcon, { backgroundColor: theme.primary + '20' }]}>
+                <Ionicons name="calculator" size={24} color={theme.primary} />
+              </View>
+              <Text style={[styles.bacCourseTitle, { color: theme.text }]}>Mathématiques</Text>
+              <Text style={[styles.bacCourseProgress, { color: theme.primary }]}>68%</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.bacCourseCard, { backgroundColor: theme.surface }]}
+              onPress={() => router.push('/courses/' + user?.level + '/Physique')}
+            >
+              <View style={[styles.bacCourseIcon, { backgroundColor: theme.accent + '20' }]}>
+                <Ionicons name="nuclear" size={24} color={theme.accent} />
+              </View>
+              <Text style={[styles.bacCourseTitle, { color: theme.text }]}>Physique</Text>
+              <Text style={[styles.bacCourseProgress, { color: theme.accent }]}>45%</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* Subject Progress */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -436,18 +482,27 @@ export default function DashboardScreen() {
           <ModernCard style={styles.bacProgressOverviewCard}>
             <CircularProgress percentage={68} />
             <View style={styles.bacProgressStats}>
-              <View style={styles.bacProgressStat}>
+              <TouchableOpacity 
+                style={styles.bacProgressStat}
+                onPress={() => router.push('/(tabs)/courses')}
+              >
                 <Text style={[styles.bacProgressStatValue, { color: theme.text }]}>5</Text>
                 <Text style={[styles.bacProgressStatLabel, { color: theme.textSecondary }]}>Cours actifs</Text>
-              </View>
-              <View style={styles.bacProgressStat}>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.bacProgressStat}
+                onPress={() => router.push('/(tabs)/courses')}
+              >
                 <Text style={[styles.bacProgressStatValue, { color: theme.text }]}>23</Text>
                 <Text style={[styles.bacProgressStatLabel, { color: theme.textSecondary }]}>Leçons complétées</Text>
-              </View>
-              <View style={styles.bacProgressStat}>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.bacProgressStat}
+                onPress={() => router.push('/(tabs)/quizzes')}
+              >
                 <Text style={[styles.bacProgressStatValue, { color: theme.text }]}>89%</Text>
                 <Text style={[styles.bacProgressStatLabel, { color: theme.textSecondary }]}>Taux de réussite</Text>
-              </View>
+              </TouchableOpacity>
             </View>
           </ModernCard>
         </View>
@@ -462,7 +517,7 @@ export default function DashboardScreen() {
             date="25 Mai 2024"
             timeLeft="3 jours"
             difficulty="Difficile"
-            onPress={() => console.log('Open exam details')}
+            onPress={() => router.push('/(tabs)/schedule')}
           />
           <BacExamCard
             title="Dissertation Philosophie"
@@ -470,7 +525,7 @@ export default function DashboardScreen() {
             date="27 Mai 2024"
             timeLeft="5 jours"
             difficulty="Moyen"
-            onPress={() => console.log('Open exam details')}
+            onPress={() => router.push('/(tabs)/schedule')}
           />
           <BacExamCard
             title="TP Physique"
@@ -478,7 +533,7 @@ export default function DashboardScreen() {
             date="30 Mai 2024"
             timeLeft="1 semaine"
             difficulty="Facile"
-            onPress={() => console.log('Open exam details')}
+            onPress={() => router.push('/(tabs)/schedule')}
           />
         </View>
 
@@ -898,6 +953,39 @@ const styles = StyleSheet.create({
   bacStatsGrid: {
     flexDirection: 'row',
     gap: 12,
+  },
+  bacCoursesGrid: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  bacCourseCard: {
+    flex: 1,
+    padding: 16,
+    borderRadius: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  bacCourseIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  bacCourseTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  bacCourseProgress: {
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   bacStatCard: {
     flex: 1,
