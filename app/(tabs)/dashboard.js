@@ -1,4 +1,4 @@
-// File: app/(tabs)/dashboard.js - Fixed curved header like schedule
+// app/(tabs)/dashboard.js - DIFFERENTIATED FOR DEF vs BAC
 import React, { useContext } from 'react';
 import {
   View,
@@ -21,6 +21,7 @@ export default function DashboardScreen() {
 
   const isDefLevel = user?.level === 'DEF';
 
+  // Common Components
   const ProgressBar = ({ progress, color = theme.primary }) => (
     <View style={[styles.progressBarContainer, { backgroundColor: theme.neutralLight }]}>
       <View 
@@ -50,125 +51,199 @@ export default function DashboardScreen() {
     </View>
   );
 
-  const CourseCard = ({ icon, title, subtitle, progress, color, isNew = false }) => (
-    <TouchableOpacity>
-      <ModernCard style={styles.courseCard}>
-        <View style={styles.courseHeader}>
-          <View style={[styles.courseIconContainer, { backgroundColor: color + '15' }]}>
-            <Ionicons name={icon} size={24} color={color} />
-          </View>
-          <View style={styles.courseInfo}>
-            <Text style={[styles.courseTitle, { color: theme.text }]}>{title}</Text>
-            {isNew ? (
-              <View style={[styles.newBadge, { backgroundColor: theme.accent + '20' }]}>
-                <Text style={[styles.newText, { color: theme.accent }]}>Nouveau</Text>
-              </View>
-            ) : (
-              <Text style={[styles.courseSubtitle, { color: theme.textSecondary }]}>{subtitle}</Text>
-            )}
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={theme.textSecondary} />
-        </View>
-        
-        {progress !== undefined && (
-          <View style={styles.progressSection}>
-            <ProgressBar progress={progress} color={color} />
-            <Text style={[styles.progressText, { color: theme.textSecondary }]}>{progress}% complété</Text>
+  // DEF-Specific Components
+  const DefQuickActionCard = ({ icon, title, color, onPress, badge }) => (
+    <TouchableOpacity style={[styles.defActionCard, { backgroundColor: color + '15' }]} onPress={onPress}>
+      <View style={[styles.defActionIcon, { backgroundColor: color }]}>
+        <Ionicons name={icon} size={28} color="#fff" />
+        {badge && (
+          <View style={[styles.defActionBadge, { backgroundColor: theme.error }]}>
+            <Text style={styles.defActionBadgeText}>{badge}</Text>
           </View>
         )}
-      </ModernCard>
+      </View>
+      <Text style={[styles.defActionTitle, { color: theme.text }]}>{title}</Text>
     </TouchableOpacity>
   );
 
-  const StatCard = ({ icon, title, value, color, subtitle }) => (
-    <ModernCard style={styles.statCard}>
-      <View style={[styles.statIconContainer, { backgroundColor: color + '15' }]}>
-        <Ionicons name={icon} size={24} color={color} />
+  const DefSubjectCard = ({ icon, title, progress, nextLesson, color, onPress }) => (
+    <TouchableOpacity style={[styles.defSubjectCard, { backgroundColor: theme.surface }]} onPress={onPress}>
+      <View style={styles.defSubjectHeader}>
+        <View style={[styles.defSubjectIcon, { backgroundColor: color + '20' }]}>
+          <Ionicons name={icon} size={24} color={color} />
+        </View>
+        <View style={styles.defSubjectInfo}>
+          <Text style={[styles.defSubjectTitle, { color: theme.text }]}>{title}</Text>
+          <Text style={[styles.defSubjectNext, { color: theme.textSecondary }]}>{nextLesson}</Text>
+        </View>
+        <Text style={[styles.defSubjectProgress, { color: color }]}>{progress}%</Text>
       </View>
-      <Text style={[styles.statValue, { color: theme.text }]}>{value}</Text>
-      <Text style={[styles.statTitle, { color: theme.text }]}>{title}</Text>
+      <ProgressBar progress={progress} color={color} />
+    </TouchableOpacity>
+  );
+
+  const DefTaskCard = ({ title, subject, dueDate, priority, onPress }) => (
+    <TouchableOpacity style={[styles.defTaskCard, { backgroundColor: theme.surface }]} onPress={onPress}>
+      <View style={[styles.defTaskPriority, { 
+        backgroundColor: priority === 'high' ? theme.error : 
+                        priority === 'medium' ? theme.warning : theme.success 
+      }]} />
+      <View style={styles.defTaskContent}>
+        <Text style={[styles.defTaskTitle, { color: theme.text }]}>{title}</Text>
+        <Text style={[styles.defTaskSubject, { color: theme.textSecondary }]}>{subject}</Text>
+        <Text style={[styles.defTaskDue, { color: theme.primary }]}>{dueDate}</Text>
+      </View>
+    </TouchableOpacity>
+  );
+
+  // BAC-Specific Components
+  const BacStatCard = ({ icon, title, value, color, subtitle, trend }) => (
+    <ModernCard style={styles.bacStatCard}>
+      <View style={styles.bacStatHeader}>
+        <View style={[styles.bacStatIcon, { backgroundColor: color + '15' }]}>
+          <Ionicons name={icon} size={24} color={color} />
+        </View>
+        {trend && (
+          <View style={[styles.bacTrendIndicator, { backgroundColor: trend > 0 ? theme.success + '20' : theme.error + '20' }]}>
+            <Ionicons 
+              name={trend > 0 ? "trending-up" : "trending-down"} 
+              size={14} 
+              color={trend > 0 ? theme.success : theme.error} 
+            />
+          </View>
+        )}
+      </View>
+      <Text style={[styles.bacStatValue, { color: theme.text }]}>{value}</Text>
+      <Text style={[styles.bacStatTitle, { color: theme.text }]}>{title}</Text>
       {subtitle && (
-        <Text style={[styles.statSubtitle, { color: theme.textSecondary }]}>{subtitle}</Text>
+        <Text style={[styles.bacStatSubtitle, { color: theme.textSecondary }]}>{subtitle}</Text>
       )}
     </ModernCard>
   );
 
-  const UpcomingCard = ({ title, date, subject, color, type }) => (
-    <TouchableOpacity>
-      <ModernCard style={styles.upcomingCard}>
-        <View style={styles.upcomingHeader}>
-          <View style={[styles.upcomingIndicator, { backgroundColor: color }]} />
-          <View style={styles.upcomingContent}>
-            <Text style={[styles.upcomingTitle, { color: theme.text }]}>{title}</Text>
-            <Text style={[styles.upcomingSubject, { color: theme.textSecondary }]}>{subject}</Text>
-          </View>
-          <View style={styles.upcomingMeta}>
-            <Text style={[styles.upcomingDate, { color: color }]}>{date}</Text>
-            <Text style={[styles.upcomingType, { color: theme.textSecondary }]}>{type}</Text>
+  const BacExamCard = ({ title, subject, date, timeLeft, difficulty, onPress }) => (
+    <TouchableOpacity style={[styles.bacExamCard, { backgroundColor: theme.surface }]} onPress={onPress}>
+      <View style={styles.bacExamHeader}>
+        <View style={styles.bacExamInfo}>
+          <Text style={[styles.bacExamTitle, { color: theme.text }]}>{title}</Text>
+          <Text style={[styles.bacExamSubject, { color: theme.textSecondary }]}>{subject}</Text>
+          <Text style={[styles.bacExamDate, { color: theme.primary }]}>{date}</Text>
+        </View>
+        <View style={styles.bacExamMeta}>
+          <Text style={[styles.bacExamTimeLeft, { color: theme.error }]}>{timeLeft}</Text>
+          <View style={[styles.bacExamDifficulty, { 
+            backgroundColor: difficulty === 'Difficile' ? theme.error + '20' : 
+                            difficulty === 'Moyen' ? theme.warning + '20' : theme.success + '20'
+          }]}>
+            <Text style={[styles.bacExamDifficultyText, { 
+              color: difficulty === 'Difficile' ? theme.error : 
+                     difficulty === 'Moyen' ? theme.warning : theme.success 
+            }]}>
+              {difficulty}
+            </Text>
           </View>
         </View>
-      </ModernCard>
+      </View>
     </TouchableOpacity>
   );
 
-  // Header Component - exactly like schedule
-  const Header = () => (
+  // Headers
+  const DefHeader = () => (
     <View style={[styles.header, { backgroundColor: theme.primary }]}>
       <View style={styles.headerContent}>
         <View>
           <Text style={[styles.greeting, { color: '#FFFFFF99' }]}>
-            {isDefLevel ? 'Bonjour,' : 'Bonsoir,'}
+            Salut,
           </Text>
           <Text style={[styles.userName, { color: '#FFFFFF' }]}>
-            {user?.name || 'Étudiant'}
+            {user?.name || 'Étudiant'} ! 👋
           </Text>
         </View>
-        <TouchableOpacity style={[styles.notificationButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}>
-          <Ionicons name="notifications" size={20} color="#FFFFFF" />
-          <View style={[styles.notificationBadge, { backgroundColor: theme.error }]}>
-            <Text style={styles.notificationCount}>{isDefLevel ? '3' : '2'}</Text>
-          </View>
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity style={[styles.notificationButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}>
+            <Ionicons name="notifications" size={20} color="#FFFFFF" />
+            <View style={[styles.notificationBadge, { backgroundColor: theme.error }]}>
+              <Text style={styles.notificationCount}>3</Text>
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.timeButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}>
+            <Ionicons name="time" size={20} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
 
-  // Progress Card - overlapping like schedule day selector
-  const ProgressCard = () => (
+  const BacHeader = () => (
+    <View style={[styles.header, { backgroundColor: theme.primary }]}>
+      <View style={styles.headerContent}>
+        <View>
+          <Text style={[styles.greeting, { color: '#FFFFFF99' }]}>
+            Tableau de bord
+          </Text>
+          <Text style={[styles.userName, { color: '#FFFFFF' }]}>
+            {user?.name || 'Étudiant'} • {user?.level}
+          </Text>
+        </View>
+        <View style={styles.headerActions}>
+          <TouchableOpacity style={[styles.notificationButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}>
+            <Ionicons name="notifications" size={20} color="#FFFFFF" />
+            <View style={[styles.notificationBadge, { backgroundColor: theme.error }]}>
+              <Text style={styles.notificationCount}>2</Text>
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.analyticsButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}>
+            <Ionicons name="analytics" size={20} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
+  );
+
+  // Progress Cards
+  const DefProgressCard = () => (
     <View style={[styles.progressCardContainer, { backgroundColor: theme.surface }]}>
-      {isDefLevel ? (
-        <View style={styles.weeklyProgressContent}>
-          <Text style={[styles.progressCardTitle, { color: theme.text }]}>
-            Ma progression cette semaine
+      <View style={styles.defCountdownContent}>
+        <View style={styles.defCountdownLeft}>
+          <Text style={[styles.defCountdownLabel, { color: theme.textSecondary }]}>
+            Temps restant jusqu'au DEF
           </Text>
-          <Text style={[styles.progressCardValue, { color: theme.primary }]}>
-            8/12 exercices
-          </Text>
-          <ProgressBar progress={67} color={theme.primary} />
-          <Text style={[styles.progressCardSubtitle, { color: theme.textSecondary }]}>
-            Continue comme ça !
-          </Text>
+          <Text style={[styles.defCountdownValue, { color: theme.text }]}>42 jours</Text>
+          <TouchableOpacity 
+            style={[styles.defPlanningButton, { backgroundColor: theme.primary }]}
+            onPress={() => router.push('/(tabs)/schedule')}
+          >
+            <Ionicons name="calendar" size={16} color="#FFFFFF" />
+            <Text style={styles.defPlanningText}>Mon planning</Text>
+          </TouchableOpacity>
         </View>
-      ) : (
-        <View style={styles.countdownContent}>
-          <View style={styles.countdownLeft}>
-            <Text style={[styles.countdownLabel, { color: theme.textSecondary }]}>
-              Temps restant jusqu'au BAC
-            </Text>
-            <Text style={[styles.countdownValue, { color: theme.text }]}>25 jours</Text>
-            <TouchableOpacity 
-              style={[styles.planningButton, { backgroundColor: theme.primary }]}
-              onPress={() => router.push('/(tabs)/schedule')}
-            >
-              <Ionicons name="calendar" size={16} color="#FFFFFF" />
-              <Text style={styles.planningText}>Voir mon planning</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={[styles.countdownIcon, { backgroundColor: theme.primary + '15' }]}>
-            <Ionicons name="time" size={32} color={theme.primary} />
-          </View>
+        <View style={[styles.defCountdownIcon, { backgroundColor: theme.primary + '15' }]}>
+          <Ionicons name="time" size={32} color={theme.primary} />
         </View>
-      )}
+      </View>
+    </View>
+  );
+
+  const BacProgressCard = () => (
+    <View style={[styles.progressCardContainer, { backgroundColor: theme.surface }]}>
+      <View style={styles.bacCountdownContent}>
+        <View style={styles.bacCountdownLeft}>
+          <Text style={[styles.bacCountdownLabel, { color: theme.textSecondary }]}>
+            Temps restant jusqu'au BAC
+          </Text>
+          <Text style={[styles.bacCountdownValue, { color: theme.text }]}>25 jours</Text>
+          <TouchableOpacity 
+            style={[styles.bacPlanningButton, { backgroundColor: theme.primary }]}
+            onPress={() => router.push('/(tabs)/schedule')}
+          >
+            <Ionicons name="calendar" size={16} color="#FFFFFF" />
+            <Text style={styles.bacPlanningText}>Planning de révisions</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={[styles.bacCountdownIcon, { backgroundColor: theme.primary + '15' }]}>
+          <Ionicons name="hourglass" size={32} color={theme.primary} />
+        </View>
+      </View>
     </View>
   );
 
@@ -176,68 +251,126 @@ export default function DashboardScreen() {
   if (isDefLevel) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-        <Header />
-        <ProgressCard />
+        <DefHeader />
+        <DefProgressCard />
 
         <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollContent}>
-          {/* Stats Grid */}
+          {/* Weekly Progress */}
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>Mes résultats</Text>
-            <View style={styles.statsGrid}>
-              <StatCard icon="trophy" title="Réussite" value="85%" color={theme.success} />
-              <StatCard icon="book" title="Exercices" value="24" color={theme.primary} />
-              <StatCard icon="school" title="Matières" value="6" color={theme.accent} />
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Ma progression</Text>
+            <ModernCard style={styles.defWeeklyCard}>
+              <View style={styles.defWeeklyContent}>
+                <View style={styles.defWeeklyLeft}>
+                  <Text style={[styles.defWeeklyTitle, { color: theme.text }]}>
+                    Cette semaine
+                  </Text>
+                  <Text style={[styles.defWeeklyValue, { color: theme.primary }]}>
+                    8/12 exercices
+                  </Text>
+                  <Text style={[styles.defWeeklySubtitle, { color: theme.textSecondary }]}>
+                    Continue comme ça ! 🎉
+                  </Text>
+                </View>
+                <View style={[styles.defWeeklyCircle, { backgroundColor: theme.primary + '15' }]}>
+                  <Text style={[styles.defWeeklyPercent, { color: theme.primary }]}>67%</Text>
+                </View>
+              </View>
+              <ProgressBar progress={67} color={theme.primary} />
+            </ModernCard>
+          </View>
+
+          {/* Quick Actions */}
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Actions rapides</Text>
+            <View style={styles.defActionsGrid}>
+              <DefQuickActionCard
+                icon="book"
+                title="Mes cours"
+                color={theme.primary}
+                onPress={() => router.push('/(tabs)/courses')}
+              />
+              <DefQuickActionCard
+                icon="help-circle"
+                title="Quiz"
+                color={theme.accent}
+                onPress={() => router.push('/(tabs)/quizzes')}
+                badge="3"
+              />
+              <DefQuickActionCard
+                icon="calendar"
+                title="Planning"
+                color={theme.success}
+                onPress={() => router.push('/(tabs)/schedule')}
+              />
+              <DefQuickActionCard
+                icon="trophy"
+                title="Récompenses"
+                color={theme.warning}
+                onPress={() => console.log('Rewards')}
+                badge="!"
+              />
             </View>
           </View>
 
-          {/* Courses Section */}
+          {/* My Subjects */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={[styles.sectionTitle, { color: theme.text }]}>Mes matières</Text>
-              <TouchableOpacity>
+              <TouchableOpacity onPress={() => router.push('/(tabs)/courses')}>
                 <Text style={[styles.seeAllText, { color: theme.primary }]}>Voir tout</Text>
               </TouchableOpacity>
             </View>
             
-            <CourseCard
+            <DefSubjectCard
               icon="calculator"
               title="Mathématiques"
-              subtitle="Géométrie - Chapitre 4"
-              progress={45}
+              progress={75}
+              nextLesson="Géométrie - Chapitre 4"
               color={theme.primary}
+              onPress={() => router.push('/courses/DEF/Mathématiques')}
             />
-            <CourseCard
-              icon="flask"
-              title="Physique-Chimie"
-              subtitle="États de la matière"
-              progress={60}
-              color={theme.accent}
-            />
-            <CourseCard
+            <DefSubjectCard
               icon="language"
               title="Français"
-              isNew={true}
+              progress={60}
+              nextLesson="Expression écrite"
               color={theme.secondary}
+              onPress={() => router.push('/courses/DEF/Français')}
+            />
+            <DefSubjectCard
+              icon="flask"
+              title="Physique-Chimie"
+              progress={45}
+              nextLesson="États de la matière"
+              color={theme.accent}
+              onPress={() => router.push('/courses/DEF/Physique-Chimie')}
             />
           </View>
 
-          {/* Upcoming Section */}
+          {/* Tasks & Homework */}
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>Prochains contrôles</Text>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Mes devoirs</Text>
             
-            <UpcomingCard
-              title="Contrôle de Mathématiques"
-              subject="Géométrie"
-              date="Demain"
-              type="Contrôle"
-              color={theme.primary}
+            <DefTaskCard
+              title="Exercices de géométrie"
+              subject="Mathématiques"
+              dueDate="Demain"
+              priority="high"
+              onPress={() => console.log('Open task')}
             />
-            <UpcomingCard
-              title="Quiz Sciences"
+            <DefTaskCard
+              title="Lecture - Le Petit Prince"
+              subject="Français"
+              dueDate="Vendredi"
+              priority="medium"
+              onPress={() => console.log('Open task')}
+            />
+            <DefTaskCard
+              title="Expérience sur les mélanges"
               subject="Physique-Chimie"
-              date="Vendredi"
-              type="Quiz"
-              color={theme.accent}
+              dueDate="Lundi prochain"
+              priority="low"
+              onPress={() => console.log('Open task')}
             />
           </View>
 
@@ -250,79 +383,102 @@ export default function DashboardScreen() {
   // BAC Dashboard
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <Header />
-      <ProgressCard />
+      <BacHeader />
+      <BacProgressCard />
 
       <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollContent}>
-        {/* Global Progress */}
+        {/* Performance Analytics */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>Progression globale</Text>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Performance</Text>
             <TouchableOpacity>
               <Text style={[styles.seeAllText, { color: theme.primary }]}>Détails</Text>
             </TouchableOpacity>
           </View>
           
-          <ModernCard style={styles.progressOverviewCard}>
-            <CircularProgress percentage={68} />
-            <View style={styles.progressStats}>
-              <View style={styles.progressStat}>
-                <Text style={[styles.progressStatValue, { color: theme.text }]}>5</Text>
-                <Text style={[styles.progressStatLabel, { color: theme.textSecondary }]}>Cours</Text>
-              </View>
-              <View style={styles.progressStat}>
-                <Text style={[styles.progressStatValue, { color: theme.text }]}>23</Text>
-                <Text style={[styles.progressStatLabel, { color: theme.textSecondary }]}>Leçons</Text>
-              </View>
-              <View style={styles.progressStat}>
-                <Text style={[styles.progressStatValue, { color: theme.text }]}>12</Text>
-                <Text style={[styles.progressStatLabel, { color: theme.textSecondary }]}>Quiz</Text>
-              </View>
-            </View>
-          </ModernCard>
+          <View style={styles.bacStatsGrid}>
+            <BacStatCard
+              icon="trending-up"
+              title="Progression"
+              value="68%"
+              color={theme.success}
+              subtitle="Moyenne générale"
+              trend={5}
+            />
+            <BacStatCard
+              icon="school"
+              title="Examens"
+              value="12"
+              color={theme.info}
+              subtitle="Terminés"
+              trend={2}
+            />
+            <BacStatCard
+              icon="trophy"
+              title="Classement"
+              value="#3"
+              color={theme.accent}
+              subtitle="Dans la classe"
+              trend={-1}
+            />
+          </View>
         </View>
 
-        {/* Continue Learning */}
+        {/* Subject Progress */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>Continuer l'apprentissage</Text>
-            <TouchableOpacity>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Progression par matière</Text>
+            <TouchableOpacity onPress={() => router.push('/(tabs)/courses')}>
               <Text style={[styles.seeAllText, { color: theme.primary }]}>Voir tout</Text>
             </TouchableOpacity>
           </View>
           
-          <CourseCard
-            icon="calculator"
-            title="Mathématiques"
-            subtitle="Intégrales - Chapitre 8"
-            progress={65}
-            color={theme.primary}
-          />
-          <CourseCard
-            icon="nuclear"
-            title="Physique"
-            isNew={true}
-            color={theme.accent}
-          />
+          <ModernCard style={styles.bacProgressOverviewCard}>
+            <CircularProgress percentage={68} />
+            <View style={styles.bacProgressStats}>
+              <View style={styles.bacProgressStat}>
+                <Text style={[styles.bacProgressStatValue, { color: theme.text }]}>5</Text>
+                <Text style={[styles.bacProgressStatLabel, { color: theme.textSecondary }]}>Cours actifs</Text>
+              </View>
+              <View style={styles.bacProgressStat}>
+                <Text style={[styles.bacProgressStatValue, { color: theme.text }]}>23</Text>
+                <Text style={[styles.bacProgressStatLabel, { color: theme.textSecondary }]}>Leçons complétées</Text>
+              </View>
+              <View style={styles.bacProgressStat}>
+                <Text style={[styles.bacProgressStatValue, { color: theme.text }]}>89%</Text>
+                <Text style={[styles.bacProgressStatLabel, { color: theme.textSecondary }]}>Taux de réussite</Text>
+              </View>
+            </View>
+          </ModernCard>
         </View>
 
         {/* Upcoming Exams */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Examens à venir</Text>
           
-          <UpcomingCard
-            title="Dissertation de Philosophie"
-            subject="La conscience"
-            date="25 Mai"
-            type="Examen"
-            color={theme.secondary}
+          <BacExamCard
+            title="Examen Blanc Mathématiques"
+            subject="Analyse et algèbre"
+            date="25 Mai 2024"
+            timeLeft="3 jours"
+            difficulty="Difficile"
+            onPress={() => console.log('Open exam details')}
           />
-          <UpcomingCard
-            title="Examen de Mathématiques"
-            subject="Analyse"
-            date="27 Mai"
-            type="Examen Blanc"
-            color={theme.primary}
+          <BacExamCard
+            title="Dissertation Philosophie"
+            subject="La conscience et l'inconscient"
+            date="27 Mai 2024"
+            timeLeft="5 jours"
+            difficulty="Moyen"
+            onPress={() => console.log('Open exam details')}
+          />
+          <BacExamCard
+            title="TP Physique"
+            subject="Oscillations mécaniques"
+            date="30 Mai 2024"
+            timeLeft="1 semaine"
+            difficulty="Facile"
+            onPress={() => console.log('Open exam details')}
           />
         </View>
 
@@ -336,7 +492,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  // Header - exactly like schedule
+  // Common Header Styles
   header: {
     paddingTop: 60,
     paddingBottom: 30,
@@ -356,6 +512,10 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 28,
     fontWeight: 'bold',
+  },
+  headerActions: {
+    flexDirection: 'row',
+    gap: 12,
   },
   notificationButton: {
     width: 44,
@@ -380,7 +540,34 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
   },
-  // Progress card - like day selector in schedule
+  streakButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 4,
+  },
+  streakText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  timeButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  analyticsButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  
+  // Progress Card Styles
   progressCardContainer: {
     marginTop: -15,
     marginHorizontal: 20,
@@ -392,42 +579,71 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
   },
-  weeklyProgressContent: {
+  progressBarContainer: {
+    height: 8,
+    borderRadius: 4,
+    overflow: 'hidden',
+    marginTop: 12,
+  },
+  progressBar: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  
+  // DEF Progress Styles
+  defProgressContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  defProgressLeft: {
+    flex: 1,
+  },
+  defProgressTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  defProgressValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  defProgressSubtitle: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  defProgressCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  progressCardTitle: {
+  defProgressPercent: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: 'bold',
+  },
+  
+  // DEF Countdown Styles
+  defCountdownContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  defCountdownLeft: {
+    flex: 1,
+  },
+  defCountdownLabel: {
+    fontSize: 14,
+    fontWeight: '500',
     marginBottom: 8,
   },
-  progressCardValue: {
+  defCountdownValue: {
     fontSize: 32,
     fontWeight: 'bold',
     marginBottom: 16,
   },
-  progressCardSubtitle: {
-    fontSize: 14,
-    marginTop: 12,
-    fontWeight: '500',
-  },
-  countdownContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  countdownLeft: {
-    flex: 1,
-  },
-  countdownLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 8,
-  },
-  countdownValue: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    marginBottom: 16,
-  },
-  planningButton: {
+  defPlanningButton: {
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
@@ -436,18 +652,99 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     gap: 6,
   },
-  planningText: {
+  defPlanningText: {
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '600',
   },
-  countdownIcon: {
+  defCountdownIcon: {
     width: 64,
     height: 64,
     borderRadius: 32,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  
+  // DEF Weekly Progress Styles
+  defWeeklyCard: {
+    padding: 16,
+  },
+  defWeeklyContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  defWeeklyLeft: {
+    flex: 1,
+  },
+  defWeeklyTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  defWeeklyValue: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  defWeeklySubtitle: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  defWeeklyCircle: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  defWeeklyPercent: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  
+  // BAC Progress Styles
+  bacCountdownContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  bacCountdownLeft: {
+    flex: 1,
+  },
+  bacCountdownLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 8,
+  },
+  bacCountdownValue: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    marginBottom: 16,
+  },
+  bacPlanningButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    gap: 6,
+  },
+  bacPlanningText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  bacCountdownIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  
+  // Common Layout
   scrollContent: {
     flex: 1,
   },
@@ -480,91 +777,170 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
   },
-  statsGrid: {
+  
+  // DEF-Specific Styles
+  defActionsGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 12,
   },
-  statCard: {
-    flex: 1,
+  defActionCard: {
+    width: '47%',
     alignItems: 'center',
-    paddingVertical: 16,
+    paddingVertical: 20,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    position: 'relative',
   },
-  statIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  defActionIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+    position: 'relative',
+  },
+  defActionBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  defActionBadgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  defActionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  defSubjectCard: {
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  defSubjectHeader: {
+    flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 12,
   },
-  statValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 4,
+  defSubjectIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
   },
-  statTitle: {
+  defSubjectInfo: {
+    flex: 1,
+  },
+  defSubjectTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  defSubjectNext: {
+    fontSize: 12,
+  },
+  defSubjectProgress: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  defTaskCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  defTaskPriority: {
+    width: 4,
+    height: 40,
+    borderRadius: 2,
+    marginRight: 12,
+  },
+  defTaskContent: {
+    flex: 1,
+  },
+  defTaskTitle: {
     fontSize: 14,
     fontWeight: '600',
     marginBottom: 2,
   },
-  statSubtitle: {
+  defTaskSubject: {
     fontSize: 12,
+    marginBottom: 2,
   },
-  courseCard: {
-    padding: 16,
+  defTaskDue: {
+    fontSize: 12,
+    fontWeight: '500',
   },
-  courseHeader: {
+  
+  // BAC-Specific Styles
+  bacStatsGrid: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    gap: 12,
   },
-  courseIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  bacStatCard: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 16,
+  },
+  bacStatHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    marginBottom: 12,
+  },
+  bacStatIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
   },
-  courseInfo: {
-    flex: 1,
+  bacTrendIndicator: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  courseTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+  bacStatValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
     marginBottom: 4,
   },
-  courseSubtitle: {
+  bacStatTitle: {
     fontSize: 14,
-    fontWeight: '500',
-  },
-  newBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  newText: {
-    fontSize: 12,
     fontWeight: '600',
+    marginBottom: 2,
+    textAlign: 'center',
   },
-  progressSection: {
-    marginTop: 16,
-  },
-  progressText: {
+  bacStatSubtitle: {
     fontSize: 12,
-    marginTop: 8,
-    fontWeight: '500',
+    textAlign: 'center',
   },
-  progressBarContainer: {
-    height: 6,
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  progressBar: {
-    height: '100%',
-    borderRadius: 3,
-  },
-  progressOverviewCard: {
+  bacProgressOverviewCard: {
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -597,59 +973,70 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  progressStats: {
+  bacProgressStats: {
     flex: 1,
     gap: 16,
   },
-  progressStat: {
+  bacProgressStat: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  progressStatValue: {
+  bacProgressStatValue: {
     fontSize: 18,
     fontWeight: 'bold',
   },
-  progressStatLabel: {
+  bacProgressStatLabel: {
     fontSize: 14,
     fontWeight: '500',
   },
-  upcomingCard: {
+  bacExamCard: {
     padding: 16,
+    borderRadius: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  upcomingHeader: {
+  bacExamHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
   },
-  upcomingIndicator: {
-    width: 4,
-    height: 48,
-    borderRadius: 2,
-    marginRight: 16,
-  },
-  upcomingContent: {
+  bacExamInfo: {
     flex: 1,
   },
-  upcomingTitle: {
+  bacExamTitle: {
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 4,
   },
-  upcomingSubject: {
+  bacExamSubject: {
     fontSize: 14,
-    fontWeight: '500',
+    marginBottom: 4,
   },
-  upcomingMeta: {
-    alignItems: 'flex-end',
-  },
-  upcomingDate: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginBottom: 2,
-  },
-  upcomingType: {
+  bacExamDate: {
     fontSize: 12,
     fontWeight: '500',
+  },
+  bacExamMeta: {
+    alignItems: 'flex-end',
+  },
+  bacExamTimeLeft: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  bacExamDifficulty: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  bacExamDifficultyText: {
+    fontSize: 10,
+    fontWeight: '600',
   },
   bottomPadding: {
     height: 40,
