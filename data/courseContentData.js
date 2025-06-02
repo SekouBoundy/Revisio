@@ -1,4 +1,4 @@
-// data/courseContentData.js - CREATE THIS FILE
+// data/courseContentData.js - NO VIDEOS VERSION
 export const COURSE_CONTENT = {
   // DEF Level Courses
   DEF: {
@@ -21,18 +21,24 @@ export const COURSE_CONTENT = {
           downloadUrl: '#',
           lastUpdated: '2024-01-20',
           isDownloaded: false
-        }
-      ],
-      videos: [
+        },
         {
-          id: 1,
-          title: 'Les temps du passé',
-          duration: '35:20',
-          chapter: 'Chapitre 1',
-          thumbnailUrl: 'https://via.placeholder.com/300x200',
-          videoUrl: '#',
-          watched: true,
-          watchTime: '35:20'
+          id: 3,
+          title: 'Expression écrite',
+          chapter: 'Chapitre 3',
+          pages: 18,
+          downloadUrl: '#',
+          lastUpdated: '2024-02-01',
+          isDownloaded: true
+        },
+        {
+          id: 4,
+          title: 'Analyse de texte',
+          chapter: 'Chapitre 4',
+          pages: 25,
+          downloadUrl: '#',
+          lastUpdated: '2024-02-10',
+          isDownloaded: false
         }
       ],
       pastExams: [
@@ -47,6 +53,30 @@ export const COURSE_CONTENT = {
           hasCorrection: true,
           difficulty: 'Moyen',
           averageScore: 15.8
+        },
+        {
+          id: 2,
+          title: 'Examen DEF Français 2022',
+          year: '2022',
+          session: 'Principale',
+          duration: '2h',
+          pages: 5,
+          downloadUrl: '#',
+          hasCorrection: true,
+          difficulty: 'Moyen',
+          averageScore: 14.2
+        },
+        {
+          id: 3,
+          title: 'Examen DEF Français 2021',
+          year: '2021',
+          session: 'Principale',
+          duration: '2h',
+          pages: 7,
+          downloadUrl: '#',
+          hasCorrection: false,
+          difficulty: 'Difficile',
+          averageScore: 13.9
         }
       ]
     },
@@ -61,18 +91,33 @@ export const COURSE_CONTENT = {
           downloadUrl: '#',
           lastUpdated: '2024-01-10',
           isDownloaded: true
-        }
-      ],
-      videos: [
+        },
         {
-          id: 1,
-          title: 'Résolution d\'équations',
-          duration: '38:45',
-          chapter: 'Chapitre 1',
-          thumbnailUrl: 'https://via.placeholder.com/300x200',
-          videoUrl: '#',
-          watched: true,
-          watchTime: '38:45'
+          id: 2,
+          title: 'Géométrie - Théorème de Pythagore',
+          chapter: 'Chapitre 2',
+          pages: 16,
+          downloadUrl: '#',
+          lastUpdated: '2024-01-25',
+          isDownloaded: false
+        },
+        {
+          id: 3,
+          title: 'Statistiques - Moyenne et médiane',
+          chapter: 'Chapitre 3',
+          pages: 18,
+          downloadUrl: '#',
+          lastUpdated: '2024-02-05',
+          isDownloaded: true
+        },
+        {
+          id: 4,
+          title: 'Probabilités - Introduction',
+          chapter: 'Chapitre 4',
+          pages: 14,
+          downloadUrl: '#',
+          lastUpdated: '2024-02-15',
+          isDownloaded: false
         }
       ],
       pastExams: [
@@ -87,6 +132,18 @@ export const COURSE_CONTENT = {
           hasCorrection: true,
           difficulty: 'Difficile',
           averageScore: 13.5
+        },
+        {
+          id: 2,
+          title: 'Examen DEF Mathématiques 2022',
+          year: '2022',
+          session: 'Principale',
+          duration: '2h30',
+          pages: 7,
+          downloadUrl: '#',
+          hasCorrection: true,
+          difficulty: 'Moyen',
+          averageScore: 14.8
         }
       ]
     },
@@ -101,18 +158,24 @@ export const COURSE_CONTENT = {
           downloadUrl: '#',
           lastUpdated: '2024-01-18',
           isDownloaded: false
-        }
-      ],
-      videos: [
+        },
         {
-          id: 1,
-          title: 'Expérience - États de la matière',
-          duration: '25:40',
-          chapter: 'Chapitre 1',
-          thumbnailUrl: 'https://via.placeholder.com/300x200',
-          videoUrl: '#',
-          watched: false,
-          watchTime: '0:00'
+          id: 2,
+          title: 'Forces et mouvements',
+          chapter: 'Chapitre 2',
+          pages: 16,
+          downloadUrl: '#',
+          lastUpdated: '2024-02-02',
+          isDownloaded: true
+        },
+        {
+          id: 3,
+          title: 'Réactions chimiques',
+          chapter: 'Chapitre 3',
+          pages: 20,
+          downloadUrl: '#',
+          lastUpdated: '2024-02-12',
+          isDownloaded: false
         }
       ],
       pastExams: [
@@ -127,6 +190,55 @@ export const COURSE_CONTENT = {
           hasCorrection: false,
           difficulty: 'Moyen',
           averageScore: 14.8
+        },
+        {
+          id: 2,
+          title: 'Examen DEF Physique-Chimie 2022',
+          year: '2022',
+          session: 'Principale',
+          duration: '2h',
+          pages: 5,
+          downloadUrl: '#',
+          hasCorrection: true,
+          difficulty: 'Facile',
+          averageScore: 16.2
+        }
+      ]
+    },
+
+    'Histoire-Géographie': {
+      notes: [
+        {
+          id: 1,
+          title: 'La Renaissance européenne',
+          chapter: 'Chapitre 1',
+          pages: 24,
+          downloadUrl: '#',
+          lastUpdated: '2024-01-14',
+          isDownloaded: true
+        },
+        {
+          id: 2,
+          title: 'Géographie de l\'Europe',
+          chapter: 'Chapitre 2',
+          pages: 18,
+          downloadUrl: '#',
+          lastUpdated: '2024-01-30',
+          isDownloaded: false
+        }
+      ],
+      pastExams: [
+        {
+          id: 1,
+          title: 'Examen DEF Histoire-Géographie 2023',
+          year: '2023',
+          session: 'Principale',
+          duration: '2h',
+          pages: 4,
+          downloadUrl: '#',
+          hasCorrection: true,
+          difficulty: 'Facile',
+          averageScore: 16.4
         }
       ]
     }
@@ -153,18 +265,24 @@ export const COURSE_CONTENT = {
           downloadUrl: '#',
           lastUpdated: '2024-01-28',
           isDownloaded: false
-        }
-      ],
-      videos: [
+        },
         {
-          id: 1,
-          title: 'Calcul de limites',
-          duration: '55:30',
-          chapter: 'Chapitre 1',
-          thumbnailUrl: 'https://via.placeholder.com/300x200',
-          videoUrl: '#',
-          watched: true,
-          watchTime: '55:30'
+          id: 3,
+          title: 'Intégration',
+          chapter: 'Chapitre 3',
+          pages: 38,
+          downloadUrl: '#',
+          lastUpdated: '2024-02-08',
+          isDownloaded: true
+        },
+        {
+          id: 4,
+          title: 'Équations différentielles',
+          chapter: 'Chapitre 4',
+          pages: 28,
+          downloadUrl: '#',
+          lastUpdated: '2024-02-20',
+          isDownloaded: false
         }
       ],
       pastExams: [
@@ -179,6 +297,18 @@ export const COURSE_CONTENT = {
           hasCorrection: true,
           difficulty: 'Difficile',
           averageScore: 11.2
+        },
+        {
+          id: 2,
+          title: 'Baccalauréat Mathématiques TSE 2022',
+          year: '2022',
+          session: 'Principale',
+          duration: '4h',
+          pages: 10,
+          downloadUrl: '#',
+          hasCorrection: true,
+          difficulty: 'Difficile',
+          averageScore: 12.8
         }
       ]
     },
@@ -193,18 +323,24 @@ export const COURSE_CONTENT = {
           downloadUrl: '#',
           lastUpdated: '2024-01-15',
           isDownloaded: true
-        }
-      ],
-      videos: [
+        },
         {
-          id: 1,
-          title: 'Mouvements rectiligne et circulaire',
-          duration: '45:15',
-          chapter: 'Chapitre 1',
-          thumbnailUrl: 'https://via.placeholder.com/300x200',
-          videoUrl: '#',
-          watched: true,
-          watchTime: '45:15'
+          id: 2,
+          title: 'Dynamique - Forces',
+          chapter: 'Chapitre 2',
+          pages: 28,
+          downloadUrl: '#',
+          lastUpdated: '2024-02-01',
+          isDownloaded: false
+        },
+        {
+          id: 3,
+          title: 'Électricité - Circuits',
+          chapter: 'Chapitre 3',
+          pages: 32,
+          downloadUrl: '#',
+          lastUpdated: '2024-02-15',
+          isDownloaded: true
         }
       ],
       pastExams: [
@@ -219,30 +355,161 @@ export const COURSE_CONTENT = {
           hasCorrection: true,
           difficulty: 'Difficile',
           averageScore: 12.3
+        },
+        {
+          id: 2,
+          title: 'Baccalauréat Physique TSE 2022',
+          year: '2022',
+          session: 'Principale',
+          duration: '3h',
+          pages: 9,
+          downloadUrl: '#',
+          hasCorrection: true,
+          difficulty: 'Difficile',
+          averageScore: 11.9
+        }
+      ]
+    },
+
+    'Chimie': {
+      notes: [
+        {
+          id: 1,
+          title: 'Chimie organique - Hydrocarbures',
+          chapter: 'Chapitre 1',
+          pages: 26,
+          downloadUrl: '#',
+          lastUpdated: '2024-01-20',
+          isDownloaded: false
+        },
+        {
+          id: 2,
+          title: 'Cinétique chimique',
+          chapter: 'Chapitre 2',
+          pages: 22,
+          downloadUrl: '#',
+          lastUpdated: '2024-02-05',
+          isDownloaded: true
+        }
+      ],
+      pastExams: [
+        {
+          id: 1,
+          title: 'Baccalauréat Chimie TSE 2023',
+          year: '2023',
+          session: 'Principale',
+          duration: '3h',
+          pages: 7,
+          downloadUrl: '#',
+          hasCorrection: true,
+          difficulty: 'Difficile',
+          averageScore: 13.1
         }
       ]
     }
   },
 
-  // Add other specializations
+  // BAC Level - TSEXP
   TSEXP: {
     'Mathématiques': {
-      notes: [],
-      videos: [],
-      pastExams: []
+      notes: [
+        {
+          id: 1,
+          title: 'Statistiques et probabilités',
+          chapter: 'Chapitre 1',
+          pages: 28,
+          downloadUrl: '#',
+          lastUpdated: '2024-01-16',
+          isDownloaded: true
+        }
+      ],
+      pastExams: [
+        {
+          id: 1,
+          title: 'Baccalauréat Mathématiques TSEXP 2023',
+          year: '2023',
+          session: 'Principale',
+          duration: '3h',
+          pages: 8,
+          downloadUrl: '#',
+          hasCorrection: true,
+          difficulty: 'Moyen',
+          averageScore: 14.2
+        }
+      ]
     }
   },
   
+  // BAC Level - TSECO
   TSECO: {
     'Économie': {
-      notes: [],
-      videos: [],
-      pastExams: []
+      notes: [
+        {
+          id: 1,
+          title: 'Microéconomie - Offre et demande',
+          chapter: 'Chapitre 1',
+          pages: 32,
+          downloadUrl: '#',
+          lastUpdated: '2024-01-18',
+          isDownloaded: true
+        },
+        {
+          id: 2,
+          title: 'Macroéconomie - PIB et croissance',
+          chapter: 'Chapitre 2',
+          pages: 28,
+          downloadUrl: '#',
+          lastUpdated: '2024-02-03',
+          isDownloaded: false
+        }
+      ],
+      pastExams: [
+        {
+          id: 1,
+          title: 'Baccalauréat Économie TSECO 2023',
+          year: '2023',
+          session: 'Principale',
+          duration: '3h',
+          pages: 6,
+          downloadUrl: '#',
+          hasCorrection: true,
+          difficulty: 'Moyen',
+          averageScore: 15.6
+        }
+      ]
+    },
+
+    'Gestion': {
+      notes: [
+        {
+          id: 1,
+          title: 'Management des organisations',
+          chapter: 'Chapitre 1',
+          pages: 24,
+          downloadUrl: '#',
+          lastUpdated: '2024-01-22',
+          isDownloaded: false
+        }
+      ],
+      pastExams: [
+        {
+          id: 1,
+          title: 'Baccalauréat Gestion TSECO 2023',
+          year: '2023',
+          session: 'Principale',
+          duration: '2h30',
+          pages: 5,
+          downloadUrl: '#',
+          hasCorrection: true,
+          difficulty: 'Moyen',
+          averageScore: 14.8
+        }
+      ]
     }
   }
 };
 
-// Helper function to get course content
+// Helper function to get course content - NO VIDEOS
 export const getCourseContent = (level, courseName) => {
   const cleanCourseName = courseName.replace(/[_]/g, ' ');
   
@@ -253,7 +520,6 @@ export const getCourseContent = (level, courseName) => {
   // Return default empty content if not found
   return {
     notes: [],
-    videos: [],
     pastExams: []
   };
 };
@@ -281,6 +547,12 @@ export const getCourseMetadata = (level, courseName) => {
         description: 'Sciences physiques et chimiques fondamentales',
         totalLessons: 20,
         completedLessons: 12
+      },
+      'Histoire-Géographie': {
+        instructor: 'M. Bernard',
+        description: 'Histoire moderne et géographie européenne',
+        totalLessons: 22,
+        completedLessons: 18
       }
     },
     TSE: {
@@ -295,6 +567,34 @@ export const getCourseMetadata = (level, courseName) => {
         description: 'Mécanique, électricité et physique moderne',
         totalLessons: 28,
         completedLessons: 18
+      },
+      'Chimie': {
+        instructor: 'Prof. Blanc',
+        description: 'Chimie organique et inorganique avancée',
+        totalLessons: 24,
+        completedLessons: 16
+      }
+    },
+    TSEXP: {
+      'Mathématiques': {
+        instructor: 'Prof. Garcia',
+        description: 'Mathématiques appliquées aux sciences expérimentales',
+        totalLessons: 26,
+        completedLessons: 19
+      }
+    },
+    TSECO: {
+      'Économie': {
+        instructor: 'Prof. Moreau',
+        description: 'Économie générale et politique économique',
+        totalLessons: 30,
+        completedLessons: 24
+      },
+      'Gestion': {
+        instructor: 'Mme Laurent',
+        description: 'Management et sciences de gestion',
+        totalLessons: 26,
+        completedLessons: 20
       }
     }
   };

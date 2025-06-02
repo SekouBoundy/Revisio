@@ -1,4 +1,4 @@
-// app/(tabs)/courses/[level]/[courseName].js - IMPROVED SEARCH UX
+// app/(tabs)/courses/[level]/[courseName].js - REMOVED VIDEOS SECTION
 import React, { useContext, useState, useRef } from 'react';
 import {
   View,
@@ -29,7 +29,7 @@ export default function CourseDetailScreen() {
   const searchInputRef = useRef(null);
   const searchAnimValue = useRef(new Animated.Value(0)).current;
 
-  // COURSE DATA - Same as before (keeping it concise for space)
+  // COURSE DATA - Notes and Exams only
   const getCourseContent = (level, courseName) => {
     const COURSE_DATA = {
       DEF: {
@@ -61,28 +61,6 @@ export default function CourseDetailScreen() {
               downloadUrl: '#',
               lastUpdated: '2024-02-01',
               isDownloaded: true
-            }
-          ],
-          videos: [
-            {
-              id: 1,
-              title: 'Les temps du passé',
-              duration: '35:20',
-              chapter: 'Chapitre 1',
-              thumbnailUrl: 'https://via.placeholder.com/300x200',
-              videoUrl: '#',
-              watched: true,
-              watchTime: '35:20'
-            },
-            {
-              id: 2,
-              title: 'Analyse littéraire',
-              duration: '42:15',
-              chapter: 'Chapitre 2',
-              thumbnailUrl: 'https://via.placeholder.com/300x200',
-              videoUrl: '#',
-              watched: false,
-              watchTime: '15:30'
             }
           ],
           pastExams: [
@@ -133,18 +111,6 @@ export default function CourseDetailScreen() {
               isDownloaded: false
             }
           ],
-          videos: [
-            {
-              id: 1,
-              title: 'Résolution d\'équations',
-              duration: '38:45',
-              chapter: 'Chapitre 1',
-              thumbnailUrl: 'https://via.placeholder.com/300x200',
-              videoUrl: '#',
-              watched: true,
-              watchTime: '38:45'
-            }
-          ],
           pastExams: [
             {
               id: 1,
@@ -183,18 +149,6 @@ export default function CourseDetailScreen() {
               isDownloaded: false
             }
           ],
-          videos: [
-            {
-              id: 1,
-              title: 'Calcul de limites',
-              duration: '55:30',
-              chapter: 'Chapitre 1',
-              thumbnailUrl: 'https://via.placeholder.com/300x200',
-              videoUrl: '#',
-              watched: true,
-              watchTime: '55:30'
-            }
-          ],
           pastExams: [
             {
               id: 1,
@@ -221,7 +175,6 @@ export default function CourseDetailScreen() {
     
     return {
       notes: [],
-      videos: [],
       pastExams: []
     };
   };
@@ -315,7 +268,6 @@ export default function CourseDetailScreen() {
     if (!searchQuery.trim()) return courseContent;
     return {
       notes: filterContent(courseContent.notes),
-      videos: filterContent(courseContent.videos),
       pastExams: filterContent(courseContent.pastExams)
     };
   };
@@ -323,9 +275,9 @@ export default function CourseDetailScreen() {
   const filteredContent = getFilteredContent();
   const hasSearchResults = searchQuery.trim().length > 0;
   const totalResults = hasSearchResults ? 
-    filteredContent.notes.length + filteredContent.videos.length + filteredContent.pastExams.length : 0;
+    filteredContent.notes.length + filteredContent.pastExams.length : 0;
 
-  // Component functions (same as before)
+  // Component functions
   const TabButton = ({ id, title, icon, isActive, onPress, count }) => (
     <TouchableOpacity
       style={[
@@ -381,23 +333,6 @@ export default function CourseDetailScreen() {
     );
   };
 
-  const handlePlayVideo = (video) => {
-    Alert.alert(
-      'Lire la vidéo',
-      `Voulez-vous regarder "${video.title}" ?`,
-      [
-        { text: 'Annuler', style: 'cancel' },
-        { 
-          text: 'Regarder', 
-          onPress: () => {
-            console.log('Playing video:', video.title);
-            Alert.alert('Lecture', 'Ouverture du lecteur vidéo...');
-          }
-        }
-      ]
-    );
-  };
-
   const NoteCard = ({ note }) => (
     <TouchableOpacity 
       style={[styles.contentCard, { backgroundColor: theme.surface }]}
@@ -436,74 +371,6 @@ export default function CourseDetailScreen() {
       </View>
     </TouchableOpacity>
   );
-
-  const VideoCard = ({ video }) => {
-    const progressPercentage = video.watchTime === video.duration ? 100 : 
-      (parseInt(video.watchTime.split(':')[0]) * 60 + parseInt(video.watchTime.split(':')[1])) /
-      (parseInt(video.duration.split(':')[0]) * 60 + parseInt(video.duration.split(':')[1])) * 100;
-
-    return (
-      <TouchableOpacity 
-        style={[styles.contentCard, { backgroundColor: theme.surface }]}
-        onPress={() => handlePlayVideo(video)}
-      >
-        <View style={styles.videoHeader}>
-          <View style={[styles.videoThumbnail, { backgroundColor: theme.neutralLight }]}>
-            <Ionicons 
-              name={video.watched ? "checkmark-circle" : "play-circle"} 
-              size={32} 
-              color={video.watched ? theme.success : theme.primary} 
-            />
-            <View style={[styles.videoDuration, { backgroundColor: 'rgba(0,0,0,0.7)' }]}>
-              <Text style={styles.videoDurationText}>{video.duration}</Text>
-            </View>
-          </View>
-          
-          <View style={styles.videoInfo}>
-            <Text style={[styles.contentTitle, { color: theme.text }]}>
-              {video.title}
-            </Text>
-            <Text style={[styles.contentSubtitle, { color: theme.textSecondary }]}>
-              {video.chapter} • {video.duration}
-            </Text>
-            
-            {video.watched ? (
-              <View style={styles.watchedBadge}>
-                <Ionicons name="checkmark-circle" size={14} color={theme.success} />
-                <Text style={[styles.watchedText, { color: theme.success }]}>
-                  Regardé
-                </Text>
-              </View>
-            ) : (
-              <View style={styles.progressContainer}>
-                <View style={[styles.progressBar, { backgroundColor: theme.neutralLight }]}>
-                  <View 
-                    style={[
-                      styles.progressFill, 
-                      { 
-                        width: `${progressPercentage}%`, 
-                        backgroundColor: theme.primary 
-                      }
-                    ]} 
-                  />
-                </View>
-                <Text style={[styles.progressText, { color: theme.textSecondary }]}>
-                  {video.watchTime} / {video.duration}
-                </Text>
-              </View>
-            )}
-          </View>
-
-          <TouchableOpacity 
-            style={[styles.actionButton, { backgroundColor: theme.primary + '15' }]}
-            onPress={() => handlePlayVideo(video)}
-          >
-            <Ionicons name="play" size={16} color={theme.primary} />
-          </TouchableOpacity>
-        </View>
-      </TouchableOpacity>
-    );
-  };
 
   const ExamCard = ({ exam }) => {
     const getDifficultyColor = (difficulty) => {
@@ -603,31 +470,6 @@ export default function CourseDetailScreen() {
           </View>
         );
       
-      case 'videos':
-        return (
-          <View style={styles.contentSection}>
-            <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: theme.text }]}>
-                Vidéos de cours
-              </Text>
-              <Text style={[styles.sectionCount, { color: theme.textSecondary }]}>
-                {currentContent.videos.length} vidéo{currentContent.videos.length !== 1 ? 's' : ''}
-              </Text>
-            </View>
-            {currentContent.videos.length > 0 ? (
-              currentContent.videos.map((video) => (
-                <VideoCard key={video.id} video={video} />
-              ))
-            ) : (
-              <EmptyState 
-                title={hasSearchResults ? "Aucun résultat" : "Aucune vidéo disponible"}
-                message={hasSearchResults ? "Essayez des mots-clés différents" : "Les vidéos de cours seront bientôt disponibles"}
-                icon="play-circle-outline"
-              />
-            )}
-          </View>
-        );
-      
       case 'exams':
         return (
           <View style={styles.contentSection}>
@@ -702,7 +544,7 @@ export default function CourseDetailScreen() {
         }}
       />
 
-      {/* IMPROVED SEARCH BAR - Slides down instead of modal */}
+      {/* SEARCH BAR - Slides down */}
       {searchVisible && (
         <Animated.View 
           style={[
@@ -797,7 +639,7 @@ export default function CourseDetailScreen() {
         </View>
       )}
 
-      {/* Tab Navigation */}
+      {/* Tab Navigation - Only Notes and Exams */}
       <View style={[styles.tabContainer, { backgroundColor: theme.background }]}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <TabButton
@@ -807,14 +649,6 @@ export default function CourseDetailScreen() {
             isActive={activeTab === 'notes'}
             count={filteredContent.notes.length}
             onPress={() => setActiveTab('notes')}
-          />
-          <TabButton
-            id="videos"
-            title="Vidéos"
-            icon="play-circle-outline"
-            isActive={activeTab === 'videos'}
-            count={filteredContent.videos.length}
-            onPress={() => setActiveTab('videos')}
           />
           <TabButton
             id="exams"
@@ -1055,60 +889,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  videoHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  videoThumbnail: {
-    width: 80,
-    height: 60,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-    position: 'relative',
-  },
-  videoDuration: {
-    position: 'absolute',
-    bottom: 4,
-    right: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  videoDurationText: {
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: '500',
-  },
-  videoInfo: {
-    flex: 1,
-  },
-  watchedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 4,
-  },
-  watchedText: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  progressContainer: {
-    marginTop: 4,
-  },
-  progressBar: {
-    height: 4,
-    borderRadius: 2,
-    marginBottom: 4,
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 2,
-  },
-  progressText: {
-    fontSize: 10,
   },
   examMeta: {
     flexDirection: 'row',
