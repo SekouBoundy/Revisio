@@ -1,7 +1,7 @@
 // app/(tabs)/quizzes/_layout.js - CREATE THIS FILE
 import { Stack } from 'expo-router';
 import { useContext } from 'react';
-import { ThemeContext } from '../../../constants/ThemeContextContext';
+import { ThemeContext } from '../../../constants/ThemeContext';
 
 export default function QuizzesLayout() {
   const { theme } = useContext(ThemeContext);

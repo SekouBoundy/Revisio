@@ -35,14 +35,11 @@ export default function QuizScreen() {
     selectOption,
     goToNextQuestion,
     resetQuiz,
-  } = useQuiz(level, stream, course);
+  } = useQuiz("BAC", "Arts_et_Lettres_TAL", "Anglais");
 
+  // 👉 Add this check!
   if (!questions.length) {
-    return (
-      <SafeAreaView style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={Colors.primary} />
-      </SafeAreaView>
-    );
+    return <Text>No questions found for this quiz!</Text>;
   }
 
   if (isFinished) {

@@ -159,7 +159,7 @@ export const useAsyncStorage = (key, defaultValue) => {
 // components/common/LoadingSpinner.js - REUSABLE LOADING
 import React, { useContext } from 'react';
 import { View, ActivityIndicator, Text, StyleSheet } from 'react-native';
-import { ThemeContext } from '../../constants/ThemeContextContext';
+import { ThemeContext } from '../../constants/ThemeContext';
 
 export const LoadingSpinner = ({ message = 'Chargement...', size = 'large' }) => {
   const { theme } = useContext(ThemeContext);

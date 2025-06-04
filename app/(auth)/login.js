@@ -16,7 +16,7 @@ import {
 import Button from '../../components/common/Button';
 import Header from '../../components/common/Header';
 import { useAuth } from '../../constants/AuthContext';
-import { ThemeContext } from '../../constants/ThemeContextContext';
+import { ThemeContext } from '../../constants/ThemeContext';
 
 export default function LoginScreen() {
   const router = useRouter();

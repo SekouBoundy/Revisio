@@ -14,7 +14,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
-import { ThemeContext } from '../../../../constants/ThemeContextContext';
+import { ThemeContext } from '../../../../constants/ThemeContext';
 import { useUser } from '../../../../constants/UserContext';
 
 export default function LevelQuizzesScreen() {

@@ -1,10 +1,13 @@
 // constants/ThemeContext.js - Clean implementation
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { createContext, useState, useEffect } from "react";
+// import React, { createContext, useState, useEffect } from "react";
 import { Appearance } from "react-native";
+// import { ThemeContext } from '../constants/ThemeContext';
 
+// export const ThemeContext = createContext();
 export const ThemeContext = createContext();
+
 export const Colors = {
   primary: "#2E86AB",
   background: "#FFFFFF",
