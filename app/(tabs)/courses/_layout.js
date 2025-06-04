@@ -1,7 +1,7 @@
 // app/(tabs)/courses/_layout.js - CREATE THIS FILE
 import { Stack } from 'expo-router';
 import { useContext } from 'react';
-import { ThemeContext } from '../../../constants/ThemeContext';
+import { ThemeContext } from '../../../constants/ThemeContextContext';
 
 export default function CoursesLayout() {
   const { theme } = useContext(ThemeContext);

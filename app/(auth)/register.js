@@ -15,7 +15,7 @@ import {
 
 import Button from '../../components/common/Button';
 import Header from '../../components/common/Header';
-import { ThemeContext } from '../../constants/ThemeContext';
+import { ThemeContext } from '../../constants/ThemeContextContext';
 
 export default function RegisterScreen() {
   const { theme } = useContext(ThemeContext);

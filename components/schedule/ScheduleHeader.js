@@ -2,7 +2,7 @@
 import React, { useContext } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { ThemeContext } from '../../constants/ThemeContext';
+import { ThemeContext } from '../../constants/ThemeContextContext';
 
 export default function ScheduleHeader({ isEditMode, onToggleEdit, onOpenCalendar, user }) {
   const { theme } = useContext(ThemeContext);

@@ -1,7 +1,7 @@
 // components/common/Header.js
 import React, { useContext } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { ThemeContext } from '../../constants/ThemeContext';
+import { ThemeContext } from '../../constants/ThemeContextContext';
 
 export default function Header({ title }) {
   const { theme } = useContext(ThemeContext);

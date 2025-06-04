@@ -16,7 +16,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
-import { ThemeContext } from '../../constants/ThemeContext';
+import { ThemeContext } from '../../constants/ThemeContextContext';
 import { useUser } from '../../constants/UserContext';
 
 export default function ScheduleScreen() {

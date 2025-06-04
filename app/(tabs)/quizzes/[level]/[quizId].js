@@ -13,7 +13,7 @@ import {
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
-import { ThemeContext } from '../../../../constants/ThemeContext';
+import { ThemeContext } from '../../../../constants/ThemeContextContext';
 import { useUser } from '../../../../constants/UserContext';
 
 export default function QuizTakingScreen() {

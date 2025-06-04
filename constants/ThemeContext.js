@@ -1,8 +1,34 @@
 // constants/ThemeContext.js - Clean implementation
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { createContext, useState, useEffect } from "react";
+import { Appearance } from "react-native";
 
 export const ThemeContext = createContext();
+export const Colors = {
+  primary: "#2E86AB",
+  background: "#FFFFFF",
+  cardBackground: "#F5F5F5",
+  correct: "#27AE60",
+  incorrect: "#C0392B",
+  textPrimary: "#333333",
+  textSecondary: "#555555",
+  border: "#DDDDDD",
+};
+
+export const FontSizes = {
+  small: 12,
+  medium: 16,
+  large: 20,
+};
+
+export const Spacing = {
+  xs: 4,
+  sm: 8,
+  md: 16,
+  lg: 24,
+  xl: 32,
+};
 
 export function ThemeProvider({ children }) {
   const [isDarkMode, setIsDarkMode] = useState(false);
