@@ -1,5 +1,5 @@
-// app/(tabs)/dashboard.js - DIFFERENTIATED FOR DEF vs BAC
-import React, { useContext } from 'react';
+// app/(tabs)/dashboard.js - WITH COLLAPSIBLE HEADER
+import React, { useContext, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   ScrollView,
   TouchableOpacity,
   SafeAreaView,
+  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -20,6 +21,53 @@ export default function DashboardScreen() {
   const router = useRouter();
 
   const isDefLevel = user?.level === 'DEF';
+  
+  // Animation values
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const [headerCollapsed, setHeaderCollapsed] = useState(false);
+
+  // Fine-tuned header collapse animation
+  const headerHeight = scrollY.interpolate({
+    inputRange: [0, 80],
+    outputRange: [160, 75],
+    extrapolate: 'clamp',
+  });
+
+  const headerOpacity = scrollY.interpolate({
+    inputRange: [0, 80],
+    outputRange: [1, 0.98],
+    extrapolate: 'clamp',
+  });
+
+  const titleScale = scrollY.interpolate({
+    inputRange: [0, 80],
+    outputRange: [1, 0.85],
+    extrapolate: 'clamp',
+  });
+
+  const progressCardTranslateY = scrollY.interpolate({
+    inputRange: [0, 80],
+    outputRange: [0, -25],
+    extrapolate: 'clamp',
+  });
+
+  const progressCardOpacity = scrollY.interpolate({
+    inputRange: [0, 40, 80],
+    outputRange: [1, 0.6, 0],
+    extrapolate: 'clamp',
+  });
+
+  // Scroll handler with gentler threshold
+  const handleScroll = Animated.event(
+    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+    {
+      useNativeDriver: false,
+      listener: (event) => {
+        const scrollPosition = event.nativeEvent.contentOffset.y;
+        setHeaderCollapsed(scrollPosition > 30); // More sensitive
+      },
+    }
+  );
 
   // Common Components
   const ProgressBar = ({ progress, color = theme.primary }) => (
@@ -51,7 +99,7 @@ export default function DashboardScreen() {
     </View>
   );
 
-  // DEF-Specific Components
+  // DEF Components
   const DefQuickActionCard = ({ icon, title, color, onPress, badge }) => (
     <TouchableOpacity style={[styles.defActionCard, { backgroundColor: color + '15' }]} onPress={onPress}>
       <View style={[styles.defActionIcon, { backgroundColor: color }]}>
@@ -96,7 +144,7 @@ export default function DashboardScreen() {
     </TouchableOpacity>
   );
 
-  // BAC-Specific Components
+  // BAC Components
   const BacStatCard = ({ icon, title, value, color, subtitle, trend }) => (
     <ModernCard style={styles.bacStatCard}>
       <View style={styles.bacStatHeader}>
@@ -147,17 +195,30 @@ export default function DashboardScreen() {
     </TouchableOpacity>
   );
 
-  // Headers
+  // Remove absolute positioning - use normal layout
   const DefHeader = () => (
-    <View style={[styles.header, { backgroundColor: theme.primary }]}>
+    <Animated.View style={[
+      styles.header, 
+      { 
+        backgroundColor: theme.primary,
+        height: headerHeight,
+        opacity: headerOpacity,
+      }
+    ]}>
       <View style={styles.headerContent}>
         <View>
           <Text style={[styles.greeting, { color: '#FFFFFF99' }]}>
             Salut,
           </Text>
-          <Text style={[styles.userName, { color: '#FFFFFF' }]}>
+          <Animated.Text style={[
+            styles.userName, 
+            { 
+              color: '#FFFFFF',
+              transform: [{ scale: titleScale }]
+            }
+          ]}>
             {user?.name || 'Étudiant'} ! 👋
-          </Text>
+          </Animated.Text>
         </View>
         <View style={styles.headerActions}>
           <TouchableOpacity 
@@ -177,19 +238,32 @@ export default function DashboardScreen() {
           </TouchableOpacity>
         </View>
       </View>
-    </View>
+    </Animated.View>
   );
 
   const BacHeader = () => (
-    <View style={[styles.header, { backgroundColor: theme.primary }]}>
+    <Animated.View style={[
+      styles.header, 
+      { 
+        backgroundColor: theme.primary,
+        height: headerHeight,
+        opacity: headerOpacity,
+      }
+    ]}>
       <View style={styles.headerContent}>
         <View>
           <Text style={[styles.greeting, { color: '#FFFFFF99' }]}>
             Tableau de bord
           </Text>
-          <Text style={[styles.userName, { color: '#FFFFFF' }]}>
+          <Animated.Text style={[
+            styles.userName, 
+            { 
+              color: '#FFFFFF',
+              transform: [{ scale: titleScale }]
+            }
+          ]}>
             {user?.name || 'Étudiant'} • {user?.level}
-          </Text>
+          </Animated.Text>
         </View>
         <View style={styles.headerActions}>
           <TouchableOpacity 
@@ -209,41 +283,157 @@ export default function DashboardScreen() {
           </TouchableOpacity>
         </View>
       </View>
-    </View>
+    </Animated.View>
   );
 
-  // Progress Cards
+  // Animated Progress Cards
   const DefProgressCard = () => (
-    <View style={[styles.progressCardContainer, { backgroundColor: theme.surface }]}>
-      <View style={styles.defCountdownContent}>
+    <Animated.View style={[
+      styles.progressCardContainer, 
+      { 
+        backgroundColor: theme.surface,
+        transform: [{ translateY: progressCardTranslateY }],
+        height: scrollY.interpolate({
+          inputRange: [0, 80],
+          outputRange: [120, 50],
+          extrapolate: 'clamp',
+        }),
+        padding: scrollY.interpolate({
+          inputRange: [0, 80],
+          outputRange: [20, 8],
+          extrapolate: 'clamp',
+        }),
+      }
+    ]}>
+      <Animated.View style={[
+        styles.defCountdownContent,
+        {
+          flexDirection: scrollY.interpolate({
+            inputRange: [0, 40, 80],
+            outputRange: [0, 0.5, 1], // 0 = column, 1 = row
+            extrapolate: 'clamp',
+          }) === 1 ? 'row' : 'row', // Always row for smooth transition
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }
+      ]}>
         <View style={styles.defCountdownLeft}>
-          <Text style={[styles.defCountdownLabel, { color: theme.textSecondary }]}>
+          <Animated.Text style={[
+            styles.defCountdownLabel, 
+            { 
+              color: theme.textSecondary,
+              opacity: scrollY.interpolate({
+                inputRange: [0, 40],
+                outputRange: [1, 0],
+                extrapolate: 'clamp',
+              }),
+              height: scrollY.interpolate({
+                inputRange: [0, 40],
+                outputRange: [20, 0],
+                extrapolate: 'clamp',
+              }),
+            }
+          ]}>
             Temps restant jusqu'au DEF
-          </Text>
-          <Text style={[styles.defCountdownValue, { color: theme.text }]}>42 jours</Text>
-          <TouchableOpacity 
-            style={[styles.defPlanningButton, { backgroundColor: theme.primary }]}
-            onPress={() => router.push('/(tabs)/schedule')}
-          >
-            <Ionicons name="calendar" size={16} color="#FFFFFF" />
-            <Text style={styles.defPlanningText}>Mon planning</Text>
-          </TouchableOpacity>
+          </Animated.Text>
+          <Animated.Text style={[
+            styles.defCountdownValue, 
+            { 
+              color: theme.text,
+              fontSize: scrollY.interpolate({
+                inputRange: [0, 80],
+                outputRange: [32, 18],
+                extrapolate: 'clamp',
+              }),
+              marginBottom: scrollY.interpolate({
+                inputRange: [0, 80],
+                outputRange: [16, 0],
+                extrapolate: 'clamp',
+              }),
+            }
+          ]}>42 jours</Animated.Text>
         </View>
-        <View style={[styles.defCountdownIcon, { backgroundColor: theme.primary + '15' }]}>
+        
+        <TouchableOpacity 
+          style={[
+            styles.defPlanningButton, 
+            { 
+              backgroundColor: theme.primary,
+              marginTop: 0,
+            }
+          ]}
+          onPress={() => router.push('/(tabs)/schedule')}
+        >
+          <Ionicons name="calendar" size={16} color="#FFFFFF" />
+          <Text style={styles.defPlanningText}>Mon planning</Text>
+        </TouchableOpacity>
+        
+        <Animated.View style={[
+          styles.defCountdownIcon, 
+          { 
+            backgroundColor: theme.primary + '15',
+            opacity: scrollY.interpolate({
+              inputRange: [0, 40],
+              outputRange: [1, 0],
+              extrapolate: 'clamp',
+            }),
+            width: scrollY.interpolate({
+              inputRange: [0, 40],
+              outputRange: [64, 0],
+              extrapolate: 'clamp',
+            }),
+          }
+        ]}>
           <Ionicons name="time" size={32} color={theme.primary} />
-        </View>
-      </View>
-    </View>
+        </Animated.View>
+      </Animated.View>
+    </Animated.View>
   );
 
   const BacProgressCard = () => (
-    <View style={[styles.progressCardContainer, { backgroundColor: theme.surface }]}>
+    <Animated.View style={[
+      styles.progressCardContainer, 
+      { 
+        backgroundColor: theme.surface,
+        transform: [{ translateY: progressCardTranslateY }],
+        height: scrollY.interpolate({
+          inputRange: [0, 100],
+          outputRange: [120, 60],
+          extrapolate: 'clamp',
+        }),
+        padding: scrollY.interpolate({
+          inputRange: [0, 100],
+          outputRange: [20, 10],
+          extrapolate: 'clamp',
+        }),
+      }
+    ]}>
       <View style={styles.bacCountdownContent}>
         <View style={styles.bacCountdownLeft}>
-          <Text style={[styles.bacCountdownLabel, { color: theme.textSecondary }]}>
+          <Animated.Text style={[
+            styles.bacCountdownLabel, 
+            { 
+              color: theme.textSecondary,
+              opacity: scrollY.interpolate({
+                inputRange: [0, 50],
+                outputRange: [1, 0],
+                extrapolate: 'clamp',
+              }),
+            }
+          ]}>
             Temps restant jusqu'au BAC
-          </Text>
-          <Text style={[styles.bacCountdownValue, { color: theme.text }]}>25 jours</Text>
+          </Animated.Text>
+          <Animated.Text style={[
+            styles.bacCountdownValue, 
+            { 
+              color: theme.text,
+              fontSize: scrollY.interpolate({
+                inputRange: [0, 100],
+                outputRange: [36, 20],
+                extrapolate: 'clamp',
+              }),
+            }
+          ]}>25 jours</Animated.Text>
           <TouchableOpacity 
             style={[styles.bacPlanningButton, { backgroundColor: theme.primary }]}
             onPress={() => router.push('/(tabs)/schedule')}
@@ -252,11 +442,21 @@ export default function DashboardScreen() {
             <Text style={styles.bacPlanningText}>Planning de révisions</Text>
           </TouchableOpacity>
         </View>
-        <View style={[styles.bacCountdownIcon, { backgroundColor: theme.primary + '15' }]}>
+        <Animated.View style={[
+          styles.bacCountdownIcon, 
+          { 
+            backgroundColor: theme.primary + '15',
+            opacity: scrollY.interpolate({
+              inputRange: [0, 50],
+              outputRange: [1, 0],
+              extrapolate: 'clamp',
+            }),
+          }
+        ]}>
           <Ionicons name="hourglass" size={32} color={theme.primary} />
-        </View>
+        </Animated.View>
       </View>
-    </View>
+    </Animated.View>
   );
 
   // DEF Dashboard
@@ -266,7 +466,15 @@ export default function DashboardScreen() {
         <DefHeader />
         <DefProgressCard />
 
-        <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollContent}>
+        <ScrollView 
+          showsVerticalScrollIndicator={false} 
+          style={styles.scrollContent}
+          onScroll={handleScroll}
+          scrollEventThrottle={8}
+          decelerationRate="normal"
+          bounces={false}
+          contentContainerStyle={{ paddingTop: 20 }}
+        >
           {/* Weekly Progress */}
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: theme.text }]}>Ma progression</Text>
@@ -398,7 +606,13 @@ export default function DashboardScreen() {
       <BacHeader />
       <BacProgressCard />
 
-      <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollContent}>
+      <Animated.ScrollView 
+        showsVerticalScrollIndicator={false} 
+        style={styles.scrollContent}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+        contentContainerStyle={{ paddingTop: 20 }}
+      >
         {/* Performance Analytics */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -538,7 +752,7 @@ export default function DashboardScreen() {
         </View>
 
         <View style={styles.bottomPadding} />
-      </ScrollView>
+      </Animated.ScrollView>
     </SafeAreaView>
   );
 }
@@ -547,7 +761,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  // Common Header Styles
+  // Header Styles - Remove absolute positioning
   header: {
     paddingTop: 60,
     paddingBottom: 30,
@@ -595,18 +809,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
   },
-  streakButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    gap: 4,
-  },
-  streakText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
   timeButton: {
     width: 44,
     height: 44,
@@ -622,7 +824,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   
-  // Progress Card Styles
+  // Progress Card Styles - Remove absolute positioning
   progressCardContainer: {
     marginTop: -15,
     marginHorizontal: 20,
@@ -646,41 +848,6 @@ const styles = StyleSheet.create({
   },
   
   // DEF Progress Styles
-  defProgressContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  defProgressLeft: {
-    flex: 1,
-  },
-  defProgressTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  defProgressValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  defProgressSubtitle: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  defProgressCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  defProgressPercent: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  
-  // DEF Countdown Styles
   defCountdownContent: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -718,45 +885,6 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  
-  // DEF Weekly Progress Styles
-  defWeeklyCard: {
-    padding: 16,
-  },
-  defWeeklyContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  defWeeklyLeft: {
-    flex: 1,
-  },
-  defWeeklyTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  defWeeklyValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  defWeeklySubtitle: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  defWeeklyCircle: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  defWeeklyPercent: {
-    fontSize: 16,
-    fontWeight: 'bold',
   },
   
   // BAC Progress Styles
@@ -799,7 +927,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   
-  // Common Layout
+  // ScrollView - Remove top margin since no absolute positioning
   scrollContent: {
     flex: 1,
   },
@@ -833,7 +961,46 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   
-  // DEF-Specific Styles
+  // DEF Weekly Progress
+  defWeeklyCard: {
+    padding: 16,
+  },
+  defWeeklyContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  defWeeklyLeft: {
+    flex: 1,
+  },
+  defWeeklyTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  defWeeklyValue: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  defWeeklySubtitle: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  defWeeklyCircle: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  defWeeklyPercent: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  
+  // DEF Actions Grid
   defActionsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -949,7 +1116,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   
-  // BAC-Specific Styles
+  // BAC Stats Grid
   bacStatsGrid: {
     flexDirection: 'row',
     gap: 12,
