@@ -1,4 +1,4 @@
-// app/(tabs)/profile.js
+// app/(tabs)/profile.js - MVP VERSION WITH UPDATED STATS
 import React, { useContext, useState } from 'react';
 import {
   View,
@@ -10,7 +10,6 @@ import {
   Switch,
   Modal,
   Alert,
-  Share,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -26,6 +25,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const [showLevelModal, setShowLevelModal] = useState(false);
   const [showBacOptions, setShowBacOptions] = useState(false);
+  const [showAboutModal, setShowAboutModal] = useState(false);
 
   const bacSpecializations = [
     { value: 'TSE', label: 'Sciences Exactes (TSE)' },
@@ -50,41 +50,6 @@ export default function ProfileScreen() {
           onPress: () => {
             logout();
             router.replace('/login');
-          }
-        }
-      ]
-    );
-  };
-
-  const handleShareProfile = async () => {
-    try {
-      await Share.share({
-        message: `Découvrez le profil de ${user?.name} sur notre plateforme d'apprentissage!`,
-        title: 'Partager le profil'
-      });
-    } catch (error) {
-      console.error('Error sharing profile:', error);
-    }
-  };
-
-  const handleDownloadedFiles = () => {
-    // Navigate to downloaded files screen or show modal with files
-    router.push('/downloaded-files');
-  };
-
-  const handleClearCache = () => {
-    Alert.alert(
-      'Vider le cache',
-      'Cette action supprimera tous les fichiers en cache. Êtes-vous sûr de vouloir continuer ?',
-      [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'Vider',
-          style: 'destructive',
-          onPress: () => {
-            // Clear cache logic here
-            console.log('Cache cleared');
-            Alert.alert('Succès', 'Le cache a été vidé avec succès');
           }
         }
       ]
@@ -147,6 +112,7 @@ export default function ProfileScreen() {
     </View>
   );
 
+  // Updated StatsCard with MVP-appropriate metrics
   const StatsCard = ({ title, value, icon, color }) => (
     <View style={[styles.statCard, { backgroundColor: theme.surface }]}>
       <View style={[styles.statIcon, { backgroundColor: color + '15' }]}>
@@ -155,6 +121,114 @@ export default function ProfileScreen() {
       <Text style={[styles.statValue, { color: theme.text }]}>{value}</Text>
       <Text style={[styles.statLabel, { color: theme.textSecondary }]}>{title}</Text>
     </View>
+  );
+
+  const AboutModal = () => (
+    <Modal
+      visible={showAboutModal}
+      transparent={true}
+      animationType="slide"
+    >
+      <View style={styles.modalOverlay}>
+        <View style={[styles.modalContent, { backgroundColor: theme.background }]}>
+          <View style={[styles.modalHeader, { borderBottomColor: theme.neutralLight }]}>
+            <Text style={[styles.modalTitle, { color: theme.text }]}>
+              À propos de l'application
+            </Text>
+            <TouchableOpacity 
+              onPress={() => setShowAboutModal(false)}
+              style={[styles.closeButton, { backgroundColor: theme.neutralLight }]}
+            >
+              <Ionicons name="close" size={20} color={theme.textSecondary} />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+            <View style={styles.aboutContainer}>
+              <View style={[styles.aboutIcon, { backgroundColor: theme.primary + '15' }]}>
+                <Text style={[styles.aboutIconText, { color: theme.primary }]}>R</Text>
+              </View>
+              
+              <Text style={[styles.aboutAppName, { color: theme.text }]}>Revisio</Text>
+              <Text style={[styles.aboutVersion, { color: theme.textSecondary }]}>Version 1.0 (MVP)</Text>
+              
+              <View style={[styles.aboutSection, { backgroundColor: theme.surface }]}>
+                <View style={styles.aboutRow}>
+                  <Text style={styles.aboutEmoji}>🎯</Text>
+                  <View style={styles.aboutTextContainer}>
+                    <Text style={[styles.aboutLabel, { color: theme.text }]}>Objectif</Text>
+                    <Text style={[styles.aboutValue, { color: theme.textSecondary }]}>
+                      Aider les élèves maliens à réussir leurs études
+                    </Text>
+                  </View>
+                </View>
+              </View>
+
+              <View style={[styles.aboutSection, { backgroundColor: theme.surface }]}>
+                <View style={styles.aboutRow}>
+                  <Text style={styles.aboutEmoji}>🛠️</Text>
+                  <View style={styles.aboutTextContainer}>
+                    <Text style={[styles.aboutLabel, { color: theme.text }]}>Créée par</Text>
+                    <Text style={[styles.aboutValue, { color: theme.textSecondary }]}>
+                      Sekou Boundy
+                    </Text>
+                  </View>
+                </View>
+              </View>
+
+              <View style={[styles.aboutSection, { backgroundColor: theme.surface }]}>
+                <View style={styles.aboutRow}>
+                  <Text style={styles.aboutEmoji}>📩</Text>
+                  <View style={styles.aboutTextContainer}>
+                    <Text style={[styles.aboutLabel, { color: theme.text }]}>Contact</Text>
+                    <TouchableOpacity>
+                      <Text style={[styles.aboutValue, styles.aboutLink, { color: theme.primary }]}>
+                        sekouboundy55@gmail.com
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity>
+                      <Text style={[styles.aboutValue, styles.aboutLink, { color: theme.primary }]}>
+                        +223 93 18 43 67
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+
+              <View style={[styles.aboutSection, { backgroundColor: theme.surface }]}>
+                <Text style={[styles.aboutSectionTitle, { color: theme.text }]}>Fonctionnalités</Text>
+                <View style={styles.featuresList}>
+                  <Text style={[styles.featureItem, { color: theme.textSecondary }]}>
+                    • Quiz interactifs pour DEF et BAC
+                  </Text>
+                  <Text style={[styles.featureItem, { color: theme.textSecondary }]}>
+                    • Cours organisés par filière
+                  </Text>
+                  <Text style={[styles.featureItem, { color: theme.textSecondary }]}>
+                    • Planning d'emploi du temps
+                  </Text>
+                  <Text style={[styles.featureItem, { color: theme.textSecondary }]}>
+                    • Suivi des progrès
+                  </Text>
+                  <Text style={[styles.featureItem, { color: theme.textSecondary }]}>
+                    • Mode sombre/clair
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.aboutFooter}>
+                <Text style={[styles.aboutCopyright, { color: theme.textSecondary }]}>
+                  © 2024 Revisio - Tous droits réservés
+                </Text>
+                <Text style={[styles.aboutCopyright, { color: theme.textSecondary }]}>
+                  Fait avec ❤️ au Mali
+                </Text>
+              </View>
+            </View>
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
   );
 
   const LevelPickerModal = () => {
@@ -278,20 +352,13 @@ export default function ProfileScreen() {
         {/* Header */}
         <View style={[styles.header, { backgroundColor: theme.primary }]}>
           <View style={styles.headerContent}>
-            <TouchableOpacity 
-              style={styles.shareButton}
-              onPress={handleShareProfile}
-            >
-              <Ionicons name="share-outline" size={20} color="#FFFFFF" />
-            </TouchableOpacity>
-            
             <View style={[styles.avatar, { backgroundColor: theme.surface }]}>
               <Text style={[styles.avatarText, { color: theme.primary }]}>
                 {user?.name?.charAt(0)?.toUpperCase() || 'U'}
               </Text>
               <TouchableOpacity 
                 style={[styles.editAvatarButton, { backgroundColor: theme.primary }]}
-                onPress={() => console.log('Edit avatar')}
+                onPress={() => router.push('/edit-profile')}
               >
                 <Ionicons name="camera" size={14} color="#FFFFFF" />
               </TouchableOpacity>
@@ -303,11 +370,6 @@ export default function ProfileScreen() {
             <Text style={[styles.userEmail, { color: '#FFFFFF99' }]}>
               {user?.email || 'user@example.com'}
             </Text>
-            {user?.bio && (
-              <Text style={[styles.userBio, { color: theme.surface + 'DD' }]}>
-                {user.bio}
-              </Text>
-            )}
             <View style={[styles.levelBadge, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]}>
               <Text style={[styles.levelText, { color: '#FFFFFF' }]}>
                 Niveau: {user?.level === 'DEF' ? 'DEF (Secondaire)' : `BAC ${user?.level || ''}`}
@@ -316,7 +378,7 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Stats Cards */}
+        {/* Updated Stats Cards - MVP appropriate */}
         <View style={styles.statsContainer}>
           <StatsCard 
             title="Progression" 
@@ -331,14 +393,14 @@ export default function ProfileScreen() {
             color={theme.info} 
           />
           <StatsCard 
-            title="Rang" 
-            value="#3" 
-            icon="trophy" 
-            color={theme.accent} 
+            title="Série" 
+            value="5 jours" 
+            icon="flame" 
+            color={theme.warning} 
           />
         </View>
 
-        {/* Account Section */}
+        {/* Simplified Account Section for MVP */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Compte</Text>
           
@@ -356,31 +418,9 @@ export default function ProfileScreen() {
             onPress={() => setShowLevelModal(true)}
             iconColor={theme.secondary}
           />
-          
-          <ProfileItem
-            icon="trophy"
-            title="Réussites"
-            onPress={() => console.log('Achievements')}
-            iconColor={theme.accent}
-            badge="3"
-          />
-          
-          <ProfileItem
-            icon="bookmark"
-            title="Favoris"
-            onPress={() => console.log('Bookmarks')}
-            iconColor={theme.warning}
-          />
-          
-          <ProfileItem
-            icon="download"
-            title="Fichiers enregistrés"
-            onPress={() => handleDownloadedFiles()}
-            iconColor={theme.info}
-          />
         </View>
 
-        {/* Preferences Section */}
+        {/* Simplified Preferences Section for MVP */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Préférences</Text>
           
@@ -391,35 +431,6 @@ export default function ProfileScreen() {
             onToggle={toggleTheme}
             iconColor={theme.primary}
           />
-          
-          <ProfileItem
-            icon="notifications"
-            title="Notifications"
-            onPress={() => console.log('Notifications')}
-            iconColor={theme.warning}
-          />
-          
-          <ProfileItem
-            icon="language"
-            title="Langue"
-            value="Français"
-            onPress={() => console.log('Language')}
-            iconColor={theme.info}
-          />
-          
-          <ProfileItem
-            icon="shield-checkmark"
-            title="Confidentialité"
-            onPress={() => console.log('Privacy')}
-            iconColor={theme.success}
-          />
-          
-          <ProfileItem
-            icon="trash"
-            title="Vider le cache"
-            onPress={() => handleClearCache()}
-            iconColor={theme.error}
-          />
         </View>
 
         {/* Support Section */}
@@ -427,23 +438,9 @@ export default function ProfileScreen() {
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Support</Text>
           
           <ProfileItem
-            icon="help-circle"
-            title="Aide et support"
-            onPress={() => console.log('Help')}
-            iconColor={theme.success}
-          />
-          
-          <ProfileItem
-            icon="document-text"
-            title="Conditions d'utilisation"
-            onPress={() => console.log('Terms')}
-            iconColor={theme.info}
-          />
-          
-          <ProfileItem
             icon="information-circle"
             title="À propos"
-            onPress={() => console.log('About')}
+            onPress={() => setShowAboutModal(true)}
             iconColor={theme.info}
           />
         </View>
@@ -461,6 +458,7 @@ export default function ProfileScreen() {
       </ScrollView>
 
       <LevelPickerModal />
+      <AboutModal />
     </SafeAreaView>
   );
 }
@@ -477,18 +475,6 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 30,
   },
   headerContent: {
-    alignItems: 'center',
-    position: 'relative',
-  },
-  shareButton: {
-    position: 'absolute',
-    top: -10,
-    right: 0,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    justifyContent: 'center',
     alignItems: 'center',
   },
   avatar: {
@@ -529,13 +515,6 @@ const styles = StyleSheet.create({
   userEmail: {
     fontSize: 16,
     marginBottom: 12,
-  },
-  userBio: {
-    fontSize: 14,
-    textAlign: 'center',
-    marginBottom: 16,
-    paddingHorizontal: 20,
-    lineHeight: 20,
   },
   levelBadge: {
     paddingHorizontal: 20,
@@ -744,5 +723,87 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '500',
     textAlign: 'center',
+  },
+  // About Modal Styles
+  aboutContainer: {
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
+  aboutIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  aboutIconText: {
+    fontSize: 36,
+    fontWeight: 'bold',
+  },
+  aboutAppName: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  aboutVersion: {
+    fontSize: 16,
+    marginBottom: 32,
+  },
+  aboutSection: {
+    width: '100%',
+    padding: 20,
+    borderRadius: 16,
+    marginBottom: 16,
+  },
+  aboutRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  aboutEmoji: {
+    fontSize: 24,
+    marginRight: 16,
+    width: 32,
+  },
+  aboutTextContainer: {
+    flex: 1,
+  },
+  aboutLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  aboutValue: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  aboutLink: {
+    textDecorationLine: 'underline',
+    marginBottom: 4,
+  },
+  aboutSectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
+  },
+  featuresList: {
+    gap: 8,
+  },
+  featureItem: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  aboutFooter: {
+    alignItems: 'center',
+    marginTop: 20,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
+    width: '100%',
+  },
+  aboutCopyright: {
+    fontSize: 12,
+    textAlign: 'center',
+    marginBottom: 4,
   },
 });

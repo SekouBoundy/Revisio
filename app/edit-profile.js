@@ -1,6 +1,5 @@
-// app/edit-profile.js - FIXED VERSION
-
-import React, { useState, useContext, useEffect } from 'react';
+// app/edit-profile.js - MVP VERSION
+import React, { useState, useContext } from 'react';
 import {
   View,
   Text,
@@ -10,9 +9,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
-  Image,
   Modal,
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
@@ -32,14 +28,10 @@ export default function EditProfileScreen() {
     school: user?.school || '',
     phone: user?.phone || '',
     level: user?.level || 'DEF',
-    location: user?.location || '',
-    birthDate: user?.birthDate || '',
   });
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [avatarUri, setAvatarUri] = useState(user?.avatar);
   const [errors, setErrors] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
   const [showLevelModal, setShowLevelModal] = useState(false);
   const [showBacOptions, setShowBacOptions] = useState(false);
 
@@ -53,21 +45,6 @@ export default function EditProfileScreen() {
     { value: 'STI', label: 'Sciences et Technologies Industrielles (STI)' },
     { value: 'STG', label: 'Sciences et Technologies de Gestion (STG)' },
   ];
-
-  // Check for unsaved changes
-  useEffect(() => {
-    const originalData = {
-      name: user?.name || '',
-      bio: user?.bio || '',
-      school: user?.school || '',
-      phone: user?.phone || '',
-      level: user?.level || 'DEF',
-      location: user?.location || '',
-      birthDate: user?.birthDate || '',
-    };
-    const hasChanges = JSON.stringify(formData) !== JSON.stringify(originalData);
-    setHasUnsavedChanges(hasChanges);
-  }, [formData, user]);
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -96,34 +73,6 @@ export default function EditProfileScreen() {
     return spec ? `BAC ${spec.label}` : `BAC ${level}`;
   };
 
-  const handleCancel = () => {
-    if (hasUnsavedChanges) {
-      Alert.alert(
-        'Modifications non sauvegardées',
-        'Vous avez des modifications non sauvegardées. Voulez-vous vraiment quitter ?',
-        [
-          { text: 'Rester', style: 'cancel' },
-          { text: 'Quitter', style: 'destructive', onPress: () => router.back() }
-        ]
-      );
-    } else {
-      router.back();
-    }
-  };
-
-  const handleChangePhoto = () => {
-    Alert.alert(
-      'Changer la photo de profil',
-      'Choisissez une option',
-      [
-        { text: 'Appareil photo', onPress: () => console.log('Camera') },
-        { text: 'Galerie', onPress: () => console.log('Gallery') },
-        { text: 'Supprimer la photo', style: 'destructive', onPress: () => setAvatarUri(null) },
-        { text: 'Annuler', style: 'cancel' }
-      ]
-    );
-  };
-
   const validateForm = () => {
     const newErrors = {};
 
@@ -132,11 +81,9 @@ export default function EditProfileScreen() {
     } else if (formData.name.trim().length < 2) {
       newErrors.name = 'Le nom doit contenir au moins 2 caractères';
     }
+
     if (formData.phone && !isValidPhoneNumber(formData.phone)) {
       newErrors.phone = 'Numéro de téléphone invalide';
-    }
-    if (formData.bio && formData.bio.length > 150) {
-      newErrors.bio = 'La bio ne peut pas dépasser 150 caractères';
     }
 
     setErrors(newErrors);
@@ -153,11 +100,7 @@ export default function EditProfileScreen() {
 
     setIsLoading(true);
     setTimeout(() => {
-      const updatedData = { ...formData };
-      if (avatarUri !== user?.avatar) {
-        updatedData.avatar = avatarUri;
-      }
-      updateUser(updatedData);
+      updateUser(formData);
       setIsLoading(false);
       Alert.alert('Succès', 'Profil mis à jour avec succès', [
         { text: 'OK', onPress: () => router.back() }
@@ -165,8 +108,7 @@ export default function EditProfileScreen() {
     }, 1000);
   };
 
-  // Input field reusable component
-  const InputField = React.useCallback(({ 
+  const InputField = ({ 
     label, 
     value, 
     onChangeText, 
@@ -175,22 +117,12 @@ export default function EditProfileScreen() {
     keyboardType = 'default', 
     required = false,
     error,
-    maxLength,
-    showCharacterCount = false
+    maxLength
   }) => (
     <View style={styles.inputGroup}>
-      <View style={styles.labelContainer}>
-        <Text style={[styles.label, { color: theme.text }]}>
-          {label} {required && <Text style={{ color: theme.error }}>*</Text>}
-        </Text>
-        {showCharacterCount && maxLength && (
-          <Text style={[styles.characterCount, { 
-            color: (value?.length || 0) > maxLength ? theme.error : theme.textSecondary 
-          }]}>
-            {value?.length || 0}/{maxLength}
-          </Text>
-        )}
-      </View>
+      <Text style={[styles.label, { color: theme.text }]}>
+        {label} {required && <Text style={{ color: theme.error }}>*</Text>}
+      </Text>
       <TextInput
         style={[
           multiline ? styles.textArea : styles.input, 
@@ -207,11 +139,8 @@ export default function EditProfileScreen() {
         placeholderTextColor={theme.textSecondary}
         multiline={multiline}
         numberOfLines={multiline ? 4 : 1}
-        textAlignVertical={multiline ? "top" : "center"}
         keyboardType={keyboardType}
         maxLength={maxLength}
-        autoCorrect={false}
-        autoComplete="off"
       />
       {error && (
         <View style={styles.errorContainer}>
@@ -220,9 +149,8 @@ export default function EditProfileScreen() {
         </View>
       )}
     </View>
-  ), [theme]);
+  );
 
-  // Level Picker Modal
   const LevelPickerModal = () => {
     const currentLevelIsBac = formData.level !== 'DEF';
     
@@ -348,21 +276,15 @@ export default function EditProfileScreen() {
           headerTintColor: theme.surface,
           headerTitleStyle: { fontWeight: 'bold' },
           headerLeft: () => (
-            <TouchableOpacity onPress={handleCancel} style={styles.headerButton}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.headerButton}>
               <Ionicons name="arrow-back" size={24} color={theme.surface} />
             </TouchableOpacity>
           ),
           headerRight: () => (
             <TouchableOpacity 
               onPress={handleSave} 
-              style={[
-                styles.saveHeaderButton, 
-                { 
-                  backgroundColor: hasUnsavedChanges ? theme.surface + '20' : 'transparent',
-                  opacity: hasUnsavedChanges ? 1 : 0.5
-                }
-              ]}
-              disabled={isLoading || !hasUnsavedChanges}
+              style={[styles.saveHeaderButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}
+              disabled={isLoading}
             >
               <Text style={[styles.saveButton, { color: theme.surface }]}>
                 {isLoading ? 'Saving...' : 'Sauver'}
@@ -372,156 +294,120 @@ export default function EditProfileScreen() {
         }}
       />
 
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {/* Avatar Section */}
-          <View style={styles.avatarSection}>
-            <View style={[styles.avatar, { backgroundColor: theme.primary }]}>
-              {avatarUri ? (
-                <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
-              ) : (
-                <Text style={[styles.avatarText, { color: theme.surface }]}>
-                  {formData.name?.charAt(0)?.toUpperCase() || 'U'}
-                </Text>
-              )}
-            </View>
-            <TouchableOpacity 
-              style={[styles.changePhotoButton, { backgroundColor: theme.primary + '15' }]}
-              onPress={handleChangePhoto}
-            >
-              <Ionicons name="camera" size={16} color={theme.primary} style={{ marginRight: 6 }} />
-              <Text style={[styles.changePhotoText, { color: theme.primary }]}>
-                {avatarUri ? 'Modifier la photo' : 'Ajouter une photo'}
-              </Text>
-            </TouchableOpacity>
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Avatar Section */}
+        <View style={styles.avatarSection}>
+          <View style={[styles.avatar, { backgroundColor: theme.primary }]}>
+            <Text style={[styles.avatarText, { color: theme.surface }]}>
+              {formData.name?.charAt(0)?.toUpperCase() || 'U'}
+            </Text>
           </View>
-
-          {/* Form */}
-          <View style={styles.form}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>
-              Informations personnelles
-            </Text>
-            
-            <InputField
-              label="Nom complet"
-              value={formData.name}
-              onChangeText={(text) => handleChange('name', text)}
-              placeholder="Entrez votre nom complet"
-              required
-              error={errors.name}
-              maxLength={50}
-              showCharacterCount
-            />
-
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: theme.text }]}>Email</Text>
-              <View style={[styles.disabledInput, { 
-                backgroundColor: theme.neutralLight, 
-                borderColor: theme.neutralLight
-              }]}>
-                <Text style={[styles.disabledText, { color: theme.textSecondary }]}>
-                  {user?.email || 'user@example.com'}
-                </Text>
-                <Ionicons name="lock-closed" size={16} color={theme.textSecondary} />
-              </View>
-              <Text style={[styles.helpText, { color: theme.textSecondary }]}>
-                L'email ne peut pas être modifié
-              </Text>
-            </View>
-
-            <InputField
-              label="Téléphone"
-              value={formData.phone}
-              onChangeText={(text) => handleChange('phone', text)}
-              placeholder="Entrez votre numéro de téléphone"
-              keyboardType="phone-pad"
-              error={errors.phone}
-            />
-
-            <InputField
-              label="École/Lycée"
-              value={formData.school}
-              onChangeText={(text) => handleChange('school', text)}
-              placeholder="Entrez le nom de votre établissement"
-              maxLength={100}
-            />
-
-            <InputField
-              label="Ville"
-              value={formData.location}
-              onChangeText={(text) => handleChange('location', text)}
-              placeholder="Entrez votre ville"
-              maxLength={50}
-            />
-
-            {/* Level Picker */}
-            <Text style={[styles.sectionTitle, { color: theme.text, marginTop: 32 }]}>
-              Niveau académique
-            </Text>
-            
-            <TouchableOpacity
-              style={[styles.levelPickerButton, { 
-                backgroundColor: theme.surface,
-                borderColor: theme.neutralLight 
-              }]}
-              onPress={() => setShowLevelModal(true)}
-            >
-              <View style={styles.levelPickerContent}>
-                <Text style={[styles.levelPickerText, { color: theme.text }]}>
-                  {getLevelDisplayName(formData.level)}
-                </Text>
-                <Ionicons name="chevron-down" size={20} color={theme.textSecondary} />
-              </View>
-            </TouchableOpacity>
-
-            <Text style={[styles.sectionTitle, { color: theme.text, marginTop: 32 }]}>
-              À propos de vous
-            </Text>
-
-            <InputField
-              label="Bio"
-              value={formData.bio}
-              onChangeText={(text) => handleChange('bio', text)}
-              placeholder="Parlez-nous de vous..."
-              multiline
-              maxLength={150}
-              showCharacterCount
-              error={errors.bio}
-            />
-          </View>
-
-          {/* Save Button */}
-          <TouchableOpacity
-            style={[
-              styles.saveButtonMobile, 
-              { 
-                backgroundColor: hasUnsavedChanges ? theme.primary : theme.neutralLight,
-                opacity: hasUnsavedChanges ? 1 : 0.6
-              }
-            ]}
-            onPress={handleSave}
-            disabled={isLoading || !hasUnsavedChanges}
+          <TouchableOpacity 
+            style={[styles.changePhotoButton, { backgroundColor: theme.primary + '15' }]}
           >
-            <Ionicons 
-              name="save" 
-              size={20} 
-              color={hasUnsavedChanges ? "#fff" : theme.textSecondary} 
-              style={{ marginRight: 8 }} 
-            />
-            <Text style={[
-              styles.saveButtonText,
-              { color: hasUnsavedChanges ? "#fff" : theme.textSecondary }
-            ]}>
-              {isLoading ? 'Sauvegarde...' : 'Sauvegarder les modifications'}
+            <Ionicons name="camera" size={16} color={theme.primary} style={{ marginRight: 6 }} />
+            <Text style={[styles.changePhotoText, { color: theme.primary }]}>
+              Modifier la photo
             </Text>
           </TouchableOpacity>
+        </View>
 
-          <View style={styles.bottomPadding} />
-        </ScrollView>
-      </KeyboardAvoidingView>
+        {/* Form */}
+        <View style={styles.form}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>
+            Informations personnelles
+          </Text>
+          
+          <InputField
+            label="Nom complet"
+            value={formData.name}
+            onChangeText={(text) => handleChange('name', text)}
+            placeholder="Entrez votre nom complet"
+            required
+            error={errors.name}
+            maxLength={50}
+          />
+
+          <View style={styles.inputGroup}>
+            <Text style={[styles.label, { color: theme.text }]}>Email</Text>
+            <View style={[styles.disabledInput, { 
+              backgroundColor: theme.neutralLight, 
+              borderColor: theme.neutralLight
+            }]}>
+              <Text style={[styles.disabledText, { color: theme.textSecondary }]}>
+                {user?.email || 'user@example.com'}
+              </Text>
+              <Ionicons name="lock-closed" size={16} color={theme.textSecondary} />
+            </View>
+            <Text style={[styles.helpText, { color: theme.textSecondary }]}>
+              L'email ne peut pas être modifié
+            </Text>
+          </View>
+
+          <InputField
+            label="Téléphone"
+            value={formData.phone}
+            onChangeText={(text) => handleChange('phone', text)}
+            placeholder="+223 XX XX XX XX"
+            keyboardType="phone-pad"
+            error={errors.phone}
+          />
+
+          <InputField
+            label="École/Lycée"
+            value={formData.school}
+            onChangeText={(text) => handleChange('school', text)}
+            placeholder="Entrez le nom de votre établissement"
+            maxLength={100}
+          />
+
+          <Text style={[styles.sectionTitle, { color: theme.text, marginTop: 32 }]}>
+            Niveau académique
+          </Text>
+          
+          <TouchableOpacity
+            style={[styles.levelPickerButton, { 
+              backgroundColor: theme.surface,
+              borderColor: theme.neutralLight 
+            }]}
+            onPress={() => setShowLevelModal(true)}
+          >
+            <View style={styles.levelPickerContent}>
+              <Text style={[styles.levelPickerText, { color: theme.text }]}>
+                {getLevelDisplayName(formData.level)}
+              </Text>
+              <Ionicons name="chevron-down" size={20} color={theme.textSecondary} />
+            </View>
+          </TouchableOpacity>
+
+          <Text style={[styles.sectionTitle, { color: theme.text, marginTop: 32 }]}>
+            À propos de vous
+          </Text>
+
+          <InputField
+            label="Bio"
+            value={formData.bio}
+            onChangeText={(text) => handleChange('bio', text)}
+            placeholder="Parlez-nous de vous..."
+            multiline
+            maxLength={150}
+          />
+        </View>
+
+        {/* Save Button */}
+        <TouchableOpacity
+          style={[styles.saveButtonMobile, { backgroundColor: theme.primary }]}
+          onPress={handleSave}
+          disabled={isLoading}
+        >
+          <Ionicons name="save" size={20} color="#fff" style={{ marginRight: 8 }} />
+          <Text style={styles.saveButtonText}>
+            {isLoading ? 'Sauvegarde...' : 'Sauvegarder les modifications'}
+          </Text>
+        </TouchableOpacity>
+
+        <View style={styles.bottomPadding} />
+      </ScrollView>
 
       <LevelPickerModal />
     </SafeAreaView>
@@ -564,12 +450,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 8,
-    overflow: 'hidden',
-  },
-  avatarImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 50,
   },
   avatarText: {
     fontSize: 40,
@@ -597,19 +477,10 @@ const styles = StyleSheet.create({
   inputGroup: {
     marginBottom: 24,
   },
-  labelContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
   label: {
     fontSize: 16,
     fontWeight: '600',
-  },
-  characterCount: {
-    fontSize: 12,
-    fontWeight: '500',
+    marginBottom: 8,
   },
   input: {
     height: 56,
@@ -627,6 +498,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     fontSize: 16,
     fontWeight: '500',
+    textAlignVertical: 'top',
   },
   disabledInput: {
     height: 56,
@@ -688,6 +560,7 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   saveButtonText: {
+    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },
