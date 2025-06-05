@@ -26,34 +26,34 @@ export default function DashboardScreen() {
   const scrollY = useRef(new Animated.Value(0)).current;
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
 
-  // Fine-tuned header collapse animation
+  // More dramatic header collapse animation
   const headerHeight = scrollY.interpolate({
-    inputRange: [0, 80],
-    outputRange: [160, 75],
+    inputRange: [0, 100],
+    outputRange: [160, 70],
     extrapolate: 'clamp',
   });
 
   const headerOpacity = scrollY.interpolate({
-    inputRange: [0, 80],
-    outputRange: [1, 0.98],
+    inputRange: [0, 100],
+    outputRange: [1, 0.95],
     extrapolate: 'clamp',
   });
 
   const titleScale = scrollY.interpolate({
-    inputRange: [0, 80],
-    outputRange: [1, 0.85],
+    inputRange: [0, 100],
+    outputRange: [1, 0.8],
     extrapolate: 'clamp',
   });
 
   const progressCardTranslateY = scrollY.interpolate({
-    inputRange: [0, 80],
-    outputRange: [0, -25],
+    inputRange: [0, 100],
+    outputRange: [0, -30],
     extrapolate: 'clamp',
   });
 
   const progressCardOpacity = scrollY.interpolate({
-    inputRange: [0, 40, 80],
-    outputRange: [1, 0.6, 0],
+    inputRange: [0, 50, 100],
+    outputRange: [1, 0.5, 0],
     extrapolate: 'clamp',
   });
 
@@ -293,100 +293,26 @@ export default function DashboardScreen() {
       { 
         backgroundColor: theme.surface,
         transform: [{ translateY: progressCardTranslateY }],
-        height: scrollY.interpolate({
-          inputRange: [0, 80],
-          outputRange: [120, 50],
-          extrapolate: 'clamp',
-        }),
-        padding: scrollY.interpolate({
-          inputRange: [0, 80],
-          outputRange: [20, 8],
-          extrapolate: 'clamp',
-        }),
       }
     ]}>
-      <Animated.View style={[
-        styles.defCountdownContent,
-        {
-          flexDirection: scrollY.interpolate({
-            inputRange: [0, 40, 80],
-            outputRange: [0, 0.5, 1], // 0 = column, 1 = row
-            extrapolate: 'clamp',
-          }) === 1 ? 'row' : 'row', // Always row for smooth transition
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }
-      ]}>
+      <View style={styles.defCountdownContent}>
         <View style={styles.defCountdownLeft}>
-          <Animated.Text style={[
-            styles.defCountdownLabel, 
-            { 
-              color: theme.textSecondary,
-              opacity: scrollY.interpolate({
-                inputRange: [0, 40],
-                outputRange: [1, 0],
-                extrapolate: 'clamp',
-              }),
-              height: scrollY.interpolate({
-                inputRange: [0, 40],
-                outputRange: [20, 0],
-                extrapolate: 'clamp',
-              }),
-            }
-          ]}>
+          <Text style={[styles.defCountdownLabel, { color: theme.textSecondary }]}>
             Temps restant jusqu'au DEF
-          </Animated.Text>
-          <Animated.Text style={[
-            styles.defCountdownValue, 
-            { 
-              color: theme.text,
-              fontSize: scrollY.interpolate({
-                inputRange: [0, 80],
-                outputRange: [32, 18],
-                extrapolate: 'clamp',
-              }),
-              marginBottom: scrollY.interpolate({
-                inputRange: [0, 80],
-                outputRange: [16, 0],
-                extrapolate: 'clamp',
-              }),
-            }
-          ]}>42 jours</Animated.Text>
+          </Text>
+          <Text style={[styles.defCountdownValue, { color: theme.text }]}>42 jours</Text>
+          <TouchableOpacity 
+            style={[styles.defPlanningButton, { backgroundColor: theme.primary }]}
+            onPress={() => router.push('/(tabs)/schedule')}
+          >
+            <Ionicons name="calendar" size={16} color="#FFFFFF" />
+            <Text style={styles.defPlanningText}>Mon planning</Text>
+          </TouchableOpacity>
         </View>
-        
-        <TouchableOpacity 
-          style={[
-            styles.defPlanningButton, 
-            { 
-              backgroundColor: theme.primary,
-              marginTop: 0,
-            }
-          ]}
-          onPress={() => router.push('/(tabs)/schedule')}
-        >
-          <Ionicons name="calendar" size={16} color="#FFFFFF" />
-          <Text style={styles.defPlanningText}>Mon planning</Text>
-        </TouchableOpacity>
-        
-        <Animated.View style={[
-          styles.defCountdownIcon, 
-          { 
-            backgroundColor: theme.primary + '15',
-            opacity: scrollY.interpolate({
-              inputRange: [0, 40],
-              outputRange: [1, 0],
-              extrapolate: 'clamp',
-            }),
-            width: scrollY.interpolate({
-              inputRange: [0, 40],
-              outputRange: [64, 0],
-              extrapolate: 'clamp',
-            }),
-          }
-        ]}>
+        <View style={[styles.defCountdownIcon, { backgroundColor: theme.primary + '15' }]}>
           <Ionicons name="time" size={32} color={theme.primary} />
-        </Animated.View>
-      </Animated.View>
+        </View>
+      </View>
     </Animated.View>
   );
 
@@ -396,44 +322,14 @@ export default function DashboardScreen() {
       { 
         backgroundColor: theme.surface,
         transform: [{ translateY: progressCardTranslateY }],
-        height: scrollY.interpolate({
-          inputRange: [0, 100],
-          outputRange: [120, 60],
-          extrapolate: 'clamp',
-        }),
-        padding: scrollY.interpolate({
-          inputRange: [0, 100],
-          outputRange: [20, 10],
-          extrapolate: 'clamp',
-        }),
       }
     ]}>
       <View style={styles.bacCountdownContent}>
         <View style={styles.bacCountdownLeft}>
-          <Animated.Text style={[
-            styles.bacCountdownLabel, 
-            { 
-              color: theme.textSecondary,
-              opacity: scrollY.interpolate({
-                inputRange: [0, 50],
-                outputRange: [1, 0],
-                extrapolate: 'clamp',
-              }),
-            }
-          ]}>
+          <Text style={[styles.bacCountdownLabel, { color: theme.textSecondary }]}>
             Temps restant jusqu'au BAC
-          </Animated.Text>
-          <Animated.Text style={[
-            styles.bacCountdownValue, 
-            { 
-              color: theme.text,
-              fontSize: scrollY.interpolate({
-                inputRange: [0, 100],
-                outputRange: [36, 20],
-                extrapolate: 'clamp',
-              }),
-            }
-          ]}>25 jours</Animated.Text>
+          </Text>
+          <Text style={[styles.bacCountdownValue, { color: theme.text }]}>25 jours</Text>
           <TouchableOpacity 
             style={[styles.bacPlanningButton, { backgroundColor: theme.primary }]}
             onPress={() => router.push('/(tabs)/schedule')}
@@ -442,19 +338,9 @@ export default function DashboardScreen() {
             <Text style={styles.bacPlanningText}>Planning de révisions</Text>
           </TouchableOpacity>
         </View>
-        <Animated.View style={[
-          styles.bacCountdownIcon, 
-          { 
-            backgroundColor: theme.primary + '15',
-            opacity: scrollY.interpolate({
-              inputRange: [0, 50],
-              outputRange: [1, 0],
-              extrapolate: 'clamp',
-            }),
-          }
-        ]}>
+        <View style={[styles.bacCountdownIcon, { backgroundColor: theme.primary + '15' }]}>
           <Ionicons name="hourglass" size={32} color={theme.primary} />
-        </Animated.View>
+        </View>
       </View>
     </Animated.View>
   );
