@@ -1,13 +1,17 @@
-// Example: app/(tabs)/_layout.js
+// app/(tabs)/_layout.js - FIXED WITH THEME SUPPORT
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { View, Text } from 'react-native';
+import { useContext } from 'react';
+import { ThemeContext } from '../../constants/ThemeContext';
 
 export default function TabLayout() {
+  const { theme } = useContext(ThemeContext);
+
   return (
     <Tabs
       screenOptions={({ route }) => ({
-        tabBarIcon: ({ focused, color, size }) => {
+        tabBarIcon: ({ focused, size }) => {
           let iconName;
           switch (route.name) {
             case 'dashboard':
@@ -29,11 +33,16 @@ export default function TabLayout() {
               iconName = focused ? 'ellipse' : 'ellipse-outline';
           }
           return (
-            <Ionicons name={iconName} size={focused ? 28 : 24} color={color} style={{ marginBottom: 0 }} />
+            <Ionicons 
+              name={iconName} 
+              size={focused ? 28 : 24} 
+              color={focused ? theme.primary : theme.textSecondary} 
+              style={{ marginBottom: 0 }} 
+            />
           );
         },
-        tabBarActiveTintColor: '#4E8CEE',
-        tabBarInactiveTintColor: '#52606D',
+        tabBarActiveTintColor: theme.primary,
+        tabBarInactiveTintColor: theme.textSecondary,
         tabBarShowLabel: true,
         tabBarLabelStyle: {
           fontSize: 12,
@@ -44,7 +53,7 @@ export default function TabLayout() {
           height: 64,
           borderTopLeftRadius: 18,
           borderTopRightRadius: 18,
-          backgroundColor: '#fff',
+          backgroundColor: theme.surface, // ✅ Now uses theme
           position: 'absolute',
           left: 0,
           right: 0,
@@ -61,7 +70,7 @@ export default function TabLayout() {
         <View style={{
           flexDirection: 'row',
           height: 64,
-          backgroundColor: '#fff',
+          backgroundColor: theme.surface, // ✅ Now uses theme
           borderTopLeftRadius: 18,
           borderTopRightRadius: 18,
           position: 'absolute',
@@ -103,13 +112,13 @@ export default function TabLayout() {
                 <Ionicons
                   name={iconName}
                   size={isFocused ? 28 : 24}
-                  color={isFocused ? '#4E8CEE' : '#52606D'}
+                  color={isFocused ? theme.primary : theme.textSecondary} // ✅ Now uses theme
                   style={{ marginBottom: 0 }}
                   onPress={() => navigation.navigate(route.name)}
                 />
                 <Text
                   style={{
-                    color: isFocused ? '#4E8CEE' : '#52606D',
+                    color: isFocused ? theme.primary : theme.textSecondary, // ✅ Now uses theme
                     fontWeight: isFocused ? 'bold' : '600',
                     fontSize: 12,
                   }}
@@ -123,7 +132,7 @@ export default function TabLayout() {
                     width: 6,
                     height: 6,
                     borderRadius: 3,
-                    backgroundColor: '#4E8CEE',
+                    backgroundColor: theme.primary, // ✅ Now uses theme
                     marginTop: 2,
                   }} />
                 )}
