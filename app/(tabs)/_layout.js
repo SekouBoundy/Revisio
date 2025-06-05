@@ -50,7 +50,7 @@ export default function TabLayout() {
           marginBottom: 2,
         },
         tabBarStyle: {
-          height: 64,
+          height: 75,
           borderTopLeftRadius: 18,
           borderTopRightRadius: 18,
           backgroundColor: theme.surface, // ✅ Now uses theme
@@ -69,7 +69,7 @@ export default function TabLayout() {
       tabBar={({ state, descriptors, navigation }) => (
         <View style={{
           flexDirection: 'row',
-          height: 64,
+          height: 75,
           backgroundColor: theme.surface, // ✅ Now uses theme
           borderTopLeftRadius: 18,
           borderTopRightRadius: 18,
