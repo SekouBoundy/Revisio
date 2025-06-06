@@ -615,20 +615,9 @@ saveQuickClass = () => {
                   onPress={() => {
                     if (classItem) {
                       if (isEditMode) {
-                        deleteClass(classItem);
+                        deleteClass(classItem); // This should work now
                       } else {
-                        Alert.alert(
-                          classItem.subject,
-                          `${classItem.description}\n${classItem.time}`,
-                          [
-                            { text: 'OK' },
-                            ...(isEditMode ? [{ 
-                              text: 'Supprimer', 
-                              style: 'destructive',
-                              onPress: () => deleteClass(classItem) 
-                            }] : [])
-                          ]
-                        );
+                        Alert.alert(classItem.subject, `${classItem.description}\n${classItem.time}`);
                       }
                     } else if (isEditMode) {
                       openQuickAdd(dayIndex, timeSlot);
@@ -1242,32 +1231,36 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingHorizontal: 10,
   },
-  gridHeader: {
-    flexDirection: 'row',
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-    marginBottom: 10,
-  },
-  timeColumn: {
-    width: 60,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dayColumn: {
-    flex: 1,
-    alignItems: 'center',
-    paddingHorizontal: 2,
-  },
-  gridHeaderText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  gridHeaderDate: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  gridRow: {
+gridHeader: {
+  flexDirection: 'row',
+  paddingBottom: 10,
+  borderBottomWidth: 1,
+  borderBottomColor: '#E0E0E0',
+  marginBottom: 10,
+  paddingHorizontal: 5, // Add padding
+},
+timeColumn: {
+  width: 50, // Reduced from 60
+  alignItems: 'center',
+  justifyContent: 'center',
+},
+dayColumn: {
+  flex: 1,
+  alignItems: 'center',
+  paddingHorizontal: 1, // Reduced padding
+  minWidth: 45, // Add minimum width
+},
+gridHeaderText: {
+  fontSize: 12, // Reduced from 14
+  fontWeight: 'bold',
+},
+gridHeaderDate: {
+  fontSize: 16, // Larger date
+  marginTop: 2,
+  fontWeight: 'bold',
+},
+
+gridRow: {
     flexDirection: 'row',
     marginBottom: 2,
   },
@@ -1275,16 +1268,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
   },
-  gridCell: {
-    flex: 1,
-    minHeight: 60,
-    marginHorizontal: 1,
-    borderRadius: 6,
-    padding: 4,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    position: 'relative',
-  },
+gridCell: {
+  flex: 1,
+  minHeight: 50, // Reduced from 60
+  marginHorizontal: 0.5, // Reduced margin
+  borderRadius: 4,
+  padding: 3, // Reduced padding
+  borderWidth: 0.5, // Thinner border
+  borderColor: '#E0E0E0',
+  position: 'relative',
+},
   gridClassContent: {
     flex: 1,
     justifyContent: 'center',
