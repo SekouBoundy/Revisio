@@ -1,4 +1,4 @@
-// app/(tabs)/schedule.js - COMPLETE ENHANCED VERSION
+// app/(tabs)/schedule.js - COMPLETE VERSION WITH COURSE NAVIGATION
 import React, { useContext, useState, useCallback } from 'react';
 import { 
   SafeAreaView, 
@@ -224,6 +224,14 @@ export default function ScheduleScreen() {
     'Français', 'Philosophie', 'Anglais'
   ];
 
+  // COURSE NAVIGATION FUNCTION
+  const navigateToCourse = (classItem) => {
+    const courseName = classItem.subject.replace(/\s+/g, '_').replace(/\//g, '_');
+    const userLevel = isDefLevel ? 'DEF' : user?.level || 'TSE';
+    
+    router.push(`/courses/${userLevel}/${courseName}`);
+  };
+
   // Get current week date range
   const getWeekDateRange = () => {
     const startDate = weekDates[0];
@@ -318,56 +326,54 @@ export default function ScheduleScreen() {
   };
 
   // Ultra-simplified save function
-saveQuickClass = () => {
-  if (!quickForm.subject.trim()) {
-    Alert.alert('Erreur', 'Veuillez choisir une matière');
-    return;
-  }
+  const saveQuickClass = () => {
+    if (!quickForm.subject.trim()) {
+      Alert.alert('Erreur', 'Veuillez choisir une matière');
+      return;
+    }
 
-  const newClass = {
-    id: `${currentWeek}-${quickAddPosition.day + 1}-${Date.now()}`,
-    time: `${quickForm.startTime}-${quickForm.endTime}`,
-    subject: quickForm.subject,
-    teacher: '',
-    room: '',
-    type: quickForm.type,
-    color: getSubjectColor(quickForm.subject),
-    description: `${quickForm.type} - ${quickForm.subject}`,
-    isExam: quickForm.isExam || false,
-    isRecurring: quickForm.isRecurring || false,
-    weekOffset: quickForm.isExam && !quickForm.isRecurring ? currentWeek : null // Only for this week if non-recurring exam
-  };
+    const newClass = {
+      id: `${currentWeek}-${quickAddPosition.day + 1}-${Date.now()}`,
+      time: `${quickForm.startTime}-${quickForm.endTime}`,
+      subject: quickForm.subject,
+      teacher: '',
+      room: '',
+      type: quickForm.type,
+      color: getSubjectColor(quickForm.subject),
+      description: `${quickForm.type} - ${quickForm.subject}`,
+      isExam: quickForm.isExam || false,
+      isRecurring: quickForm.isRecurring || false,
+      weekOffset: quickForm.isExam && !quickForm.isRecurring ? currentWeek : null
+    };
 
-  const dayKey = quickAddPosition.day + 1;
-  const updatedSchedule = { ...scheduleData };
+    const dayKey = quickAddPosition.day + 1;
+    const updatedSchedule = { ...scheduleData };
 
-  if (!updatedSchedule[dayKey]) {
-    updatedSchedule[dayKey] = [];
-  }
-  
-  updatedSchedule[dayKey].push(newClass);
-  updatedSchedule[dayKey].sort((a, b) => {
-    const timeA = a.time.split('-')[0];
-    const timeB = b.time.split('-')[0];
-    return timeA.localeCompare(timeB);
-  });
+    if (!updatedSchedule[dayKey]) {
+      updatedSchedule[dayKey] = [];
+    }
+    
+    updatedSchedule[dayKey].push(newClass);
+    updatedSchedule[dayKey].sort((a, b) => {
+      const timeA = a.time.split('-')[0];
+      const timeB = b.time.split('-')[0];
+      return timeA.localeCompare(timeB);
+    });
 
     setScheduleData(updatedSchedule);
     setShowQuickAdd(false);
 
     setQuickForm({
-    subject: '',
-    startTime: '08:00',
-    endTime: '09:00',
-    type: 'Cours',
-    isExam: false,
-    isRecurring: false
-  });
-  
-  Alert.alert('Succès', 'Cours ajouté avec succès');
+      subject: '',
+      startTime: '08:00',
+      endTime: '09:00',
+      type: 'Cours',
+      isExam: false,
+      isRecurring: false
+    });
+    
+    Alert.alert('Succès', 'Cours ajouté avec succès');
   };
-
-  
 
   const deleteClass = (classItem) => {
     Alert.alert(
@@ -379,7 +385,6 @@ saveQuickClass = () => {
           text: 'Supprimer',
           style: 'destructive',
           onPress: () => {
-            // Find which day this class belongs to
             let dayKey = null;
             Object.keys(scheduleData).forEach(key => {
               if (scheduleData[key].some(c => c.id === classItem.id)) {
@@ -615,9 +620,10 @@ saveQuickClass = () => {
                   onPress={() => {
                     if (classItem) {
                       if (isEditMode) {
-                        deleteClass(classItem); // This should work now
+                        deleteClass(classItem);
                       } else {
-                        Alert.alert(classItem.subject, `${classItem.description}\n${classItem.time}`);
+                        // Navigate to course page
+                        navigateToCourse(classItem);
                       }
                     } else if (isEditMode) {
                       openQuickAdd(dayIndex, timeSlot);
@@ -660,353 +666,288 @@ saveQuickClass = () => {
     </View>
   );
 
-  // Simplified Class Card Component - no teacher/room
-const ClassCard = ({ classItem, index }) => {
-  const isUpcoming = () => {
-    const now = new Date();
-    const [hour, minute] = classItem.time.split('-')[0].split(':').map(Number);
-    const classTime = new Date();
-    classTime.setHours(hour, minute, 0, 0);
-    return classTime > now && weekDates[selectedDayIndex].isToday;
-  };
+  // Simplified Class Card Component - with course navigation
+  const ClassCard = ({ classItem, index }) => {
+    const isUpcoming = () => {
+      const now = new Date();
+      const [hour, minute] = classItem.time.split('-')[0].split(':').map(Number);
+      const classTime = new Date();
+      classTime.setHours(hour, minute, 0, 0);
+      return classTime > now && weekDates[selectedDayIndex].isToday;
+    };
 
-  return (
-    <TouchableOpacity 
-      style={[
-        styles.classCard, 
-        { 
-          backgroundColor: theme.surface,
-          borderLeftWidth: isUpcoming() ? 4 : 0,
-          borderLeftColor: theme.success
-        }
-      ]}
-      onPress={() => {
-        if (!isEditMode) {
-          Alert.alert(
-            classItem.subject,
-            `${classItem.description}`,
-            [{ text: 'OK' }]
-          );
-        }
-      }}
-    >
-      <View style={[styles.classColorBar, { backgroundColor: classItem.color }]} />
-      
-      <View style={styles.classContent}>
-        <View style={styles.classHeader}>
-          <View style={styles.classMainInfo}>
-            <Text style={[styles.classSubject, { color: theme.text }]}>
-              {classItem.subject}
-            </Text>
-            <View style={[styles.classType, { 
-              backgroundColor: classItem.isExam ? theme.error + '20' : classItem.color + '20'
-            }]}>
-              <Text style={[styles.classTypeText, { 
-                color: classItem.isExam ? theme.error : classItem.color,
-                fontWeight: classItem.isExam ? 'bold' : '600'
-              }]}>
-                {classItem.type}
+    return (
+      <TouchableOpacity 
+        style={[
+          styles.classCard, 
+          { 
+            backgroundColor: theme.surface,
+            borderLeftWidth: isUpcoming() ? 4 : 0,
+            borderLeftColor: theme.success
+          }
+        ]}
+        onPress={() => {
+          if (!isEditMode) {
+            // Navigate to course page
+            navigateToCourse(classItem);
+          }
+        }}
+      >
+        <View style={[styles.classColorBar, { backgroundColor: classItem.color }]} />
+        
+        <View style={styles.classContent}>
+          <View style={styles.classHeader}>
+            <View style={styles.classMainInfo}>
+              <Text style={[styles.classSubject, { color: theme.text }]}>
+                {classItem.subject}
               </Text>
-              {classItem.isExam && (
-                <Ionicons name="alert-circle" size={12} color={theme.error} />
+              <View style={[styles.classType, { 
+                backgroundColor: classItem.isExam ? theme.error + '20' : classItem.color + '20'
+              }]}>
+                <Text style={[styles.classTypeText, { 
+                  color: classItem.isExam ? theme.error : classItem.color,
+                  fontWeight: classItem.isExam ? 'bold' : '600'
+                }]}>
+                  {classItem.type}
+                </Text>
+                {classItem.isExam && (
+                  <Ionicons name="alert-circle" size={12} color={theme.error} />
+                )}
+              </View>
+            </View>
+            
+            <View style={styles.classTime}>
+              <Text style={[styles.classTimeText, { color: theme.textSecondary }]}>
+                {classItem.time}
+              </Text>
+              {isUpcoming() && (
+                <View style={[styles.upcomingBadge, { backgroundColor: theme.success }]}>
+                  <Text style={styles.upcomingText}>Suivant</Text>
+                </View>
               )}
             </View>
           </View>
-          
-          <View style={styles.classTime}>
-            <Text style={[styles.classTimeText, { color: theme.textSecondary }]}>
-              {classItem.time}
-            </Text>
-            {isUpcoming() && (
-              <View style={[styles.upcomingBadge, { backgroundColor: theme.success }]}>
-                <Text style={styles.upcomingText}>Suivant</Text>
-              </View>
-            )}
-          </View>
         </View>
-      </View>
 
-      {/* Always show delete button when in edit mode */}
-      {isEditMode && (
-        <TouchableOpacity 
-          style={[styles.deleteClassButton, { backgroundColor: theme.error }]}
-          onPress={(e) => {
-            e.stopPropagation(); // Prevent card press
-            deleteClass(classItem);
-          }}
-        >
-          <Ionicons name="trash" size={16} color="#fff" />
-        </TouchableOpacity>
-      )}
-    </TouchableOpacity>
-  );
-};
-
-  // ULTRA-CLEAN Quick Add Modal - Course, Time, Type only
-QuickAddModal = () => {
-  const hours = Array.from({ length: 12 }, (_, i) => {
-    const hour = 8 + i;
-    return `${hour.toString().padStart(2, '0')}:00`;
-  });
-
-  const updateEndTime = (startTime) => {
-    const [hour] = startTime.split(':');
-    const nextHour = parseInt(hour) + 1;
-    const endHour = nextHour > 19 ? 19 : nextHour;
-    return `${endHour.toString().padStart(2, '0')}:00`;
+        {/* Always show delete button when in edit mode */}
+        {isEditMode && (
+          <TouchableOpacity 
+            style={[styles.deleteClassButton, { backgroundColor: theme.error }]}
+            onPress={(e) => {
+              e.stopPropagation();
+              deleteClass(classItem);
+            }}
+          >
+            <Ionicons name="trash" size={16} color="#fff" />
+          </TouchableOpacity>
+        )}
+      </TouchableOpacity>
+    );
   };
 
-  return (
-    <Modal
-      visible={showQuickAdd}
-      animationType="slide"
-      presentationStyle="formSheet"
-    >
-      <SafeAreaView style={[styles.modalContainer, { backgroundColor: theme.background }]}>
-        <View style={[styles.modalHeader, { borderBottomColor: theme.neutralLight }]}>
-          <Text style={[styles.modalTitle, { color: theme.text }]}>Ajouter un cours</Text>
-          <TouchableOpacity onPress={() => setShowQuickAdd(false)}>
-            <Ionicons name="close" size={24} color={theme.textSecondary} />
-          </TouchableOpacity>
-        </View>
+  // ULTRA-CLEAN Quick Add Modal
+  const QuickAddModal = () => {
+    const hours = Array.from({ length: 12 }, (_, i) => {
+      const hour = 8 + i;
+      return `${hour.toString().padStart(2, '0')}:00`;
+    });
 
-        <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
-          {/* Subject Selection - Removed asterisk */}
-          <View style={styles.formGroup}>
-            <Text style={[styles.formLabel, { color: theme.text }]}>Matière</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <View style={styles.horizontalScroll}>
-                {commonSubjects.map(subject => (
+    const updateEndTime = (startTime) => {
+      const [hour] = startTime.split(':');
+      const nextHour = parseInt(hour) + 1;
+      const endHour = nextHour > 19 ? 19 : nextHour;
+      return `${endHour.toString().padStart(2, '0')}:00`;
+    };
+
+    return (
+      <Modal
+        visible={showQuickAdd}
+        animationType="slide"
+        presentationStyle="formSheet"
+      >
+        <SafeAreaView style={[styles.modalContainer, { backgroundColor: theme.background }]}>
+          <View style={[styles.modalHeader, { borderBottomColor: theme.neutralLight }]}>
+            <Text style={[styles.modalTitle, { color: theme.text }]}>Ajouter un cours</Text>
+            <TouchableOpacity onPress={() => setShowQuickAdd(false)}>
+              <Ionicons name="close" size={24} color={theme.textSecondary} />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
+            {/* Subject Selection */}
+            <View style={styles.formGroup}>
+              <Text style={[styles.formLabel, { color: theme.text }]}>Matière</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                <View style={styles.horizontalScroll}>
+                  {commonSubjects.map(subject => (
+                    <TouchableOpacity
+                      key={subject}
+                      style={[
+                        styles.courseChip,
+                        { 
+                          backgroundColor: quickForm.subject === subject ? theme.primary : theme.surface,
+                          borderColor: quickForm.subject === subject ? theme.primary : theme.neutralLight
+                        }
+                      ]}
+                      onPress={() => {
+                        setQuickForm(prev => ({...prev, subject}));
+                      }}
+                    >
+                      <Text style={[
+                        styles.courseChipText,
+                        { color: quickForm.subject === subject ? '#fff' : theme.text }
+                      ]}>
+                        {subject}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </ScrollView>
+            </View>
+
+            {/* Time Selection */}
+            <View style={styles.formGroup}>
+              <Text style={[styles.formLabel, { color: theme.text }]}>Heure</Text>
+              
+              <View style={[styles.timeDisplayRow, { backgroundColor: theme.surface }]}>
+                <Text style={[styles.timeDisplayText, { color: theme.text }]}>
+                  {quickForm.startTime} → {quickForm.endTime}
+                </Text>
+              </View>
+
+              <View style={styles.timeGrid}>
+                {hours.map(hour => (
                   <TouchableOpacity
-                    key={subject}
+                    key={hour}
                     style={[
-                      styles.courseChip,
+                      styles.timeGridItem,
                       { 
-                        backgroundColor: quickForm.subject === subject ? theme.primary : theme.surface,
-                        borderColor: quickForm.subject === subject ? theme.primary : theme.neutralLight
+                        backgroundColor: quickForm.startTime === hour ? theme.primary : theme.surface,
+                        borderColor: quickForm.startTime === hour ? theme.primary : theme.neutralLight
                       }
                     ]}
                     onPress={() => {
-                      // Don't close modal, just update selection
-                      setQuickForm(prev => ({...prev, subject}));
+                      const endTime = updateEndTime(hour);
+                      setQuickForm(prev => ({
+                        ...prev, 
+                        startTime: hour,
+                        endTime: endTime
+                      }));
                     }}
                   >
                     <Text style={[
-                      styles.courseChipText,
-                      { color: quickForm.subject === subject ? '#fff' : theme.text }
+                      styles.timeGridText,
+                      { 
+                        color: quickForm.startTime === hour ? '#fff' : theme.text,
+                        fontWeight: quickForm.startTime === hour ? 'bold' : 'normal'
+                      }
                     ]}>
-                      {subject}
+                      {hour}
                     </Text>
                   </TouchableOpacity>
                 ))}
               </View>
-            </ScrollView>
-          </View>
-
-          {/* Time Selection */}
-          <View style={styles.formGroup}>
-            <Text style={[styles.formLabel, { color: theme.text }]}>Heure</Text>
-            
-            <View style={[styles.timeDisplayRow, { backgroundColor: theme.surface }]}>
-              <Text style={[styles.timeDisplayText, { color: theme.text }]}>
-                {quickForm.startTime} → {quickForm.endTime}
-              </Text>
             </View>
 
-            <View style={styles.timeGrid}>
-              {hours.map(hour => (
-                <TouchableOpacity
-                  key={hour}
-                  style={[
-                    styles.timeGridItem,
-                    { 
-                      backgroundColor: quickForm.startTime === hour ? theme.primary : theme.surface,
-                      borderColor: quickForm.startTime === hour ? theme.primary : theme.neutralLight
-                    }
-                  ]}
-                  onPress={() => {
-                    // Don't close modal, just update time
-                    const endTime = updateEndTime(hour);
-                    setQuickForm(prev => ({
-                      ...prev, 
-                      startTime: hour,
-                      endTime: endTime
-                    }));
-                  }}
-                >
-                  <Text style={[
-                    styles.timeGridText,
-                    { 
-                      color: quickForm.startTime === hour ? '#fff' : theme.text,
-                      fontWeight: quickForm.startTime === hour ? 'bold' : 'normal'
-                    }
-                  ]}>
-                    {hour}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          {/* Type Selection with Exam Options */}
-          <View style={styles.formGroup}>
-            <Text style={[styles.formLabel, { color: theme.text }]}>Type</Text>
-            <View style={styles.typeGrid}>
-              {[
-                { type: 'Cours', icon: 'book-outline', color: theme.primary },
-                { type: 'TP', icon: 'flask-outline', color: theme.accent },
-                { type: 'TD', icon: 'create-outline', color: theme.info },
-                { type: 'Contrôle', icon: 'alert-circle-outline', color: theme.warning, isExam: true },
-                { type: 'Test', icon: 'checkmark-circle-outline', color: theme.success, isExam: true },
-                { type: 'Examen', icon: 'school-outline', color: theme.error, isExam: true }
-              ].map(({ type, icon, color, isExam }) => (
-                <TouchableOpacity
-                  key={type}
-                  style={[
-                    styles.typeChip,
-                    { 
-                      backgroundColor: quickForm.type === type ? color : theme.surface,
-                      borderColor: quickForm.type === type ? color : theme.neutralLight
-                    }
-                  ]}
-                  onPress={() => {
-                    // Don't close modal, just update type
-                    setQuickForm(prev => ({...prev, type, isExam: !!isExam}));
-                  }}
-                >
-                  <Ionicons 
-                    name={icon} 
-                    size={16} 
-                    color={quickForm.type === type ? '#fff' : color} 
-                    style={{ marginBottom: 4 }} 
-                  />
-                  <Text style={[
-                    styles.typeChipText,
-                    { color: quickForm.type === type ? '#fff' : theme.text }
-                  ]}>
-                    {type}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          {/* Fix 3: One-time exam option */}
-          {quickForm.isExam && (
+            {/* Type Selection */}
             <View style={styles.formGroup}>
-              <Text style={[styles.formLabel, { color: theme.text }]}>Récurrence</Text>
-              <View style={styles.recurrenceOptions}>
-                <TouchableOpacity
-                  style={[
-                    styles.recurrenceOption,
-                    { 
-                      backgroundColor: !quickForm.isRecurring ? theme.primary : theme.surface,
-                      borderColor: !quickForm.isRecurring ? theme.primary : theme.neutralLight
-                    }
-                  ]}
-                  onPress={() => setQuickForm(prev => ({...prev, isRecurring: false}))}
-                >
-                  <Ionicons 
-                    name="calendar-outline" 
-                    size={16} 
-                    color={!quickForm.isRecurring ? '#fff' : theme.text} 
-                  />
-                  <Text style={[
-                    styles.recurrenceText,
-                    { color: !quickForm.isRecurring ? '#fff' : theme.text }
-                  ]}>
-                    Cette semaine seulement
-                  </Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity
-                  style={[
-                    styles.recurrenceOption,
-                    { 
-                      backgroundColor: quickForm.isRecurring ? theme.primary : theme.surface,
-                      borderColor: quickForm.isRecurring ? theme.primary : theme.neutralLight
-                    }
-                  ]}
-                  onPress={() => setQuickForm(prev => ({...prev, isRecurring: true}))}
-                >
-                  <Ionicons 
-                    name="repeat" 
-                    size={16} 
-                    color={quickForm.isRecurring ? '#fff' : theme.text} 
-                  />
-                  <Text style={[
-                    styles.recurrenceText,
-                    { color: quickForm.isRecurring ? '#fff' : theme.text }
-                  ]}>
-                    Chaque semaine
-                  </Text>
-                </TouchableOpacity>
+              <Text style={[styles.formLabel, { color: theme.text }]}>Type</Text>
+              <View style={styles.typeGrid}>
+                {[
+                  { type: 'Cours', icon: 'book-outline', color: theme.primary },
+                  { type: 'TP', icon: 'flask-outline', color: theme.accent },
+                  { type: 'TD', icon: 'create-outline', color: theme.info },
+                  { type: 'Contrôle', icon: 'alert-circle-outline', color: theme.warning, isExam: true },
+                  { type: 'Test', icon: 'checkmark-circle-outline', color: theme.success, isExam: true },
+                  { type: 'Examen', icon: 'school-outline', color: theme.error, isExam: true }
+                ].map(({ type, icon, color, isExam }) => (
+                  <TouchableOpacity
+                    key={type}
+                    style={[
+                      styles.typeChip,
+                      { 
+                        backgroundColor: quickForm.type === type ? color : theme.surface,
+                        borderColor: quickForm.type === type ? color : theme.neutralLight
+                      }
+                    ]}
+                    onPress={() => {
+                      setQuickForm(prev => ({...prev, type, isExam: !!isExam}));
+                    }}
+                  >
+                    <Ionicons 
+                      name={icon} 
+                      size={16} 
+                      color={quickForm.type === type ? '#fff' : color} 
+                      style={{ marginBottom: 4 }} 
+                    />
+                    <Text style={[
+                      styles.typeChipText,
+                      { color: quickForm.type === type ? '#fff' : theme.text }
+                    ]}>
+                      {type}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
               </View>
             </View>
-          )}
 
-          {/* Enhanced Preview */}
-          {quickForm.subject && (
-            <View style={[styles.previewCard, { backgroundColor: theme.primary + '10' }]}>
-              <View style={styles.previewHeader}>
-                <Ionicons name="eye-outline" size={20} color={theme.primary} />
-                <Text style={[styles.previewTitle, { color: theme.primary }]}>Aperçu</Text>
-              </View>
-              <View style={styles.previewContent}>
-                <Text style={[styles.previewSubject, { color: theme.text }]}>
-                  {quickForm.subject}
-                </Text>
-                <View style={styles.previewMeta}>
-                  <View style={[styles.previewTypeBadge, { backgroundColor: theme.primary + '20' }]}>
-                    <Text style={[styles.previewTypeText, { color: theme.primary }]}>
-                      {quickForm.type}
+            {/* Preview */}
+            {quickForm.subject && (
+              <View style={[styles.previewCard, { backgroundColor: theme.primary + '10' }]}>
+                <View style={styles.previewHeader}>
+                  <Ionicons name="eye-outline" size={20} color={theme.primary} />
+                  <Text style={[styles.previewTitle, { color: theme.primary }]}>Aperçu</Text>
+                </View>
+                <View style={styles.previewContent}>
+                  <Text style={[styles.previewSubject, { color: theme.text }]}>
+                    {quickForm.subject}
+                  </Text>
+                  <View style={styles.previewMeta}>
+                    <View style={[styles.previewTypeBadge, { backgroundColor: theme.primary + '20' }]}>
+                      <Text style={[styles.previewTypeText, { color: theme.primary }]}>
+                        {quickForm.type}
+                      </Text>
+                    </View>
+                    <Text style={[styles.previewTime, { color: theme.textSecondary }]}>
+                      {quickForm.startTime} - {quickForm.endTime}
                     </Text>
                   </View>
-                  <Text style={[styles.previewTime, { color: theme.textSecondary }]}>
-                    {quickForm.startTime} - {quickForm.endTime}
-                  </Text>
                 </View>
-                {quickForm.isExam && (
-                  <Text style={[styles.recurrenceInfo, { color: theme.textSecondary }]}>
-                    {quickForm.isRecurring ? 'Répète chaque semaine' : 'Une seule fois'}
-                  </Text>
-                )}
               </View>
-            </View>
-          )}
-        </ScrollView>
+            )}
+          </ScrollView>
 
-        <View style={[styles.modalFooter, { backgroundColor: theme.background, borderTopColor: theme.neutralLight }]}>
-          <TouchableOpacity
-            style={[styles.cancelButton, { backgroundColor: theme.neutralLight }]}
-            onPress={() => setShowQuickAdd(false)}
-          >
-            <Text style={[styles.cancelButtonText, { color: theme.textSecondary }]}>Annuler</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.saveButton, 
-              { 
-                backgroundColor: quickForm.subject ? theme.primary : theme.neutralLight,
-                opacity: quickForm.subject ? 1 : 0.5
-              }
-            ]}
-            onPress={saveQuickClass}
-            disabled={!quickForm.subject}
-          >
-            <Ionicons name="add" size={20} color={quickForm.subject ? '#fff' : theme.textSecondary} />
-            <Text style={[
-              styles.saveButtonText,
-              { color: quickForm.subject ? '#fff' : theme.textSecondary }
-            ]}>
-              Ajouter
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    </Modal>
-  );
-};
+          <View style={[styles.modalFooter, { backgroundColor: theme.background, borderTopColor: theme.neutralLight }]}>
+            <TouchableOpacity
+              style={[styles.cancelButton, { backgroundColor: theme.neutralLight }]}
+              onPress={() => setShowQuickAdd(false)}
+            >
+              <Text style={[styles.cancelButtonText, { color: theme.textSecondary }]}>Annuler</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.saveButton, 
+                { 
+                  backgroundColor: quickForm.subject ? theme.primary : theme.neutralLight,
+                  opacity: quickForm.subject ? 1 : 0.5
+                }
+              ]}
+              onPress={saveQuickClass}
+              disabled={!quickForm.subject}
+            >
+              <Ionicons name="add" size={20} color={quickForm.subject ? '#fff' : theme.textSecondary} />
+              <Text style={[
+                styles.saveButtonText,
+                { color: quickForm.subject ? '#fff' : theme.textSecondary }
+              ]}>
+                Ajouter
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      </Modal>
+    );
+  };
 
   // Empty State Component
   const EmptyState = () => (
@@ -1062,7 +1003,6 @@ QuickAddModal = () => {
         <WeekGridView />
       )}
 
-      {/* Quick Add Modal */}
       <QuickAddModal />
     </SafeAreaView>
   );
@@ -1075,7 +1015,7 @@ const styles = StyleSheet.create({
   // ENHANCED HEADER STYLES
   header: {
     paddingTop: 60,
-    paddingBottom: 35, // Slightly larger for complex navigation
+    paddingBottom: 35,
     paddingHorizontal: 20,
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
@@ -1083,7 +1023,7 @@ const styles = StyleSheet.create({
   headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start', // Changed to flex-start for better alignment
+    alignItems: 'flex-start',
   },
   headerLeft: {
     flex: 1,
@@ -1153,12 +1093,12 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   
-  // Action Buttons (consistent with other screens)
+  // Action Buttons
   headerActions: {
     flexDirection: 'row',
     gap: 8,
     alignItems: 'flex-start',
-    marginTop: 4, // Slight offset to align with title
+    marginTop: 4,
   },
   actionButton: {
     width: 40,
@@ -1168,12 +1108,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   
-  // Enhanced Day Selector (overlapping style)
+  // Enhanced Day Selector
   daySelector: {
-    marginTop: -20, // Increased overlap
+    marginTop: -20,
     marginHorizontal: 20,
     borderRadius: 20,
-    paddingVertical: 16, // Increased padding
+    paddingVertical: 16,
     paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
@@ -1188,17 +1128,17 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     marginHorizontal: 4,
-    borderRadius: 14, // Slightly larger radius
-    minWidth: 64, // Consistent width
+    borderRadius: 14,
+    minWidth: 64,
     position: 'relative',
   },
   dayText: {
     fontSize: 12,
-    fontWeight: '600', // Bolder
+    fontWeight: '600',
     marginBottom: 6,
   },
   dateText: {
-    fontSize: 18, // Larger date
+    fontSize: 18,
     fontWeight: 'bold',
   },
   todayIndicator: {
@@ -1231,36 +1171,35 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingHorizontal: 10,
   },
-gridHeader: {
-  flexDirection: 'row',
-  paddingBottom: 10,
-  borderBottomWidth: 1,
-  borderBottomColor: '#E0E0E0',
-  marginBottom: 10,
-  paddingHorizontal: 5, // Add padding
-},
-timeColumn: {
-  width: 50, // Reduced from 60
-  alignItems: 'center',
-  justifyContent: 'center',
-},
-dayColumn: {
-  flex: 1,
-  alignItems: 'center',
-  paddingHorizontal: 1, // Reduced padding
-  minWidth: 45, // Add minimum width
-},
-gridHeaderText: {
-  fontSize: 12, // Reduced from 14
-  fontWeight: 'bold',
-},
-gridHeaderDate: {
-  fontSize: 16, // Larger date
-  marginTop: 2,
-  fontWeight: 'bold',
-},
-
-gridRow: {
+  gridHeader: {
+    flexDirection: 'row',
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+    marginBottom: 10,
+    paddingHorizontal: 5,
+  },
+  timeColumn: {
+    width: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dayColumn: {
+    flex: 1,
+    alignItems: 'center',
+    paddingHorizontal: 1,
+    minWidth: 45,
+  },
+  gridHeaderText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  gridHeaderDate: {
+    fontSize: 16,
+    marginTop: 2,
+    fontWeight: 'bold',
+  },
+  gridRow: {
     flexDirection: 'row',
     marginBottom: 2,
   },
@@ -1268,16 +1207,16 @@ gridRow: {
     fontSize: 12,
     fontWeight: '500',
   },
-gridCell: {
-  flex: 1,
-  minHeight: 50, // Reduced from 60
-  marginHorizontal: 0.5, // Reduced margin
-  borderRadius: 4,
-  padding: 3, // Reduced padding
-  borderWidth: 0.5, // Thinner border
-  borderColor: '#E0E0E0',
-  position: 'relative',
-},
+  gridCell: {
+    flex: 1,
+    minHeight: 50,
+    marginHorizontal: 0.5,
+    borderRadius: 4,
+    padding: 3,
+    borderWidth: 0.5,
+    borderColor: '#E0E0E0',
+    position: 'relative',
+  },
   gridClassContent: {
     flex: 1,
     justifyContent: 'center',
@@ -1402,12 +1341,6 @@ gridCell: {
     fontSize: 9,
     fontWeight: 'bold',
   },
-  classDetails: {
-    marginTop: 4,
-  },
-  classDetailText: {
-    fontSize: 12,
-  },
   deleteClassButton: {
     width: 36,
     height: 36,
@@ -1442,7 +1375,7 @@ gridCell: {
     fontWeight: '600',
   },
   
-  // SIMPLIFIED Modal Styles
+  // Modal Styles
   modalContainer: {
     flex: 1,
   },
@@ -1471,7 +1404,7 @@ gridCell: {
     marginBottom: 12,
   },
   
-  // Horizontal course selection
+  // Course selection
   horizontalScroll: {
     flexDirection: 'row',
     gap: 10,
@@ -1492,56 +1425,7 @@ gridCell: {
     textAlign: 'center',
   },
   
-  // Time picker - horizontal layout
-  timePickerRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 16,
-    borderRadius: 16,
-    padding: 20,
-  },
-  timePickerColumn: {
-    flex: 1,
-  },
-  timeLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    marginBottom: 12,
-    textTransform: 'uppercase',
-    textAlign: 'center',
-  },
-  timeSelector: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginBottom: 12,
-    alignItems: 'center',
-  },
-  timeSelectorText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  timeOptions: {
-    maxHeight: 150,
-    borderRadius: 8,
-  },
-  timeOptionItem: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 6,
-    marginVertical: 1,
-  },
-  timeOptionText: {
-    fontSize: 14,
-    textAlign: 'center',
-  },
-  timeArrowContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingTop: 30,
-    width: 40,
-  },
+  // Time picker
   timeDisplayRow: {
     paddingHorizontal: 20,
     paddingVertical: 16,
@@ -1560,7 +1444,7 @@ gridCell: {
     justifyContent: 'space-between',
   },
   timeGridItem: {
-    width: '23%', // 4 items per row
+    width: '23%',
     paddingVertical: 12,
     borderRadius: 10,
     borderWidth: 2,
@@ -1570,14 +1454,14 @@ gridCell: {
     fontSize: 14,
     fontWeight: '600',
   },
-    typeGrid: {
+  typeGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
     justifyContent: 'space-between',
   },
   typeChip: {
-    width: '48%', // 2 items per row
+    width: '48%',
     paddingVertical: 16,
     paddingHorizontal: 12,
     borderRadius: 12,
@@ -1589,7 +1473,6 @@ gridCell: {
     fontWeight: '600',
     textAlign: 'center',
   },
-
   
   // Preview section
   previewCard: {
@@ -1632,8 +1515,8 @@ gridCell: {
     fontSize: 14,
     fontWeight: '500',
   },
-  // Fixed footer
-
+  
+  // Modal footer
   modalFooter: {
     flexDirection: 'row',
     gap: 12,
@@ -1664,37 +1547,7 @@ gridCell: {
     fontSize: 16,
     fontWeight: '600',
   },
-
-    deleteClassButton: {
-    width: 36,
-    height: 36,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 18,
-    alignSelf: 'center',
-    marginRight: 12,
+  bottomPadding: {
+    height: 40,
   },
-  recurrenceOptions: {
-    gap: 12,
-  },
-  recurrenceOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 2,
-    gap: 8,
-  },
-  recurrenceText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  recurrenceInfo: {
-    fontSize: 12,
-    fontStyle: 'italic',
-    marginTop: 4,
-  },
-
-
 });
