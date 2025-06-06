@@ -318,44 +318,56 @@ export default function ScheduleScreen() {
   };
 
   // Ultra-simplified save function
-  const saveQuickClass = () => {
-    if (!quickForm.subject.trim()) {
-      Alert.alert('Erreur', 'Veuillez choisir une matière');
-      return;
-    }
+saveQuickClass = () => {
+  if (!quickForm.subject.trim()) {
+    Alert.alert('Erreur', 'Veuillez choisir une matière');
+    return;
+  }
 
-    const newClass = {
-      id: `${currentWeek}-${quickAddPosition.day + 1}-${Date.now()}`,
-      time: `${quickForm.startTime}-${quickForm.endTime}`,
-      subject: quickForm.subject,
-      teacher: '', // No teacher needed
-      room: '', // No room needed
-      type: quickForm.type,
-      color: getSubjectColor(quickForm.subject),
-      description: `${quickForm.type} - ${quickForm.subject}`,
-      isExam: quickForm.type === 'Contrôle' || quickForm.type === 'Test' || quickForm.type === 'Examen'
-    };
+  const newClass = {
+    id: `${currentWeek}-${quickAddPosition.day + 1}-${Date.now()}`,
+    time: `${quickForm.startTime}-${quickForm.endTime}`,
+    subject: quickForm.subject,
+    teacher: '',
+    room: '',
+    type: quickForm.type,
+    color: getSubjectColor(quickForm.subject),
+    description: `${quickForm.type} - ${quickForm.subject}`,
+    isExam: quickForm.isExam || false,
+    isRecurring: quickForm.isRecurring || false,
+    weekOffset: quickForm.isExam && !quickForm.isRecurring ? currentWeek : null // Only for this week if non-recurring exam
+  };
 
-    const dayKey = quickAddPosition.day + 1;
-    const updatedSchedule = { ...scheduleData };
+  const dayKey = quickAddPosition.day + 1;
+  const updatedSchedule = { ...scheduleData };
 
-    if (!updatedSchedule[dayKey]) {
-      updatedSchedule[dayKey] = [];
-    }
-    
-    updatedSchedule[dayKey].push(newClass);
-    // Sort by time
-    updatedSchedule[dayKey].sort((a, b) => {
-      const timeA = a.time.split('-')[0];
-      const timeB = b.time.split('-')[0];
-      return timeA.localeCompare(timeB);
-    });
+  if (!updatedSchedule[dayKey]) {
+    updatedSchedule[dayKey] = [];
+  }
+  
+  updatedSchedule[dayKey].push(newClass);
+  updatedSchedule[dayKey].sort((a, b) => {
+    const timeA = a.time.split('-')[0];
+    const timeB = b.time.split('-')[0];
+    return timeA.localeCompare(timeB);
+  });
 
     setScheduleData(updatedSchedule);
     setShowQuickAdd(false);
-    
-    Alert.alert('Succès', 'Cours ajouté avec succès');
+
+    setQuickForm({
+    subject: '',
+    startTime: '08:00',
+    endTime: '09:00',
+    type: 'Cours',
+    isExam: false,
+    isRecurring: false
+  });
+  
+  Alert.alert('Succès', 'Cours ajouté avec succès');
   };
+
+  
 
   const deleteClass = (classItem) => {
     Alert.alert(
@@ -660,80 +672,86 @@ export default function ScheduleScreen() {
   );
 
   // Simplified Class Card Component - no teacher/room
-  const ClassCard = ({ classItem, index }) => {
-    const isUpcoming = () => {
-      const now = new Date();
-      const [hour, minute] = classItem.time.split('-')[0].split(':').map(Number);
-      const classTime = new Date();
-      classTime.setHours(hour, minute, 0, 0);
-      return classTime > now && weekDates[selectedDayIndex].isToday;
-    };
+const ClassCard = ({ classItem, index }) => {
+  const isUpcoming = () => {
+    const now = new Date();
+    const [hour, minute] = classItem.time.split('-')[0].split(':').map(Number);
+    const classTime = new Date();
+    classTime.setHours(hour, minute, 0, 0);
+    return classTime > now && weekDates[selectedDayIndex].isToday;
+  };
 
-    return (
-      <TouchableOpacity 
-        style={[
-          styles.classCard, 
-          { 
-            backgroundColor: theme.surface,
-            borderLeftWidth: isUpcoming() ? 4 : 0,
-            borderLeftColor: theme.success
-          }
-        ]}
-        onPress={() => {
+  return (
+    <TouchableOpacity 
+      style={[
+        styles.classCard, 
+        { 
+          backgroundColor: theme.surface,
+          borderLeftWidth: isUpcoming() ? 4 : 0,
+          borderLeftColor: theme.success
+        }
+      ]}
+      onPress={() => {
+        if (!isEditMode) {
           Alert.alert(
             classItem.subject,
             `${classItem.description}`,
             [{ text: 'OK' }]
           );
-        }}
-      >
-        <View style={[styles.classColorBar, { backgroundColor: classItem.color }]} />
-        
-        <View style={styles.classContent}>
-          <View style={styles.classHeader}>
-            <View style={styles.classMainInfo}>
-              <Text style={[styles.classSubject, { color: theme.text }]}>
-                {classItem.subject}
-              </Text>
-              <View style={[styles.classType, { 
-                backgroundColor: classItem.isExam ? theme.error + '20' : classItem.color + '20'
+        }
+      }}
+    >
+      <View style={[styles.classColorBar, { backgroundColor: classItem.color }]} />
+      
+      <View style={styles.classContent}>
+        <View style={styles.classHeader}>
+          <View style={styles.classMainInfo}>
+            <Text style={[styles.classSubject, { color: theme.text }]}>
+              {classItem.subject}
+            </Text>
+            <View style={[styles.classType, { 
+              backgroundColor: classItem.isExam ? theme.error + '20' : classItem.color + '20'
+            }]}>
+              <Text style={[styles.classTypeText, { 
+                color: classItem.isExam ? theme.error : classItem.color,
+                fontWeight: classItem.isExam ? 'bold' : '600'
               }]}>
-                <Text style={[styles.classTypeText, { 
-                  color: classItem.isExam ? theme.error : classItem.color,
-                  fontWeight: classItem.isExam ? 'bold' : '600'
-                }]}>
-                  {classItem.type}
-                </Text>
-                {classItem.isExam && (
-                  <Ionicons name="alert-circle" size={12} color={theme.error} />
-                )}
-              </View>
-            </View>
-            
-            <View style={styles.classTime}>
-              <Text style={[styles.classTimeText, { color: theme.textSecondary }]}>
-                {classItem.time}
+                {classItem.type}
               </Text>
-              {isUpcoming() && (
-                <View style={[styles.upcomingBadge, { backgroundColor: theme.success }]}>
-                  <Text style={styles.upcomingText}>Suivant</Text>
-                </View>
+              {classItem.isExam && (
+                <Ionicons name="alert-circle" size={12} color={theme.error} />
               )}
             </View>
           </View>
+          
+          <View style={styles.classTime}>
+            <Text style={[styles.classTimeText, { color: theme.textSecondary }]}>
+              {classItem.time}
+            </Text>
+            {isUpcoming() && (
+              <View style={[styles.upcomingBadge, { backgroundColor: theme.success }]}>
+                <Text style={styles.upcomingText}>Suivant</Text>
+              </View>
+            )}
+          </View>
         </View>
+      </View>
 
-        {isEditMode && (
-          <TouchableOpacity 
-            style={[styles.deleteClassButton, { backgroundColor: theme.error + '20' }]}
-            onPress={() => deleteClass(classItem)}
-          >
-            <Ionicons name="trash" size={16} color={theme.error} />
-          </TouchableOpacity>
-        )}
-      </TouchableOpacity>
-    );
-  };
+      {/* Always show delete button when in edit mode */}
+      {isEditMode && (
+        <TouchableOpacity 
+          style={[styles.deleteClassButton, { backgroundColor: theme.error }]}
+          onPress={(e) => {
+            e.stopPropagation(); // Prevent card press
+            deleteClass(classItem);
+          }}
+        >
+          <Ionicons name="trash" size={16} color="#fff" />
+        </TouchableOpacity>
+      )}
+    </TouchableOpacity>
+  );
+};
 
   // ULTRA-CLEAN Quick Add Modal - Course, Time, Type only
 QuickAddModal = () => {
@@ -745,7 +763,7 @@ QuickAddModal = () => {
   const updateEndTime = (startTime) => {
     const [hour] = startTime.split(':');
     const nextHour = parseInt(hour) + 1;
-    const endHour = nextHour > 19 ? 19 : nextHour; // Cap at 19:00
+    const endHour = nextHour > 19 ? 19 : nextHour;
     return `${endHour.toString().padStart(2, '0')}:00`;
   };
 
@@ -756,7 +774,6 @@ QuickAddModal = () => {
       presentationStyle="formSheet"
     >
       <SafeAreaView style={[styles.modalContainer, { backgroundColor: theme.background }]}>
-        {/* Fixed Header */}
         <View style={[styles.modalHeader, { borderBottomColor: theme.neutralLight }]}>
           <Text style={[styles.modalTitle, { color: theme.text }]}>Ajouter un cours</Text>
           <TouchableOpacity onPress={() => setShowQuickAdd(false)}>
@@ -765,9 +782,9 @@ QuickAddModal = () => {
         </View>
 
         <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
-          {/* Subject Selection - Improved */}
+          {/* Subject Selection - Removed asterisk */}
           <View style={styles.formGroup}>
-            <Text style={[styles.formLabel, { color: theme.text }]}>Matière *</Text>
+            <Text style={[styles.formLabel, { color: theme.text }]}>Matière</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View style={styles.horizontalScroll}>
                 {commonSubjects.map(subject => (
@@ -780,7 +797,10 @@ QuickAddModal = () => {
                         borderColor: quickForm.subject === subject ? theme.primary : theme.neutralLight
                       }
                     ]}
-                    onPress={() => setQuickForm(prev => ({...prev, subject}))}
+                    onPress={() => {
+                      // Don't close modal, just update selection
+                      setQuickForm(prev => ({...prev, subject}));
+                    }}
                   >
                     <Text style={[
                       styles.courseChipText,
@@ -794,18 +814,16 @@ QuickAddModal = () => {
             </ScrollView>
           </View>
 
-          {/* Simplified Time Picker */}
+          {/* Time Selection */}
           <View style={styles.formGroup}>
             <Text style={[styles.formLabel, { color: theme.text }]}>Heure</Text>
             
-            {/* Current Time Display */}
             <View style={[styles.timeDisplayRow, { backgroundColor: theme.surface }]}>
               <Text style={[styles.timeDisplayText, { color: theme.text }]}>
                 {quickForm.startTime} → {quickForm.endTime}
               </Text>
             </View>
 
-            {/* Time Grid - Better Layout */}
             <View style={styles.timeGrid}>
               {hours.map(hour => (
                 <TouchableOpacity
@@ -818,6 +836,7 @@ QuickAddModal = () => {
                     }
                   ]}
                   onPress={() => {
+                    // Don't close modal, just update time
                     const endTime = updateEndTime(hour);
                     setQuickForm(prev => ({
                       ...prev, 
@@ -840,7 +859,7 @@ QuickAddModal = () => {
             </View>
           </View>
 
-          {/* Improved Type Selection */}
+          {/* Type Selection with Exam Options */}
           <View style={styles.formGroup}>
             <Text style={[styles.formLabel, { color: theme.text }]}>Type</Text>
             <View style={styles.typeGrid}>
@@ -848,10 +867,10 @@ QuickAddModal = () => {
                 { type: 'Cours', icon: 'book-outline', color: theme.primary },
                 { type: 'TP', icon: 'flask-outline', color: theme.accent },
                 { type: 'TD', icon: 'create-outline', color: theme.info },
-                { type: 'Contrôle', icon: 'alert-circle-outline', color: theme.warning },
-                { type: 'Test', icon: 'checkmark-circle-outline', color: theme.success },
-                { type: 'Examen', icon: 'school-outline', color: theme.error }
-              ].map(({ type, icon, color }) => (
+                { type: 'Contrôle', icon: 'alert-circle-outline', color: theme.warning, isExam: true },
+                { type: 'Test', icon: 'checkmark-circle-outline', color: theme.success, isExam: true },
+                { type: 'Examen', icon: 'school-outline', color: theme.error, isExam: true }
+              ].map(({ type, icon, color, isExam }) => (
                 <TouchableOpacity
                   key={type}
                   style={[
@@ -861,7 +880,10 @@ QuickAddModal = () => {
                       borderColor: quickForm.type === type ? color : theme.neutralLight
                     }
                   ]}
-                  onPress={() => setQuickForm(prev => ({...prev, type}))}
+                  onPress={() => {
+                    // Don't close modal, just update type
+                    setQuickForm(prev => ({...prev, type, isExam: !!isExam}));
+                  }}
                 >
                   <Ionicons 
                     name={icon} 
@@ -879,6 +901,60 @@ QuickAddModal = () => {
               ))}
             </View>
           </View>
+
+          {/* Fix 3: One-time exam option */}
+          {quickForm.isExam && (
+            <View style={styles.formGroup}>
+              <Text style={[styles.formLabel, { color: theme.text }]}>Récurrence</Text>
+              <View style={styles.recurrenceOptions}>
+                <TouchableOpacity
+                  style={[
+                    styles.recurrenceOption,
+                    { 
+                      backgroundColor: !quickForm.isRecurring ? theme.primary : theme.surface,
+                      borderColor: !quickForm.isRecurring ? theme.primary : theme.neutralLight
+                    }
+                  ]}
+                  onPress={() => setQuickForm(prev => ({...prev, isRecurring: false}))}
+                >
+                  <Ionicons 
+                    name="calendar-outline" 
+                    size={16} 
+                    color={!quickForm.isRecurring ? '#fff' : theme.text} 
+                  />
+                  <Text style={[
+                    styles.recurrenceText,
+                    { color: !quickForm.isRecurring ? '#fff' : theme.text }
+                  ]}>
+                    Cette semaine seulement
+                  </Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  style={[
+                    styles.recurrenceOption,
+                    { 
+                      backgroundColor: quickForm.isRecurring ? theme.primary : theme.surface,
+                      borderColor: quickForm.isRecurring ? theme.primary : theme.neutralLight
+                    }
+                  ]}
+                  onPress={() => setQuickForm(prev => ({...prev, isRecurring: true}))}
+                >
+                  <Ionicons 
+                    name="repeat" 
+                    size={16} 
+                    color={quickForm.isRecurring ? '#fff' : theme.text} 
+                  />
+                  <Text style={[
+                    styles.recurrenceText,
+                    { color: quickForm.isRecurring ? '#fff' : theme.text }
+                  ]}>
+                    Chaque semaine
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
 
           {/* Enhanced Preview */}
           {quickForm.subject && (
@@ -901,12 +977,16 @@ QuickAddModal = () => {
                     {quickForm.startTime} - {quickForm.endTime}
                   </Text>
                 </View>
+                {quickForm.isExam && (
+                  <Text style={[styles.recurrenceInfo, { color: theme.textSecondary }]}>
+                    {quickForm.isRecurring ? 'Répète chaque semaine' : 'Une seule fois'}
+                  </Text>
+                )}
               </View>
             </View>
           )}
         </ScrollView>
 
-        {/* Fixed Footer */}
         <View style={[styles.modalFooter, { backgroundColor: theme.background, borderTopColor: theme.neutralLight }]}>
           <TouchableOpacity
             style={[styles.cancelButton, { backgroundColor: theme.neutralLight }]}
@@ -1591,4 +1671,37 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+
+    deleteClassButton: {
+    width: 36,
+    height: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 18,
+    alignSelf: 'center',
+    marginRight: 12,
+  },
+  recurrenceOptions: {
+    gap: 12,
+  },
+  recurrenceOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 2,
+    gap: 8,
+  },
+  recurrenceText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  recurrenceInfo: {
+    fontSize: 12,
+    fontStyle: 'italic',
+    marginTop: 4,
+  },
+
+
 });
