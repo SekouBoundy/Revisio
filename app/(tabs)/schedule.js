@@ -482,7 +482,7 @@ export default function ScheduleScreen() {
           </View>
         </View>
         
-        {/* Action Buttons */}
+        {/* Action Buttons - Reduced to 2 */}
         <View style={styles.headerActions}>
           <TouchableOpacity 
             style={[
@@ -510,13 +510,6 @@ export default function ScheduleScreen() {
               size={20} 
               color={isEditMode ? theme.primary : '#FFFFFF'} 
             />
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.actionButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}
-            onPress={() => console.log('Calendar options')}
-          >
-            <Ionicons name="calendar-outline" size={20} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
       </View>
@@ -614,8 +607,15 @@ export default function ScheduleScreen() {
                       } else {
                         Alert.alert(
                           classItem.subject,
-                          `${classItem.description}`,
-                          [{ text: 'OK' }]
+                          `${classItem.description}\n${classItem.time}`,
+                          [
+                            { text: 'OK' },
+                            ...(isEditMode ? [{ 
+                              text: 'Supprimer', 
+                              style: 'destructive',
+                              onPress: () => deleteClass(classItem) 
+                            }] : [])
+                          ]
                         );
                       }
                     } else if (isEditMode) {
@@ -792,25 +792,33 @@ export default function ScheduleScreen() {
               </ScrollView>
             </View>
 
-            {/* Time Picker - Alarm Clock Style */}
+            {/* Time Picker - Horizontal Layout */}
             <View style={styles.formGroup}>
               <Text style={[styles.formLabel, { color: theme.text }]}>Heure</Text>
-              <View style={styles.timePickerContainer}>
-                <View style={styles.timePicker}>
-                  <Text style={[styles.timeLabel, { color: theme.textSecondary }]}>Début</Text>
+              <View style={[styles.timePickerRow, { backgroundColor: theme.surface }]}>
+                {/* Start Time */}
+                <View style={styles.timePickerColumn}>
+                  <Text style={[styles.timeLabel, { color: theme.textSecondary }]}>DÉBUT</Text>
+                  <TouchableOpacity 
+                    style={[styles.timeSelector, { backgroundColor: theme.surface, borderColor: theme.neutralLight }]}
+                    onPress={() => {/* Keep static - no modal */}}
+                  >
+                    <Text style={[styles.timeSelectorText, { color: theme.text }]}>{quickForm.startTime}</Text>
+                    <Ionicons name="chevron-down" size={16} color={theme.textSecondary} />
+                  </TouchableOpacity>
+                  
+                  {/* Static Time Options */}
                   <ScrollView 
-                    style={styles.timeScrollView}
+                    style={styles.timeOptions}
                     showsVerticalScrollIndicator={false}
-                    snapToInterval={40}
-                    decelerationRate="fast"
                   >
                     {hours.map(hour => (
                       <TouchableOpacity
                         key={hour}
                         style={[
-                          styles.timeOption,
+                          styles.timeOptionItem,
                           { 
-                            backgroundColor: quickForm.startTime === hour ? theme.primary : 'transparent',
+                            backgroundColor: quickForm.startTime === hour ? theme.primary + '20' : 'transparent',
                           }
                         ]}
                         onPress={() => {
@@ -825,7 +833,7 @@ export default function ScheduleScreen() {
                         <Text style={[
                           styles.timeOptionText,
                           { 
-                            color: quickForm.startTime === hour ? '#fff' : theme.text,
+                            color: quickForm.startTime === hour ? theme.primary : theme.text,
                             fontWeight: quickForm.startTime === hour ? 'bold' : 'normal'
                           }
                         ]}>
@@ -836,13 +844,15 @@ export default function ScheduleScreen() {
                   </ScrollView>
                 </View>
 
-                <View style={styles.timeArrow}>
+                {/* Arrow */}
+                <View style={styles.timeArrowContainer}>
                   <Ionicons name="arrow-forward" size={20} color={theme.textSecondary} />
                 </View>
 
-                <View style={styles.timePicker}>
-                  <Text style={[styles.timeLabel, { color: theme.textSecondary }]}>Fin</Text>
-                  <View style={[styles.timeDisplay, { backgroundColor: theme.surface }]}>
+                {/* End Time */}
+                <View style={styles.timePickerColumn}>
+                  <Text style={[styles.timeLabel, { color: theme.textSecondary }]}>FIN</Text>
+                  <View style={[styles.timeDisplay, { backgroundColor: theme.surface, borderColor: theme.neutralLight }]}>
                     <Text style={[styles.timeDisplayText, { color: theme.text }]}>
                       {quickForm.endTime}
                     </Text>
@@ -851,22 +861,34 @@ export default function ScheduleScreen() {
               </View>
             </View>
 
-            {/* Type Selection */}
+            {/* Type Selection - Better Visual Hierarchy */}
             <View style={styles.formGroup}>
               <Text style={[styles.formLabel, { color: theme.text }]}>Type</Text>
               <View style={styles.typeGrid}>
-                {['Cours', 'TP', 'Contrôle', 'Test', 'Examen'].map(type => (
+                {[
+                  { type: 'Cours', icon: 'book-outline', color: theme.primary },
+                  { type: 'TP', icon: 'flask-outline', color: theme.accent },
+                  { type: 'Contrôle', icon: 'alert-circle-outline', color: theme.warning },
+                  { type: 'Test', icon: 'checkmark-circle-outline', color: theme.info },
+                  { type: 'Examen', icon: 'school-outline', color: theme.error }
+                ].map(({ type, icon, color }) => (
                   <TouchableOpacity
                     key={type}
                     style={[
                       styles.typeChip,
                       { 
-                        backgroundColor: quickForm.type === type ? theme.primary : theme.surface,
-                        borderColor: quickForm.type === type ? theme.primary : theme.neutralLight
+                        backgroundColor: quickForm.type === type ? color : theme.surface,
+                        borderColor: quickForm.type === type ? color : theme.neutralLight
                       }
                     ]}
                     onPress={() => setQuickForm(prev => ({...prev, type}))}
                   >
+                    <Ionicons 
+                      name={icon} 
+                      size={16} 
+                      color={quickForm.type === type ? '#fff' : color} 
+                      style={{ marginRight: 6 }} 
+                    />
                     <Text style={[
                       styles.typeChipText,
                       { color: quickForm.type === type ? '#fff' : theme.text }
@@ -1403,51 +1425,60 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   
-  // Time picker - alarm clock style
-  timePickerContainer: {
+  // Time picker - horizontal layout
+  timePickerRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#f8f9fa',
+    alignItems: 'flex-start',
+    gap: 16,
     borderRadius: 16,
     padding: 20,
   },
-  timePicker: {
-    alignItems: 'center',
-    width: 80,
+  timePickerColumn: {
+    flex: 1,
   },
   timeLabel: {
     fontSize: 12,
     fontWeight: '600',
-    marginBottom: 8,
+    marginBottom: 12,
     textTransform: 'uppercase',
+    textAlign: 'center',
   },
-  timeScrollView: {
-    height: 120,
-    width: 70,
+  timeSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 12,
   },
-  timeOption: {
-    height: 40,
+  timeSelectorText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  timeOptions: {
+    maxHeight: 120,
+    borderRadius: 8,
+  },
+  timeOptionItem: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    marginVertical: 1,
+  },
+  timeArrowContainer: {
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 8,
-    marginVertical: 2,
-  },
-  timeOptionText: {
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  timeArrow: {
-    marginHorizontal: 20,
+    marginTop: 36, // Align with time selectors
   },
   timeDisplay: {
-    height: 40,
-    width: 70,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    alignItems: 'center',
+    marginTop: 24, // Align with time selector
   },
   timeDisplayText: {
     fontSize: 16,
@@ -1520,4 +1551,4 @@ const styles = StyleSheet.create({
   bottomPadding: {
     height: 40,
   },
-}); 
+});
