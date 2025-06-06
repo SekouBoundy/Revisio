@@ -792,26 +792,19 @@ export default function ScheduleScreen() {
               </ScrollView>
             </View>
 
-            {/* Time Picker - Horizontal Layout */}
+            {/* Time Picker - Fixed Horizontal Layout */}
             <View style={styles.formGroup}>
               <Text style={[styles.formLabel, { color: theme.text }]}>Heure</Text>
               <View style={[styles.timePickerRow, { backgroundColor: theme.surface }]}>
                 {/* Start Time */}
                 <View style={styles.timePickerColumn}>
                   <Text style={[styles.timeLabel, { color: theme.textSecondary }]}>DÉBUT</Text>
-                  <TouchableOpacity 
-                    style={[styles.timeSelector, { backgroundColor: theme.surface, borderColor: theme.neutralLight }]}
-                    onPress={() => {/* Keep static - no modal */}}
-                  >
+                  <View style={[styles.timeSelector, { backgroundColor: theme.background, borderColor: theme.neutralLight }]}>
                     <Text style={[styles.timeSelectorText, { color: theme.text }]}>{quickForm.startTime}</Text>
-                    <Ionicons name="chevron-down" size={16} color={theme.textSecondary} />
-                  </TouchableOpacity>
+                  </View>
                   
                   {/* Static Time Options */}
-                  <ScrollView 
-                    style={styles.timeOptions}
-                    showsVerticalScrollIndicator={false}
-                  >
+                  <View style={styles.timeOptions}>
                     {hours.map(hour => (
                       <TouchableOpacity
                         key={hour}
@@ -841,7 +834,7 @@ export default function ScheduleScreen() {
                         </Text>
                       </TouchableOpacity>
                     ))}
-                  </ScrollView>
+                  </View>
                 </View>
 
                 {/* Arrow */}
@@ -852,11 +845,12 @@ export default function ScheduleScreen() {
                 {/* End Time */}
                 <View style={styles.timePickerColumn}>
                   <Text style={[styles.timeLabel, { color: theme.textSecondary }]}>FIN</Text>
-                  <View style={[styles.timeDisplay, { backgroundColor: theme.surface, borderColor: theme.neutralLight }]}>
+                  <View style={[styles.timeDisplay, { backgroundColor: theme.background, borderColor: theme.neutralLight }]}>
                     <Text style={[styles.timeDisplayText, { color: theme.text }]}>
                       {quickForm.endTime}
                     </Text>
                   </View>
+                  <View style={styles.timeEndPlaceholder} />
                 </View>
               </View>
             </View>
@@ -1444,33 +1438,36 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   timeSelector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 12,
     borderWidth: 1,
     marginBottom: 12,
+    alignItems: 'center',
   },
   timeSelectorText: {
     fontSize: 16,
     fontWeight: '600',
   },
   timeOptions: {
-    maxHeight: 120,
+    maxHeight: 150,
     borderRadius: 8,
   },
   timeOptionItem: {
-    paddingVertical: 8,
+    paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 6,
     marginVertical: 1,
   },
+  timeOptionText: {
+    fontSize: 14,
+    textAlign: 'center',
+  },
   timeArrowContainer: {
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 36, // Align with time selectors
+    paddingTop: 30,
+    width: 40,
   },
   timeDisplay: {
     paddingHorizontal: 16,
@@ -1478,7 +1475,13 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     alignItems: 'center',
-    marginTop: 24, // Align with time selector
+  },
+  timeDisplayText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  timeEndPlaceholder: {
+    height: 150,
   },
   timeDisplayText: {
     fontSize: 16,
