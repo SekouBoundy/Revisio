@@ -736,208 +736,208 @@ export default function ScheduleScreen() {
   };
 
   // ULTRA-CLEAN Quick Add Modal - Course, Time, Type only
-  const QuickAddModal = () => {
-    const hours = Array.from({ length: 10 }, (_, i) => {
-      const hour = 8 + i;
-      return `${hour.toString().padStart(2, '0')}:00`;
-    });
+QuickAddModal = () => {
+  const hours = Array.from({ length: 12 }, (_, i) => {
+    const hour = 8 + i;
+    return `${hour.toString().padStart(2, '0')}:00`;
+  });
 
-    const updateEndTime = (startTime) => {
-      const [hour] = startTime.split(':');
-      const nextHour = parseInt(hour) + 1;
-      return `${nextHour.toString().padStart(2, '0')}:00`;
-    };
+  const updateEndTime = (startTime) => {
+    const [hour] = startTime.split(':');
+    const nextHour = parseInt(hour) + 1;
+    const endHour = nextHour > 19 ? 19 : nextHour; // Cap at 19:00
+    return `${endHour.toString().padStart(2, '0')}:00`;
+  };
 
-    return (
-      <Modal
-        visible={showQuickAdd}
-        animationType="slide"
-        presentationStyle="formSheet"
-      >
-        <SafeAreaView style={[styles.modalContainer, { backgroundColor: theme.background }]}>
-          <View style={[styles.modalHeader, { borderBottomColor: theme.neutralLight }]}>
-            <Text style={[styles.modalTitle, { color: theme.text }]}>Ajouter un cours</Text>
-            <TouchableOpacity onPress={() => setShowQuickAdd(false)}>
-              <Ionicons name="close" size={24} color={theme.textSecondary} />
-            </TouchableOpacity>
-          </View>
+  return (
+    <Modal
+      visible={showQuickAdd}
+      animationType="slide"
+      presentationStyle="formSheet"
+    >
+      <SafeAreaView style={[styles.modalContainer, { backgroundColor: theme.background }]}>
+        {/* Fixed Header */}
+        <View style={[styles.modalHeader, { borderBottomColor: theme.neutralLight }]}>
+          <Text style={[styles.modalTitle, { color: theme.text }]}>Ajouter un cours</Text>
+          <TouchableOpacity onPress={() => setShowQuickAdd(false)}>
+            <Ionicons name="close" size={24} color={theme.textSecondary} />
+          </TouchableOpacity>
+        </View>
 
-          <View style={styles.modalContent}>
-            {/* Horizontal Course Selection */}
-            <View style={styles.formGroup}>
-              <Text style={[styles.formLabel, { color: theme.text }]}>Matière</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <View style={styles.horizontalScroll}>
-                  {commonSubjects.map(subject => (
-                    <TouchableOpacity
-                      key={subject}
-                      style={[
-                        styles.courseChip,
-                        { 
-                          backgroundColor: quickForm.subject === subject ? theme.primary : theme.surface,
-                          borderColor: quickForm.subject === subject ? theme.primary : theme.neutralLight
-                        }
-                      ]}
-                      onPress={() => setQuickForm(prev => ({...prev, subject}))}
-                    >
-                      <Text style={[
-                        styles.courseChipText,
-                        { color: quickForm.subject === subject ? '#fff' : theme.text }
-                      ]}>
-                        {subject}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </ScrollView>
-            </View>
-
-            {/* Time Picker - Fixed Horizontal Layout */}
-            <View style={styles.formGroup}>
-              <Text style={[styles.formLabel, { color: theme.text }]}>Heure</Text>
-              <View style={[styles.timePickerRow, { backgroundColor: theme.surface }]}>
-                {/* Start Time */}
-                <View style={styles.timePickerColumn}>
-                  <Text style={[styles.timeLabel, { color: theme.textSecondary }]}>DÉBUT</Text>
-                  <View style={[styles.timeSelector, { backgroundColor: theme.background, borderColor: theme.neutralLight }]}>
-                    <Text style={[styles.timeSelectorText, { color: theme.text }]}>{quickForm.startTime}</Text>
-                  </View>
-                  
-                  {/* Static Time Options */}
-                  <View style={styles.timeOptions}>
-                    {hours.map(hour => (
-                      <TouchableOpacity
-                        key={hour}
-                        style={[
-                          styles.timeOptionItem,
-                          { 
-                            backgroundColor: quickForm.startTime === hour ? theme.primary + '20' : 'transparent',
-                          }
-                        ]}
-                        onPress={() => {
-                          const endTime = updateEndTime(hour);
-                          setQuickForm(prev => ({
-                            ...prev, 
-                            startTime: hour,
-                            endTime: endTime
-                          }));
-                        }}
-                      >
-                        <Text style={[
-                          styles.timeOptionText,
-                          { 
-                            color: quickForm.startTime === hour ? theme.primary : theme.text,
-                            fontWeight: quickForm.startTime === hour ? 'bold' : 'normal'
-                          }
-                        ]}>
-                          {hour}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </View>
-
-                {/* Arrow */}
-                <View style={styles.timeArrowContainer}>
-                  <Ionicons name="arrow-forward" size={20} color={theme.textSecondary} />
-                </View>
-
-                {/* End Time */}
-                <View style={styles.timePickerColumn}>
-                  <Text style={[styles.timeLabel, { color: theme.textSecondary }]}>FIN</Text>
-                  <View style={[styles.timeDisplay, { backgroundColor: theme.background, borderColor: theme.neutralLight }]}>
-                    <Text style={[styles.timeDisplayText, { color: theme.text }]}>
-                      {quickForm.endTime}
-                    </Text>
-                  </View>
-                  <View style={styles.timeEndPlaceholder} />
-                </View>
-              </View>
-            </View>
-
-            {/* Type Selection - Better Visual Hierarchy */}
-            <View style={styles.formGroup}>
-              <Text style={[styles.formLabel, { color: theme.text }]}>Type</Text>
-              <View style={styles.typeGrid}>
-                {[
-                  { type: 'Cours', icon: 'book-outline', color: theme.primary },
-                  { type: 'TP', icon: 'flask-outline', color: theme.accent },
-                  { type: 'Contrôle', icon: 'alert-circle-outline', color: theme.warning },
-                  { type: 'Test', icon: 'checkmark-circle-outline', color: theme.info },
-                  { type: 'Examen', icon: 'school-outline', color: theme.error }
-                ].map(({ type, icon, color }) => (
+        <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
+          {/* Subject Selection - Improved */}
+          <View style={styles.formGroup}>
+            <Text style={[styles.formLabel, { color: theme.text }]}>Matière *</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View style={styles.horizontalScroll}>
+                {commonSubjects.map(subject => (
                   <TouchableOpacity
-                    key={type}
+                    key={subject}
                     style={[
-                      styles.typeChip,
+                      styles.courseChip,
                       { 
-                        backgroundColor: quickForm.type === type ? color : theme.surface,
-                        borderColor: quickForm.type === type ? color : theme.neutralLight
+                        backgroundColor: quickForm.subject === subject ? theme.primary : theme.surface,
+                        borderColor: quickForm.subject === subject ? theme.primary : theme.neutralLight
                       }
                     ]}
-                    onPress={() => setQuickForm(prev => ({...prev, type}))}
+                    onPress={() => setQuickForm(prev => ({...prev, subject}))}
                   >
-                    <Ionicons 
-                      name={icon} 
-                      size={16} 
-                      color={quickForm.type === type ? '#fff' : color} 
-                      style={{ marginRight: 6 }} 
-                    />
                     <Text style={[
-                      styles.typeChipText,
-                      { color: quickForm.type === type ? '#fff' : theme.text }
+                      styles.courseChipText,
+                      { color: quickForm.subject === subject ? '#fff' : theme.text }
                     ]}>
-                      {type}
+                      {subject}
                     </Text>
                   </TouchableOpacity>
                 ))}
               </View>
+            </ScrollView>
+          </View>
+
+          {/* Simplified Time Picker */}
+          <View style={styles.formGroup}>
+            <Text style={[styles.formLabel, { color: theme.text }]}>Heure</Text>
+            
+            {/* Current Time Display */}
+            <View style={[styles.timeDisplayRow, { backgroundColor: theme.surface }]}>
+              <Text style={[styles.timeDisplayText, { color: theme.text }]}>
+                {quickForm.startTime} → {quickForm.endTime}
+              </Text>
             </View>
 
-            {/* Preview */}
-            {quickForm.subject && (
-              <View style={[styles.previewCard, { backgroundColor: theme.primary + '10' }]}>
-                <Text style={[styles.previewTitle, { color: theme.primary }]}>Aperçu :</Text>
-                <Text style={[styles.previewText, { color: theme.text }]}>
-                  {quickForm.subject} • {quickForm.type}
-                </Text>
-                <Text style={[styles.previewTime, { color: theme.textSecondary }]}>
-                  {quickForm.startTime} - {quickForm.endTime}
-                </Text>
-              </View>
-            )}
+            {/* Time Grid - Better Layout */}
+            <View style={styles.timeGrid}>
+              {hours.map(hour => (
+                <TouchableOpacity
+                  key={hour}
+                  style={[
+                    styles.timeGridItem,
+                    { 
+                      backgroundColor: quickForm.startTime === hour ? theme.primary : theme.surface,
+                      borderColor: quickForm.startTime === hour ? theme.primary : theme.neutralLight
+                    }
+                  ]}
+                  onPress={() => {
+                    const endTime = updateEndTime(hour);
+                    setQuickForm(prev => ({
+                      ...prev, 
+                      startTime: hour,
+                      endTime: endTime
+                    }));
+                  }}
+                >
+                  <Text style={[
+                    styles.timeGridText,
+                    { 
+                      color: quickForm.startTime === hour ? '#fff' : theme.text,
+                      fontWeight: quickForm.startTime === hour ? 'bold' : 'normal'
+                    }
+                  ]}>
+                    {hour}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
 
-          <View style={styles.modalFooter}>
-            <TouchableOpacity
-              style={[styles.cancelButton, { backgroundColor: theme.neutralLight }]}
-              onPress={() => setShowQuickAdd(false)}
-            >
-              <Text style={[styles.cancelButtonText, { color: theme.textSecondary }]}>Annuler</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.saveButton, 
-                { 
-                  backgroundColor: quickForm.subject ? theme.primary : theme.neutralLight,
-                  opacity: quickForm.subject ? 1 : 0.5
-                }
-              ]}
-              onPress={saveQuickClass}
-              disabled={!quickForm.subject}
-            >
-              <Text style={[
-                styles.saveButtonText,
-                { color: quickForm.subject ? '#fff' : theme.textSecondary }
-              ]}>
-                Ajouter
-              </Text>
-            </TouchableOpacity>
+          {/* Improved Type Selection */}
+          <View style={styles.formGroup}>
+            <Text style={[styles.formLabel, { color: theme.text }]}>Type</Text>
+            <View style={styles.typeGrid}>
+              {[
+                { type: 'Cours', icon: 'book-outline', color: theme.primary },
+                { type: 'TP', icon: 'flask-outline', color: theme.accent },
+                { type: 'TD', icon: 'create-outline', color: theme.info },
+                { type: 'Contrôle', icon: 'alert-circle-outline', color: theme.warning },
+                { type: 'Test', icon: 'checkmark-circle-outline', color: theme.success },
+                { type: 'Examen', icon: 'school-outline', color: theme.error }
+              ].map(({ type, icon, color }) => (
+                <TouchableOpacity
+                  key={type}
+                  style={[
+                    styles.typeChip,
+                    { 
+                      backgroundColor: quickForm.type === type ? color : theme.surface,
+                      borderColor: quickForm.type === type ? color : theme.neutralLight
+                    }
+                  ]}
+                  onPress={() => setQuickForm(prev => ({...prev, type}))}
+                >
+                  <Ionicons 
+                    name={icon} 
+                    size={16} 
+                    color={quickForm.type === type ? '#fff' : color} 
+                    style={{ marginBottom: 4 }} 
+                  />
+                  <Text style={[
+                    styles.typeChipText,
+                    { color: quickForm.type === type ? '#fff' : theme.text }
+                  ]}>
+                    {type}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
-        </SafeAreaView>
-      </Modal>
-    );
-  };
+
+          {/* Enhanced Preview */}
+          {quickForm.subject && (
+            <View style={[styles.previewCard, { backgroundColor: theme.primary + '10' }]}>
+              <View style={styles.previewHeader}>
+                <Ionicons name="eye-outline" size={20} color={theme.primary} />
+                <Text style={[styles.previewTitle, { color: theme.primary }]}>Aperçu</Text>
+              </View>
+              <View style={styles.previewContent}>
+                <Text style={[styles.previewSubject, { color: theme.text }]}>
+                  {quickForm.subject}
+                </Text>
+                <View style={styles.previewMeta}>
+                  <View style={[styles.previewTypeBadge, { backgroundColor: theme.primary + '20' }]}>
+                    <Text style={[styles.previewTypeText, { color: theme.primary }]}>
+                      {quickForm.type}
+                    </Text>
+                  </View>
+                  <Text style={[styles.previewTime, { color: theme.textSecondary }]}>
+                    {quickForm.startTime} - {quickForm.endTime}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          )}
+        </ScrollView>
+
+        {/* Fixed Footer */}
+        <View style={[styles.modalFooter, { backgroundColor: theme.background, borderTopColor: theme.neutralLight }]}>
+          <TouchableOpacity
+            style={[styles.cancelButton, { backgroundColor: theme.neutralLight }]}
+            onPress={() => setShowQuickAdd(false)}
+          >
+            <Text style={[styles.cancelButtonText, { color: theme.textSecondary }]}>Annuler</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.saveButton, 
+              { 
+                backgroundColor: quickForm.subject ? theme.primary : theme.neutralLight,
+                opacity: quickForm.subject ? 1 : 0.5
+              }
+            ]}
+            onPress={saveQuickClass}
+            disabled={!quickForm.subject}
+          >
+            <Ionicons name="add" size={20} color={quickForm.subject ? '#fff' : theme.textSecondary} />
+            <Text style={[
+              styles.saveButtonText,
+              { color: quickForm.subject ? '#fff' : theme.textSecondary }
+            ]}>
+              Ajouter
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    </Modal>
+  );
+};
 
   // Empty State Component
   const EmptyState = () => (
@@ -1388,29 +1388,29 @@ const styles = StyleSheet.create({
   modalContent: {
     flex: 1,
     paddingHorizontal: 20,
-    paddingTop: 20,
   },
   formGroup: {
-    marginBottom: 32,
+    marginBottom: 28,
   },
   formLabel: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   
   // Horizontal course selection
   horizontalScroll: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 10,
     paddingHorizontal: 4,
+    paddingVertical: 8,
   },
   courseChip: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingVertical: 12,
-    borderRadius: 25,
+    borderRadius: 20,
     borderWidth: 2,
-    minWidth: 120,
+    minWidth: 100,
     alignItems: 'center',
   },
   courseChipText: {
@@ -1469,70 +1469,108 @@ const styles = StyleSheet.create({
     paddingTop: 30,
     width: 40,
   },
-  timeDisplay: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+  timeDisplayRow: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     borderRadius: 12,
-    borderWidth: 1,
     alignItems: 'center',
+    marginBottom: 16,
   },
   timeDisplayText: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
-  timeEndPlaceholder: {
-    height: 150,
-  },
-  timeDisplayText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  
-  // Type selection
-  typeGrid: {
+  timeGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    gap: 8,
+    justifyContent: 'space-between',
   },
-  typeChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
+  timeGridItem: {
+    width: '23%', // 4 items per row
+    paddingVertical: 12,
+    borderRadius: 10,
     borderWidth: 2,
+    alignItems: 'center',
   },
-  typeChipText: {
+  timeGridText: {
     fontSize: 14,
     fontWeight: '600',
   },
+    typeGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    justifyContent: 'space-between',
+  },
+  typeChip: {
+    width: '48%', // 2 items per row
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 2,
+    alignItems: 'center',
+  },
+  typeChipText: {
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+
   
   // Preview section
   previewCard: {
     padding: 16,
     borderRadius: 12,
-    marginTop: 20,
+    marginTop: 8,
+  },
+  previewHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 8,
   },
   previewTitle: {
     fontSize: 14,
     fontWeight: 'bold',
-    marginBottom: 8,
   },
-  previewText: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
+  previewContent: {
+    gap: 8,
+  },
+  previewSubject: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  previewMeta: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  previewTypeBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  previewTypeText: {
+    fontSize: 12,
+    fontWeight: 'bold',
   },
   previewTime: {
     fontSize: 14,
+    fontWeight: '500',
   },
+  // Fixed footer
+
   modalFooter: {
     flexDirection: 'row',
     gap: 12,
     paddingHorizontal: 20,
-    paddingVertical: 20,
+    paddingVertical: 16,
+    borderTopWidth: 1,
   },
   cancelButton: {
     flex: 1,
-    paddingVertical: 16,
+    paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
   },
@@ -1542,16 +1580,15 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     flex: 1,
-    paddingVertical: 16,
+    flexDirection: 'row',
+    paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
   },
   saveButtonText: {
-    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
-  },
-  bottomPadding: {
-    height: 40,
   },
 });
