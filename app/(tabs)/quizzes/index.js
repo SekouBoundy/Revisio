@@ -1,4 +1,4 @@
-// app/(tabs)/quizzes/index.js - Updated with curved header and search
+// app/(tabs)/quizzes/index.js - FIXED VERSION
 import React, { useContext, useState, useRef } from 'react';
 import {
   View,
@@ -180,21 +180,22 @@ export default function QuizzesIndex() {
   const filteredQuizzes = filterQuizzes(quizzesData);
   const hasSearchResults = searchQuery.trim().length > 0;
 
+  // ✅ FIXED: Standardized Header
   const Header = () => (
     <View style={[styles.header, { backgroundColor: theme.primary }]}>
       <View style={styles.headerContent}>
         <View>
           <Text style={[styles.headerSubtitle, { color: '#FFFFFF99' }]}>
-            Performance
+            {isDefLevel ? 'Mes Quiz DEF' : `Quiz ${user?.level}`}
           </Text>
           <Text style={[styles.headerTitle, { color: '#FFFFFF' }]}>
-            Quiz Dashboard
+            Challenge Quiz
           </Text>
         </View>
         <View style={styles.headerActions}>
           <TouchableOpacity 
             style={[
-              styles.searchButton, 
+              styles.actionButton, 
               { backgroundColor: searchVisible ? '#FFFFFF' : 'rgba(255, 255, 255, 0.15)' }
             ]}
             onPress={toggleSearch}
@@ -206,8 +207,8 @@ export default function QuizzesIndex() {
             />
           </TouchableOpacity>
           <TouchableOpacity 
-            style={[styles.filterButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}
-            onPress={() => console.log('Filter')}
+            style={[styles.actionButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}
+            onPress={() => console.log('Analytics')}
           >
             <Ionicons name="analytics" size={20} color="#FFFFFF" />
           </TouchableOpacity>
@@ -422,14 +423,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
   },
-  searchButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  filterButton: {
+  // ✅ FIXED: Standardized button (was searchButton/filterButton)
+  actionButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -456,11 +451,14 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 12,
     gap: 12,
+    borderWidth: 0, // ✅ Remove border
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
     fontWeight: '500',
+    outline: 'none', // ✅ Remove focus outline
+    borderWidth: 0,   // ✅ Remove border
   },
   searchResultsText: {
     fontSize: 12,

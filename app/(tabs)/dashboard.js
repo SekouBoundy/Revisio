@@ -1,5 +1,5 @@
-// app/(tabs)/dashboard.js - WITH COLLAPSIBLE HEADER
-import React, { useContext, useRef, useState } from 'react';
+// app/(tabs)/dashboard.js - FIXED HEADER VERSION
+import React, { useContext } from 'react';
 import {
   View,
   Text,
@@ -7,7 +7,6 @@ import {
   ScrollView,
   TouchableOpacity,
   SafeAreaView,
-  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -21,53 +20,6 @@ export default function DashboardScreen() {
   const router = useRouter();
 
   const isDefLevel = user?.level === 'DEF';
-  
-  // Animation values
-  const scrollY = useRef(new Animated.Value(0)).current;
-  const [headerCollapsed, setHeaderCollapsed] = useState(false);
-
-  // More dramatic header collapse animation
-  const headerHeight = scrollY.interpolate({
-    inputRange: [0, 100],
-    outputRange: [160, 70],
-    extrapolate: 'clamp',
-  });
-
-  const headerOpacity = scrollY.interpolate({
-    inputRange: [0, 100],
-    outputRange: [1, 0.95],
-    extrapolate: 'clamp',
-  });
-
-  const titleScale = scrollY.interpolate({
-    inputRange: [0, 100],
-    outputRange: [1, 0.8],
-    extrapolate: 'clamp',
-  });
-
-  const progressCardTranslateY = scrollY.interpolate({
-    inputRange: [0, 100],
-    outputRange: [0, -30],
-    extrapolate: 'clamp',
-  });
-
-  const progressCardOpacity = scrollY.interpolate({
-    inputRange: [0, 50, 100],
-    outputRange: [1, 0.5, 0],
-    extrapolate: 'clamp',
-  });
-
-  // Scroll handler with gentler threshold
-  const handleScroll = Animated.event(
-    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-    {
-      useNativeDriver: false,
-      listener: (event) => {
-        const scrollPosition = event.nativeEvent.contentOffset.y;
-        setHeaderCollapsed(scrollPosition > 30); // More sensitive
-      },
-    }
-  );
 
   // Common Components
   const ProgressBar = ({ progress, color = theme.primary }) => (
@@ -195,170 +147,77 @@ export default function DashboardScreen() {
     </TouchableOpacity>
   );
 
-  // Remove absolute positioning - use normal layout
-  const DefHeader = () => (
-    <Animated.View style={[
-      styles.header, 
-      { 
-        backgroundColor: theme.primary,
-        height: headerHeight,
-        opacity: headerOpacity,
-      }
-    ]}>
+  // ✅ FIXED: Standardized Static Header (like Quizzes/Courses)
+  const Header = () => (
+    <View style={[styles.header, { backgroundColor: theme.primary }]}>
       <View style={styles.headerContent}>
         <View>
-          <Text style={[styles.greeting, { color: '#FFFFFF99' }]}>
-            Salut,
+          <Text style={[styles.headerSubtitle, { color: '#FFFFFF99' }]}>
+            {isDefLevel ? `Salut, ${user?.name || 'Étudiant'} !` : 'Tableau de bord'}
           </Text>
-          <Animated.Text style={[
-            styles.userName, 
-            { 
-              color: '#FFFFFF',
-              transform: [{ scale: titleScale }]
-            }
-          ]}>
-            {user?.name || 'Étudiant'} ! 👋
-          </Animated.Text>
+          <Text style={[styles.headerTitle, { color: '#FFFFFF' }]}>
+            {isDefLevel ? 'Tableau de bord' : `${user?.name || 'Étudiant'} • ${user?.level}`}
+          </Text>
         </View>
         <View style={styles.headerActions}>
           <TouchableOpacity 
-            style={[styles.notificationButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}
+            style={[styles.actionButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}
             onPress={() => router.push('/(tabs)/profile')}
           >
             <Ionicons name="notifications" size={20} color="#FFFFFF" />
             <View style={[styles.notificationBadge, { backgroundColor: theme.error }]}>
-              <Text style={styles.notificationCount}>3</Text>
+              <Text style={styles.notificationCount}>{isDefLevel ? '3' : '2'}</Text>
             </View>
           </TouchableOpacity>
           <TouchableOpacity 
-            style={[styles.timeButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}
+            style={[styles.actionButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}
             onPress={() => router.push('/(tabs)/schedule')}
           >
-            <Ionicons name="time" size={20} color="#FFFFFF" />
+            <Ionicons name={isDefLevel ? "time" : "analytics"} size={20} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
       </View>
-    </Animated.View>
+    </View>
   );
 
-  const BacHeader = () => (
-    <Animated.View style={[
-      styles.header, 
-      { 
-        backgroundColor: theme.primary,
-        height: headerHeight,
-        opacity: headerOpacity,
-      }
-    ]}>
-      <View style={styles.headerContent}>
-        <View>
-          <Text style={[styles.greeting, { color: '#FFFFFF99' }]}>
-            Tableau de bord
+  // ✅ FIXED: Static Progress Cards (no animations)
+  const ProgressCard = () => (
+    <View style={[styles.progressCardContainer, { backgroundColor: theme.surface }]}>
+      <View style={styles.countdownContent}>
+        <View style={styles.countdownLeft}>
+          <Text style={[styles.countdownLabel, { color: theme.textSecondary }]}>
+            Temps restant jusqu'au {isDefLevel ? 'DEF' : 'BAC'}
           </Text>
-          <Animated.Text style={[
-            styles.userName, 
-            { 
-              color: '#FFFFFF',
-              transform: [{ scale: titleScale }]
-            }
-          ]}>
-            {user?.name || 'Étudiant'} • {user?.level}
-          </Animated.Text>
-        </View>
-        <View style={styles.headerActions}>
-          <TouchableOpacity 
-            style={[styles.notificationButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}
-            onPress={() => router.push('/(tabs)/profile')}
-          >
-            <Ionicons name="notifications" size={20} color="#FFFFFF" />
-            <View style={[styles.notificationBadge, { backgroundColor: theme.error }]}>
-              <Text style={styles.notificationCount}>2</Text>
-            </View>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.analyticsButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}
-            onPress={() => router.push('/(tabs)/quizzes')}
-          >
-            <Ionicons name="analytics" size={20} color="#FFFFFF" />
-          </TouchableOpacity>
-        </View>
-      </View>
-    </Animated.View>
-  );
-
-  // Animated Progress Cards
-  const DefProgressCard = () => (
-    <Animated.View style={[
-      styles.progressCardContainer, 
-      { 
-        backgroundColor: theme.surface,
-        transform: [{ translateY: progressCardTranslateY }],
-      }
-    ]}>
-      <View style={styles.defCountdownContent}>
-        <View style={styles.defCountdownLeft}>
-          <Text style={[styles.defCountdownLabel, { color: theme.textSecondary }]}>
-            Temps restant jusqu'au DEF
+          <Text style={[styles.countdownValue, { color: theme.text }]}>
+            {isDefLevel ? '42 jours' : '25 jours'}
           </Text>
-          <Text style={[styles.defCountdownValue, { color: theme.text }]}>42 jours</Text>
           <TouchableOpacity 
-            style={[styles.defPlanningButton, { backgroundColor: theme.primary }]}
+            style={[styles.planningButton, { backgroundColor: theme.primary }]}
             onPress={() => router.push('/(tabs)/schedule')}
           >
             <Ionicons name="calendar" size={16} color="#FFFFFF" />
-            <Text style={styles.defPlanningText}>Mon planning</Text>
+            <Text style={styles.planningText}>
+              {isDefLevel ? 'Mon planning' : 'Planning de révisions'}
+            </Text>
           </TouchableOpacity>
         </View>
-        <View style={[styles.defCountdownIcon, { backgroundColor: theme.primary + '15' }]}>
-          <Ionicons name="time" size={32} color={theme.primary} />
+        <View style={[styles.countdownIcon, { backgroundColor: theme.primary + '15' }]}>
+          <Ionicons name={isDefLevel ? "time" : "hourglass"} size={32} color={theme.primary} />
         </View>
       </View>
-    </Animated.View>
-  );
-
-  const BacProgressCard = () => (
-    <Animated.View style={[
-      styles.progressCardContainer, 
-      { 
-        backgroundColor: theme.surface,
-        transform: [{ translateY: progressCardTranslateY }],
-      }
-    ]}>
-      <View style={styles.bacCountdownContent}>
-        <View style={styles.bacCountdownLeft}>
-          <Text style={[styles.bacCountdownLabel, { color: theme.textSecondary }]}>
-            Temps restant jusqu'au BAC
-          </Text>
-          <Text style={[styles.bacCountdownValue, { color: theme.text }]}>25 jours</Text>
-          <TouchableOpacity 
-            style={[styles.bacPlanningButton, { backgroundColor: theme.primary }]}
-            onPress={() => router.push('/(tabs)/schedule')}
-          >
-            <Ionicons name="calendar" size={16} color="#FFFFFF" />
-            <Text style={styles.bacPlanningText}>Planning de révisions</Text>
-          </TouchableOpacity>
-        </View>
-        <View style={[styles.bacCountdownIcon, { backgroundColor: theme.primary + '15' }]}>
-          <Ionicons name="hourglass" size={32} color={theme.primary} />
-        </View>
-      </View>
-    </Animated.View>
+    </View>
   );
 
   // DEF Dashboard
   if (isDefLevel) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-        <DefHeader />
-        <DefProgressCard />
+        <Header />
+        <ProgressCard />
 
         <ScrollView 
           showsVerticalScrollIndicator={false} 
           style={styles.scrollContent}
-          onScroll={handleScroll}
-          scrollEventThrottle={8}
-          decelerationRate="normal"
-          bounces={false}
           contentContainerStyle={{ paddingTop: 20 }}
         >
           {/* Weekly Progress */}
@@ -489,14 +348,12 @@ export default function DashboardScreen() {
   // BAC Dashboard
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <BacHeader />
-      <BacProgressCard />
+      <Header />
+      <ProgressCard />
 
-      <Animated.ScrollView 
+      <ScrollView 
         showsVerticalScrollIndicator={false} 
         style={styles.scrollContent}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
         contentContainerStyle={{ paddingTop: 20 }}
       >
         {/* Performance Analytics */}
@@ -638,16 +495,17 @@ export default function DashboardScreen() {
         </View>
 
         <View style={styles.bottomPadding} />
-      </Animated.ScrollView>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
+// ✅ FIXED: Simplified styles without animations
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  // Header Styles - Remove absolute positioning
+  // ✅ Static Header (matches other screens)
   header: {
     paddingTop: 60,
     paddingBottom: 30,
@@ -660,11 +518,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  greeting: {
-    fontSize: 16,
+  headerSubtitle: {
+    fontSize: 14,
     fontWeight: '500',
+    marginBottom: 4,
   },
-  userName: {
+  headerTitle: {
     fontSize: 28,
     fontWeight: 'bold',
   },
@@ -672,10 +531,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
   },
-  notificationButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+  // ✅ Standardized action buttons (40x40px, 20px icons)
+  actionButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
@@ -695,22 +555,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
   },
-  timeButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  analyticsButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   
-  // Progress Card Styles - Remove absolute positioning
+  // ✅ Static Progress Card (no animation transforms)
   progressCardContainer: {
     marginTop: -15,
     marginHorizontal: 20,
@@ -721,6 +567,44 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 8,
     elevation: 3,
+  },
+  countdownContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  countdownLeft: {
+    flex: 1,
+  },
+  countdownLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 8,
+  },
+  countdownValue: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    marginBottom: 16,
+  },
+  planningButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    gap: 6,
+  },
+  planningText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  countdownIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   progressBarContainer: {
     height: 8,
@@ -733,87 +617,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   
-  // DEF Progress Styles
-  defCountdownContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  defCountdownLeft: {
-    flex: 1,
-  },
-  defCountdownLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 8,
-  },
-  defCountdownValue: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    marginBottom: 16,
-  },
-  defPlanningButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    gap: 6,
-  },
-  defPlanningText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  defCountdownIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  
-  // BAC Progress Styles
-  bacCountdownContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  bacCountdownLeft: {
-    flex: 1,
-  },
-  bacCountdownLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 8,
-  },
-  bacCountdownValue: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    marginBottom: 16,
-  },
-  bacPlanningButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    gap: 6,
-  },
-  bacPlanningText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  bacCountdownIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  
-  // ScrollView - Remove top margin since no absolute positioning
+  // ScrollView
   scrollContent: {
     flex: 1,
   },
