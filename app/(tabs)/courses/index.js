@@ -1,12 +1,15 @@
-// app/(tabs)/courses/index.js - FIXED VERSION
-import React, { useContext } from 'react';
+// app/(tabs)/courses/index.js - COMPLETE FIXED VERSION WITH SEARCH
+import React, { useContext, useState, useRef } from 'react';
 import {
   View,
   Text,
-  StyleSheet,  // ← Make sure this is imported
+  StyleSheet,
   ScrollView,
   TouchableOpacity,
   SafeAreaView,
+  TextInput,
+  Animated,
+  Keyboard,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -20,6 +23,43 @@ export default function CoursesScreen() {
   const router = useRouter();
 
   const isDefLevel = user?.level === 'DEF';
+  
+  // Search state
+  const [searchVisible, setSearchVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const searchInputRef = useRef(null);
+  const searchAnimValue = useRef(new Animated.Value(0)).current;
+
+  // Toggle search functionality
+  const toggleSearch = () => {
+    if (searchVisible) {
+      Keyboard.dismiss();
+      setSearchQuery('');
+      Animated.timing(searchAnimValue, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: false,
+      }).start(() => {
+        setSearchVisible(false);
+      });
+    } else {
+      setSearchVisible(true);
+      Animated.timing(searchAnimValue, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: false,
+      }).start(() => {
+        setTimeout(() => {
+          searchInputRef.current?.focus();
+        }, 100);
+      });
+    }
+  };
+
+  const clearSearch = () => {
+    setSearchQuery('');
+    searchInputRef.current?.focus();
+  };
 
   const CourseCard = ({ icon, title, subtitle, progress, color, difficulty, lessons, level, onPress }) => (
     <TouchableOpacity 
@@ -190,18 +230,31 @@ export default function CoursesScreen() {
     return coursesByTrack[user?.level] || coursesByTrack.TSE;
   };
 
+  // Filter courses based on search
+  const filterCourses = (courses) => {
+    if (!searchQuery.trim()) return courses;
+    const query = searchQuery.toLowerCase();
+    return courses.filter(course => 
+      course.title.toLowerCase().includes(query) ||
+      course.subtitle.toLowerCase().includes(query) ||
+      course.difficulty.toLowerCase().includes(query)
+    );
+  };
+
   const coursesData = isDefLevel ? getDefCourses() : getBacCourses();
+  const filteredCourses = filterCourses(coursesData);
+  const hasSearchResults = searchQuery.trim().length > 0;
 
   const handleCoursePress = (course) => {
-  const courseName = course.title.replace(/\s+/g, '_').replace(/\//g, '_');
-  router.push({
-    pathname: '/courses/[level]/[courseName]',
-    params: {
-      level: course.level,
-      courseName: courseName
-    }
-  });
-};
+    const courseName = course.title.replace(/\s+/g, '_').replace(/\//g, '_');
+    router.push({
+      pathname: '/courses/[level]/[courseName]',
+      params: {
+        level: course.level,
+        courseName: courseName
+      }
+    });
+  };
 
   // Header Component
   const Header = () => (
@@ -209,7 +262,7 @@ export default function CoursesScreen() {
       <View style={styles.headerContent}>
         <View>
           <Text style={[styles.headerSubtitle, { color: '#FFFFFF99' }]}>
-            {isDefLevel ? 'Mes Cours DEF' : `Mes Cours ${user?.level}`}
+            {isDefLevel ? 'Mes Cours DEF' : `Cours ${user?.level}`}
           </Text>
           <Text style={[styles.headerTitle, { color: '#FFFFFF' }]}>
             Catalogue de Cours
@@ -217,41 +270,50 @@ export default function CoursesScreen() {
         </View>
         <View style={styles.headerActions}>
           <TouchableOpacity 
-            style={[styles.filterButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}
+            style={[
+              styles.actionButton, 
+              { backgroundColor: searchVisible ? '#FFFFFF' : 'rgba(255, 255, 255, 0.15)' }
+            ]}
+            onPress={toggleSearch}
           >
-            <Ionicons name="filter-outline" size={18} color="#FFFFFF" />
+            <Ionicons 
+              name={searchVisible ? "close" : "search"} 
+              size={20} 
+              color={searchVisible ? theme.primary : "#FFFFFF"} 
+            />
           </TouchableOpacity>
           <TouchableOpacity 
-            style={[styles.searchButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}
+            style={[styles.actionButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}
+            onPress={() => console.log('Filter')}
           >
-            <Ionicons name="search-outline" size={18} color="#FFFFFF" />
+            <Ionicons name="filter-outline" size={20} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
       </View>
     </View>
   );
 
-  // Stats Section
-  const StatsSelector = () => (
-    <View style={[styles.statsSelector, { backgroundColor: theme.surface }]}>
+  // Stats Card
+  const StatsCard = () => (
+    <View style={[styles.statsCard, { backgroundColor: theme.surface }]}>
       <View style={styles.statsGrid}>
-        <View style={styles.statCard}>
+        <View style={styles.statItem}>
           <Text style={[styles.statValue, { color: theme.primary }]}>
-            {coursesData.filter(c => c.progress).length}
+            {filteredCourses.filter(c => c.progress).length}
           </Text>
-          <Text style={[styles.statLabel, { color: theme.textSecondary || theme.text + '80' }]}>En cours</Text>
+          <Text style={[styles.statLabel, { color: theme.textSecondary }]}>En cours</Text>
         </View>
-        <View style={styles.statCard}>
-          <Text style={[styles.statValue, { color: theme.success || '#4CAF50' }]}>
-            {Math.round(coursesData.filter(c => c.progress).reduce((acc, c) => acc + c.progress, 0) / coursesData.filter(c => c.progress).length) || 0}%
+        <View style={styles.statItem}>
+          <Text style={[styles.statValue, { color: theme.success }]}>
+            {Math.round(filteredCourses.filter(c => c.progress).reduce((acc, c) => acc + c.progress, 0) / filteredCourses.filter(c => c.progress).length) || 0}%
           </Text>
-          <Text style={[styles.statLabel, { color: theme.textSecondary || theme.text + '80' }]}>Progression</Text>
+          <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Progression</Text>
         </View>
-        <View style={styles.statCard}>
-          <Text style={[styles.statValue, { color: theme.accent || '#E91E63' }]}>
-            {coursesData.length - coursesData.filter(c => c.progress).length}
+        <View style={styles.statItem}>
+          <Text style={[styles.statValue, { color: theme.accent }]}>
+            {filteredCourses.length - filteredCourses.filter(c => c.progress).length}
           </Text>
-          <Text style={[styles.statLabel, { color: theme.textSecondary || theme.text + '80' }]}>À commencer</Text>
+          <Text style={[styles.statLabel, { color: theme.textSecondary }]}>À commencer</Text>
         </View>
       </View>
     </View>
@@ -260,7 +322,65 @@ export default function CoursesScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <Header />
-      <StatsSelector />
+      <StatsCard />
+
+      {/* Search Bar */}
+      {searchVisible && (
+        <Animated.View 
+          style={[
+            styles.searchContainer, 
+            { 
+              backgroundColor: theme.surface,
+              height: searchAnimValue.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, 80],
+              }),
+              opacity: searchAnimValue,
+            }
+          ]}
+        >
+          <View style={styles.searchContent}>
+            <View style={[styles.searchInputContainer, { backgroundColor: theme.background }]}>
+              <Ionicons name="search" size={20} color={theme.textSecondary} />
+              <TextInput
+                ref={searchInputRef}
+                style={[styles.searchInput, { color: theme.text }]}
+                placeholder="Rechercher un cours..."
+                placeholderTextColor={theme.textSecondary}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                returnKeyType="search"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity onPress={clearSearch}>
+                  <Ionicons name="close-circle" size={20} color={theme.textSecondary} />
+                </TouchableOpacity>
+              )}
+            </View>
+            
+            {hasSearchResults && (
+              <Text style={[styles.searchResultsText, { color: theme.textSecondary }]}>
+                {filteredCourses.length} résultat{filteredCourses.length !== 1 ? 's' : ''}
+              </Text>
+            )}
+          </View>
+        </Animated.View>
+      )}
+
+      {/* Search Results Banner */}
+      {hasSearchResults && (
+        <View style={[styles.searchResultsBanner, { backgroundColor: theme.primary + '15' }]}>
+          <Ionicons name="search" size={16} color={theme.primary} />
+          <Text style={[styles.searchResultsBannerText, { color: theme.primary }]}>
+            "{searchQuery}" - {filteredCourses.length} résultat{filteredCourses.length !== 1 ? 's' : ''}
+          </Text>
+          <TouchableOpacity onPress={clearSearch}>
+            <Ionicons name="close" size={16} color={theme.primary} />
+          </TouchableOpacity>
+        </View>
+      )}
 
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.section}>
@@ -270,20 +390,30 @@ export default function CoursesScreen() {
             </Text>
           </View>
           
-          {coursesData.map((course, index) => (
-            <CourseCard
-              key={course.id}
-              icon={course.icon}
-              title={course.title}
-              subtitle={course.subtitle}
-              progress={course.progress}
-              color={course.color}
-              difficulty={course.difficulty}
-              lessons={course.lessons}
-              level={course.level}
-              onPress={() => handleCoursePress(course)}
-            />
-          ))}
+          {filteredCourses.length > 0 ? (
+            filteredCourses.map((course, index) => (
+              <CourseCard
+                key={course.id}
+                icon={course.icon}
+                title={course.title}
+                subtitle={course.subtitle}
+                progress={course.progress}
+                color={course.color}
+                difficulty={course.difficulty}
+                lessons={course.lessons}
+                level={course.level}
+                onPress={() => handleCoursePress(course)}
+              />
+            ))
+          ) : hasSearchResults ? (
+            <View style={[styles.emptyState, { backgroundColor: theme.surface }]}>
+              <Ionicons name="search-outline" size={48} color={theme.textSecondary} />
+              <Text style={[styles.emptyTitle, { color: theme.text }]}>Aucun résultat</Text>
+              <Text style={[styles.emptyMessage, { color: theme.textSecondary }]}>
+                Essayez des mots-clés différents
+              </Text>
+            </View>
+          ) : null}
         </View>
 
         <View style={styles.bottomPadding} />
@@ -292,7 +422,6 @@ export default function CoursesScreen() {
   );
 }
 
-// ✅ FIXED STYLESHEET - No syntax errors
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -322,21 +451,61 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
   },
-  filterButton: {
+  actionButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  searchButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
+  searchContainer: {
+    overflow: 'hidden',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
   },
-  statsSelector: {
+  searchContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    gap: 12,
+  },
+  searchInputContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    gap: 12,
+    borderWidth: 0,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '500',
+    outline: 'none',
+    borderWidth: 0,
+  },
+  searchResultsText: {
+    fontSize: 12,
+    fontWeight: '500',
+    minWidth: 60,
+    textAlign: 'center',
+  },
+  searchResultsBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    gap: 8,
+  },
+  searchResultsBannerText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  statsCard: {
     marginTop: -15,
     marginHorizontal: 20,
     borderRadius: 20,
@@ -352,7 +521,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
   },
-  statCard: {
+  statItem: {
     alignItems: 'center',
   },
   statValue: {
@@ -449,6 +618,23 @@ const styles = StyleSheet.create({
   progressBar: {
     height: '100%',
     borderRadius: 3,
+  },
+  emptyState: {
+    alignItems: 'center',
+    padding: 40,
+    borderRadius: 16,
+    marginVertical: 20,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyMessage: {
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
   },
   bottomPadding: {
     height: 40,
