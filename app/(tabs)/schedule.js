@@ -1,4 +1,4 @@
-// app/(tabs)/schedule.js - SIMPLIFIED UX VERSION
+// app/(tabs)/schedule.js - COMPLETE ENHANCED VERSION
 import React, { useContext, useState, useCallback } from 'react';
 import { 
   SafeAreaView, 
@@ -410,60 +410,113 @@ export default function ScheduleScreen() {
     });
   };
 
-  // Header Component
+  // ENHANCED HEADER COMPONENT
   const ScheduleHeader = () => (
     <View style={[styles.header, { backgroundColor: theme.primary }]}>
       <View style={styles.headerContent}>
         <View style={styles.headerLeft}>
           <Text style={[styles.headerSubtitle, { color: '#FFFFFF99' }]}>
-            {isDefLevel ? 'Planning DEF' : `Planning ${user?.level}`}
+            {isDefLevel ? 'Mon Planning DEF' : `Planning ${user?.level}`}
           </Text>
-          <View style={styles.weekNavigation}>
+          
+          {/* Enhanced Week Navigation in Title Area */}
+          <View style={styles.weekNavigationContainer}>
             <TouchableOpacity 
               style={styles.weekNavButton}
               onPress={() => navigateWeek(-1)}
             >
-              <Ionicons name="chevron-back" size={20} color="#FFFFFF" />
+              <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
             </TouchableOpacity>
-            <Text style={[styles.headerTitle, { color: '#FFFFFF' }]}>
-              {getWeekDateRange()}
-            </Text>
+            
+            <View style={styles.weekTitleContainer}>
+              <Text style={[styles.headerTitle, { color: '#FFFFFF' }]}>
+                {getWeekDateRange()}
+              </Text>
+              <View style={styles.weekIndicators}>
+                {[-2, -1, 0, 1, 2].map((offset) => (
+                  <View
+                    key={offset}
+                    style={[
+                      styles.weekIndicator,
+                      {
+                        backgroundColor: offset === currentWeek ? '#FFFFFF' : 'rgba(255, 255, 255, 0.3)',
+                        width: offset === currentWeek ? 24 : 6,
+                      }
+                    ]}
+                  />
+                ))}
+              </View>
+            </View>
+            
             <TouchableOpacity 
               style={styles.weekNavButton}
               onPress={() => navigateWeek(1)}
             >
-              <Ionicons name="chevron-forward" size={20} color="#FFFFFF" />
+              <Ionicons name="chevron-forward" size={24} color="#FFFFFF" />
             </TouchableOpacity>
+          </View>
+          
+          {/* Current Week Status */}
+          <View style={styles.weekStatus}>
+            <Text style={[styles.weekStatusText, { color: '#FFFFFF99' }]}>
+              {currentWeek === 0 ? 'Cette semaine' : 
+               currentWeek === -1 ? 'Semaine dernière' :
+               currentWeek === 1 ? 'Semaine prochaine' :
+               currentWeek < 0 ? `Il y a ${Math.abs(currentWeek)} semaines` :
+               `Dans ${currentWeek} semaines`}
+            </Text>
+            <View style={styles.weekStats}>
+              <View style={styles.weekStat}>
+                <Ionicons name="calendar" size={12} color="#FFFFFF99" />
+                <Text style={[styles.weekStatText, { color: '#FFFFFF99' }]}>
+                  {Object.values(scheduleData).flat().length} cours
+                </Text>
+              </View>
+              <View style={styles.weekStat}>
+                <Ionicons name="alert-circle" size={12} color="#FFFFFF99" />
+                <Text style={[styles.weekStatText, { color: '#FFFFFF99' }]}>
+                  {Object.values(scheduleData).flat().filter(c => c.isExam).length} examens
+                </Text>
+              </View>
+            </View>
           </View>
         </View>
         
+        {/* Action Buttons */}
         <View style={styles.headerActions}>
           <TouchableOpacity 
             style={[
-              styles.viewButton, 
+              styles.actionButton, 
               { backgroundColor: selectedView === 'week' ? '#FFFFFF' : 'rgba(255, 255, 255, 0.15)' }
             ]}
             onPress={() => setSelectedView(selectedView === 'day' ? 'week' : 'day')}
           >
             <Ionicons 
               name={selectedView === 'day' ? "grid" : "list"} 
-              size={18} 
+              size={20} 
               color={selectedView === 'week' ? theme.primary : "#FFFFFF"} 
             />
           </TouchableOpacity>
           
           <TouchableOpacity 
             style={[
-              styles.editButton, 
+              styles.actionButton, 
               { backgroundColor: isEditMode ? '#FFFFFF' : 'rgba(255, 255, 255, 0.15)' }
             ]}
             onPress={() => setIsEditMode(!isEditMode)}
           >
             <Ionicons 
               name={isEditMode ? "checkmark" : "pencil"} 
-              size={18} 
+              size={20} 
               color={isEditMode ? theme.primary : '#FFFFFF'} 
             />
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[styles.actionButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}
+            onPress={() => console.log('Calendar options')}
+          >
+            <Ionicons name="calendar-outline" size={20} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
       </View>
@@ -934,9 +987,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  // ENHANCED HEADER STYLES
   header: {
     paddingTop: 60,
-    paddingBottom: 30,
+    paddingBottom: 35, // Slightly larger for complex navigation
     paddingHorizontal: 20,
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
@@ -944,104 +998,143 @@ const styles = StyleSheet.create({
   headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start', // Changed to flex-start for better alignment
   },
   headerLeft: {
     flex: 1,
+    marginRight: 16,
   },
   headerSubtitle: {
     fontSize: 14,
     fontWeight: '500',
-    marginBottom: 8,
+    marginBottom: 12,
   },
-  weekNavigation: {
+  
+  // Enhanced Week Navigation
+  weekNavigationContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 12,
     gap: 12,
   },
   weekNavButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: 'rgba(255, 255, 255, 0.15)',
     justifyContent: 'center',
+    alignItems: 'center',
+  },
+  weekTitleContainer: {
+    flex: 1,
     alignItems: 'center',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    minWidth: 180,
     textAlign: 'center',
+    marginBottom: 8,
   },
+  weekIndicators: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  weekIndicator: {
+    height: 4,
+    borderRadius: 2,
+  },
+  
+  // Week Status
+  weekStatus: {
+    alignItems: 'flex-start',
+  },
+  weekStatusText: {
+    fontSize: 12,
+    fontWeight: '500',
+    marginBottom: 6,
+  },
+  weekStats: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  weekStat: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  weekStatText: {
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  
+  // Action Buttons (consistent with other screens)
   headerActions: {
     flexDirection: 'row',
     gap: 8,
+    alignItems: 'flex-start',
+    marginTop: 4, // Slight offset to align with title
   },
-  viewButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+  actionButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  editButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  
+  // Enhanced Day Selector (overlapping style)
   daySelector: {
-    marginTop: -15,
+    marginTop: -20, // Increased overlap
     marginHorizontal: 20,
     borderRadius: 20,
-    paddingVertical: 12,
+    paddingVertical: 16, // Increased padding
     paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 8,
   },
   dayButton: {
     alignItems: 'center',
     paddingVertical: 12,
     paddingHorizontal: 16,
     marginHorizontal: 4,
-    borderRadius: 12,
-    minWidth: 60,
+    borderRadius: 14, // Slightly larger radius
+    minWidth: 64, // Consistent width
     position: 'relative',
   },
   dayText: {
     fontSize: 12,
-    fontWeight: '500',
-    marginBottom: 4,
+    fontWeight: '600', // Bolder
+    marginBottom: 6,
   },
   dateText: {
-    fontSize: 16,
+    fontSize: 18, // Larger date
     fontWeight: 'bold',
   },
   todayIndicator: {
     position: 'absolute',
-    bottom: 4,
+    bottom: 6,
     width: 6,
     height: 6,
     borderRadius: 3,
   },
   examIndicator: {
     position: 'absolute',
-    top: 4,
-    right: 4,
+    top: 6,
+    right: 6,
     width: 8,
     height: 8,
     borderRadius: 4,
   },
   addButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 12,
@@ -1427,4 +1520,4 @@ const styles = StyleSheet.create({
   bottomPadding: {
     height: 40,
   },
-});
+}); 
