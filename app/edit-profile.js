@@ -267,34 +267,38 @@ export default function EditProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <Stack.Screen
-        options={{
-          headerShown: true,
-          title: 'Modifier le profil',
-          headerStyle: { backgroundColor: theme.primary },
-          headerTintColor: theme.surface,
-          headerTitleStyle: { fontWeight: 'bold' },
-          headerLeft: () => (
-            <TouchableOpacity onPress={() => router.back()} style={styles.headerButton}>
-              <Ionicons name="arrow-back" size={24} color={theme.surface} />
-            </TouchableOpacity>
-          ),
-          headerRight: () => (
-            <TouchableOpacity 
-              onPress={handleSave} 
-              style={[styles.saveHeaderButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}
-              disabled={isLoading}
-            >
-              <Text style={[styles.saveButton, { color: theme.surface }]}>
-                {isLoading ? 'Saving...' : 'Sauver'}
-              </Text>
-            </TouchableOpacity>
-          ),
-        }}
-      />
+<SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+  <Stack.Screen options={{ headerShown: false }} />
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+  {/* Curved Header */}
+  <View style={[styles.curvedHeader, { backgroundColor: theme.primary }]}>
+    <View style={styles.curvedHeaderContent}>
+      <TouchableOpacity 
+        onPress={() => router.back()} 
+        style={styles.backButton}
+      >
+        <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+      </TouchableOpacity>
+      
+      <View style={styles.headerCenter}>
+        <Text style={[styles.curvedHeaderTitle, { color: '#FFFFFF' }]}>
+          Modifier le profil
+        </Text>
+      </View>
+      
+      <TouchableOpacity 
+        onPress={handleSave} 
+        style={[styles.saveHeaderButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}
+        disabled={isLoading}
+      >
+        <Text style={[styles.saveHeaderText, { color: '#FFFFFF' }]}>
+          {isLoading ? 'Saving...' : 'Sauver'}
+        </Text>
+      </TouchableOpacity>
+    </View>
+  </View>
+
+  <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Avatar Section */}
         <View style={styles.avatarSection}>
           <View style={[styles.avatar, { backgroundColor: theme.primary }]}>
@@ -565,8 +569,41 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   bottomPadding: {
-    height: 40,
-  },
+  height: 40,
+},
+// Curved Header Styles
+curvedHeader: {
+  paddingTop: 60,
+  paddingBottom: 30,
+  paddingHorizontal: 20,
+  borderBottomLeftRadius: 30,
+  borderBottomRightRadius: 30,
+},
+curvedHeaderContent: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+},
+backButton: {
+  width: 40,
+  height: 40,
+  borderRadius: 20,
+  backgroundColor: 'rgba(255, 255, 255, 0.15)',
+  justifyContent: 'center',
+  alignItems: 'center',
+},
+headerCenter: {
+  flex: 1,
+  alignItems: 'center',
+},
+curvedHeaderTitle: {
+  fontSize: 20,
+  fontWeight: 'bold',
+},
+saveHeaderText: {
+  fontSize: 16,
+  fontWeight: '600',
+},
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',

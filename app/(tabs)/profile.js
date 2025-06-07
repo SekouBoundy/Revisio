@@ -218,7 +218,7 @@ export default function ProfileScreen() {
 
               <View style={styles.aboutFooter}>
                 <Text style={[styles.aboutCopyright, { color: theme.textSecondary }]}>
-                  © 2024 Revisio - Tous droits réservés
+                  © 2025 Revisio - Tous droits réservés
                 </Text>
                 <Text style={[styles.aboutCopyright, { color: theme.textSecondary }]}>
                   Fait avec ❤️ au Mali
