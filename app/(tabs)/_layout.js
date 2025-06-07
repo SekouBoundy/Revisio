@@ -15,7 +15,7 @@ export default function TabLayout() {
           let iconName;
           switch (route.name) {
             case 'dashboard':
-              iconName = focused ? 'grid' : 'grid-outline';
+              iconName = focused ? 'home' : 'home-outline';
               break;
             case 'courses':
               iconName = focused ? 'book' : 'book-outline';
@@ -89,7 +89,7 @@ export default function TabLayout() {
             let iconName;
             switch (route.name) {
               case 'dashboard':
-                iconName = isFocused ? 'grid' : 'grid-outline';
+                iconName = isFocused ? 'home' : 'home-outline';
                 break;
               case 'courses':
                 iconName = isFocused ? 'book' : 'book-outline';
