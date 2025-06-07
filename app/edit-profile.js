@@ -1,4 +1,4 @@
-// app/edit-profile.js - MVP VERSION
+// app/edit-profile.js - COMPLETE FIXED VERSION
 import React, { useState, useContext } from 'react';
 import {
   View,
@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   Alert,
   Modal,
+  Image,
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,18 +23,30 @@ export default function EditProfileScreen() {
   const { user, updateUser } = useUser();
   const router = useRouter();
 
+  // Helper function to get initials
+  const getInitials = (fullName) => {
+    if (!fullName) return 'U';
+    const nameParts = fullName.trim().split(' ');
+    const firstInitial = nameParts[0]?.charAt(0)?.toUpperCase() || '';
+    const lastInitial = nameParts.length > 1 ? nameParts[nameParts.length - 1]?.charAt(0)?.toUpperCase() : '';
+    return (firstInitial + lastInitial) || 'U';
+  };
+
   const [formData, setFormData] = useState({
     name: user?.name || '',
     bio: user?.bio || '',
     school: user?.school || '',
     phone: user?.phone || '',
     level: user?.level || 'DEF',
+    avatarChar: user?.avatarChar || getInitials(user?.name || ''),
+    avatarImage: user?.avatarImage || null,
   });
 
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [showLevelModal, setShowLevelModal] = useState(false);
   const [showBacOptions, setShowBacOptions] = useState(false);
+  const [showAvatarOptions, setShowAvatarOptions] = useState(false);
 
   const bacSpecializations = [
     { value: 'TSE', label: 'Sciences Exactes (TSE)' },
@@ -94,9 +107,52 @@ export default function EditProfileScreen() {
     const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
     return phoneRegex.test(phone.replace(/\s/g, ''));
   };
+  
+  const formatPhoneNumber = (input) => {
+    const digitsOnly = input.replace(/\D/g, '');
+    
+    if (digitsOnly.length > 0 && !input.startsWith('+233')) {
+      return `+233 ${digitsOnly}`;
+    }
+    
+    if (input.startsWith('+233')) {
+      const localNumber = digitsOnly.substring(3);
+      if (localNumber.length <= 2) return `+233 ${localNumber}`;
+      if (localNumber.length <= 4) return `+233 ${localNumber.substring(0, 2)} ${localNumber.substring(2)}`;
+      if (localNumber.length <= 6) return `+233 ${localNumber.substring(0, 2)} ${localNumber.substring(2, 4)} ${localNumber.substring(4)}`;
+      return `+233 ${localNumber.substring(0, 2)} ${localNumber.substring(2, 4)} ${localNumber.substring(4, 6)} ${localNumber.substring(6, 8)}`;
+    }
+    
+    return input;
+  };
+
+  // Debug function
+  const debugSave = () => {
+    console.log('Form Data:', formData);
+    console.log('User Data:', user);
+    console.log('Validation Result:', validateForm());
+    handleSave();
+  };
 
   const handleSave = () => {
     if (!validateForm()) return;
+
+    // Check if user made any changes
+    const hasChanges = 
+      formData.name !== (user?.name || '') ||
+      formData.bio !== (user?.bio || '') ||
+      formData.school !== (user?.school || '') ||
+      formData.phone !== (user?.phone || '') ||
+      formData.level !== (user?.level || 'DEF') ||
+      formData.avatarChar !== (user?.avatarChar || getInitials(user?.name || '')) ||
+      formData.avatarImage !== (user?.avatarImage || null);
+
+    if (!hasChanges) {
+      Alert.alert('Information', 'Aucune modification détectée', [
+        { text: 'OK' }
+      ]);
+      return;
+    }
 
     setIsLoading(true);
     setTimeout(() => {
@@ -135,6 +191,7 @@ export default function EditProfileScreen() {
         ]}
         value={value || ''}
         onChangeText={onChangeText}
+        defaultValue={value}
         placeholder={placeholder}
         placeholderTextColor={theme.textSecondary}
         multiline={multiline}
@@ -149,6 +206,54 @@ export default function EditProfileScreen() {
         </View>
       )}
     </View>
+  );
+
+  const AvatarOptionsModal = () => (
+    <Modal visible={showAvatarOptions} transparent animationType="slide">
+      <View style={styles.modalOverlay}>
+        <View style={[styles.modalContent, { backgroundColor: theme.background }]}>
+          <View style={[styles.modalHeader, { borderBottomColor: theme.neutralLight }]}>
+            <Text style={[styles.modalTitle, { color: theme.text }]}>
+              Choisir un avatar
+            </Text>
+            <TouchableOpacity 
+              onPress={() => setShowAvatarOptions(false)}
+              style={[styles.closeButton, { backgroundColor: theme.neutralLight }]}
+            >
+              <Ionicons name="close" size={20} color={theme.textSecondary} />
+            </TouchableOpacity>
+          </View>
+          
+          <View style={styles.modalBody}>
+            <TouchableOpacity 
+              style={[styles.avatarOption, { backgroundColor: theme.surface }]}
+              onPress={() => {
+                handleChange('avatarImage', null);
+                setShowAvatarOptions(false);
+              }}
+            >
+              <Ionicons name="text" size={24} color={theme.primary} />
+              <Text style={[styles.avatarOptionText, { color: theme.text }]}>
+                Utiliser les initiales
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.avatarOption, { backgroundColor: theme.surface }]}
+              onPress={() => {
+                Alert.alert('Info', 'Fonctionnalité à venir');
+                setShowAvatarOptions(false);
+              }}
+            >
+              <Ionicons name="camera" size={24} color={theme.primary} />
+              <Text style={[styles.avatarOptionText, { color: theme.text }]}>
+                Prendre une photo
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
   );
 
   const LevelPickerModal = () => {
@@ -267,53 +372,63 @@ export default function EditProfileScreen() {
   };
 
   return (
-<SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-  <Stack.Screen options={{ headerShown: false }} />
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+      <Stack.Screen options={{ headerShown: false }} />
 
-  {/* Curved Header */}
-  <View style={[styles.curvedHeader, { backgroundColor: theme.primary }]}>
-    <View style={styles.curvedHeaderContent}>
-      <TouchableOpacity 
-        onPress={() => router.back()} 
-        style={styles.backButton}
-      >
-        <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
-      </TouchableOpacity>
-      
-      <View style={styles.headerCenter}>
-        <Text style={[styles.curvedHeaderTitle, { color: '#FFFFFF' }]}>
-          Modifier le profil
-        </Text>
-      </View>
-      
-      <TouchableOpacity 
-        onPress={handleSave} 
-        style={[styles.saveHeaderButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}
-        disabled={isLoading}
-      >
-        <Text style={[styles.saveHeaderText, { color: '#FFFFFF' }]}>
-          {isLoading ? 'Saving...' : 'Sauver'}
-        </Text>
-      </TouchableOpacity>
-    </View>
-  </View>
-
-  <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Avatar Section */}
-        <View style={styles.avatarSection}>
-          <View style={[styles.avatar, { backgroundColor: theme.primary }]}>
-            <Text style={[styles.avatarText, { color: theme.surface }]}>
-              {formData.name?.charAt(0)?.toUpperCase() || 'U'}
+      {/* Curved Header */}
+      <View style={[styles.curvedHeader, { backgroundColor: theme.primary }]}>
+        <View style={styles.curvedHeaderContent}>
+          <TouchableOpacity 
+            onPress={() => router.back()} 
+            style={styles.backButton}
+          >
+            <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+          
+          <View style={styles.headerCenter}>
+            <Text style={[styles.curvedHeaderTitle, { color: '#FFFFFF' }]}>
+              Modifier le profil
             </Text>
           </View>
+          
           <TouchableOpacity 
-            style={[styles.changePhotoButton, { backgroundColor: theme.primary + '15' }]}
+            onPress={debugSave} 
+            style={[styles.saveHeaderButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}
+            disabled={isLoading}
           >
-            <Ionicons name="camera" size={16} color={theme.primary} style={{ marginRight: 6 }} />
-            <Text style={[styles.changePhotoText, { color: theme.primary }]}>
-              Modifier la photo
+            <Text style={[styles.saveHeaderText, { color: '#FFFFFF' }]}>
+              {isLoading ? 'Saving...' : 'Sauver'}
             </Text>
           </TouchableOpacity>
+        </View>
+      </View>
+
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Avatar Section */}
+        <View style={styles.avatarSection}>
+          <TouchableOpacity 
+            style={[styles.avatar, { backgroundColor: theme.primary }]}
+            onPress={() => setShowAvatarOptions(true)}
+          >
+            {formData.avatarImage ? (
+              <Image 
+                source={{ uri: formData.avatarImage }} 
+                style={styles.avatarImage}
+                onError={() => handleChange('avatarImage', null)}
+              />
+            ) : (
+              <Text style={[styles.avatarText, { color: theme.surface }]}>
+                {formData.avatarChar}
+              </Text>
+            )}
+            <View style={[styles.avatarEditIcon, { backgroundColor: theme.primary }]}>
+              <Ionicons name="camera" size={16} color="#fff" />
+            </View>
+          </TouchableOpacity>
+          
+          <Text style={[styles.avatarHint, { color: theme.textSecondary }]}>
+            Touchez pour changer votre avatar
+          </Text>
         </View>
 
         {/* Form */}
@@ -325,7 +440,15 @@ export default function EditProfileScreen() {
           <InputField
             label="Nom complet"
             value={formData.name}
-            onChangeText={(text) => handleChange('name', text)}
+            onChangeText={(text) => {
+              handleChange('name', text);
+              // Auto-update avatar character based on name
+              const nameParts = text.trim().split(' ');
+              const firstInitial = nameParts[0]?.charAt(0)?.toUpperCase() || '';
+              const lastInitial = nameParts.length > 1 ? nameParts[nameParts.length - 1]?.charAt(0)?.toUpperCase() : '';
+              const avatarChar = firstInitial + lastInitial || firstInitial || 'U';
+              handleChange('avatarChar', avatarChar.substring(0, 2));
+            }}
             placeholder="Entrez votre nom complet"
             required
             error={errors.name}
@@ -351,8 +474,11 @@ export default function EditProfileScreen() {
           <InputField
             label="Téléphone"
             value={formData.phone}
-            onChangeText={(text) => handleChange('phone', text)}
-            placeholder="+223 XX XX XX XX"
+            onChangeText={(text) => {
+              const formattedPhone = formatPhoneNumber(text);
+              handleChange('phone', formattedPhone);
+            }}
+            placeholder="+233 XX XX XX XX"
             keyboardType="phone-pad"
             error={errors.phone}
           />
@@ -401,7 +527,7 @@ export default function EditProfileScreen() {
         {/* Save Button */}
         <TouchableOpacity
           style={[styles.saveButtonMobile, { backgroundColor: theme.primary }]}
-          onPress={handleSave}
+          onPress={debugSave}
           disabled={isLoading}
         >
           <Ionicons name="save" size={20} color="#fff" style={{ marginRight: 8 }} />
@@ -414,6 +540,7 @@ export default function EditProfileScreen() {
       </ScrollView>
 
       <LevelPickerModal />
+      <AvatarOptionsModal />
     </SafeAreaView>
   );
 }
@@ -422,21 +549,48 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  headerButton: {
-    padding: 8,
+  content: {
+    flex: 1,
+  },
+  // Curved Header Styles
+  curvedHeader: {
+    paddingTop: 60,
+    paddingBottom: 30,
+    paddingHorizontal: 20,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+  },
+  curvedHeaderContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  curvedHeaderTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
   },
   saveHeaderButton: {
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
   },
-  saveButton: {
+  saveHeaderText: {
     fontSize: 16,
     fontWeight: '600',
   },
-  content: {
-    flex: 1,
-  },
+  // Avatar Section
   avatarSection: {
     alignItems: 'center',
     paddingVertical: 30,
@@ -454,22 +608,36 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 8,
+    position: 'relative',
   },
   avatarText: {
     fontSize: 40,
     fontWeight: 'bold',
   },
-  changePhotoButton: {
-    flexDirection: 'row',
+  avatarImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+  },
+  avatarEditIcon: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
   },
-  changePhotoText: {
-    fontSize: 16,
-    fontWeight: '500',
+  avatarHint: {
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 8,
+    fontStyle: 'italic',
   },
+  // Form Styles
   form: {
     paddingHorizontal: 20,
   },
@@ -569,41 +737,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   bottomPadding: {
-  height: 40,
-},
-// Curved Header Styles
-curvedHeader: {
-  paddingTop: 60,
-  paddingBottom: 30,
-  paddingHorizontal: 20,
-  borderBottomLeftRadius: 30,
-  borderBottomRightRadius: 30,
-},
-curvedHeaderContent: {
-  flexDirection: 'row',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-},
-backButton: {
-  width: 40,
-  height: 40,
-  borderRadius: 20,
-  backgroundColor: 'rgba(255, 255, 255, 0.15)',
-  justifyContent: 'center',
-  alignItems: 'center',
-},
-headerCenter: {
-  flex: 1,
-  alignItems: 'center',
-},
-curvedHeaderTitle: {
-  fontSize: 20,
-  fontWeight: 'bold',
-},
-saveHeaderText: {
-  fontSize: 16,
-  fontWeight: '600',
-},
+    height: 40,
+  },
+  // Modal Styles
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -637,6 +773,20 @@ saveHeaderText: {
     paddingHorizontal: 20,
     paddingVertical: 16,
   },
+  // Avatar Options
+  avatarOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    gap: 12,
+  },
+  avatarOptionText: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  // Level Picker
   levelPickerContainer: {
     gap: 20,
   },

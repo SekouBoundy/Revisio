@@ -13,7 +13,9 @@
     "updates": {
       "fallbackToCacheTimeout": 0
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "bundleIdentifier": "com.sekou.revisio",
       "supportsTablet": false
@@ -27,6 +29,11 @@
     },
     "web": {
       "favicon": "./assets/icons/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "8027f6d2-6735-4f56-b5bf-0d70205d09fb"
+      }
     }
   }
 }
