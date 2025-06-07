@@ -134,9 +134,9 @@ export default function QuizzesIndex() {
 
   const QuizCard = ({ icon, title, subject, questions, duration, difficulty, score, color, onPress }) => (
     <TouchableOpacity 
-      style={[styles.quizCard, { backgroundColor: theme.surface }]}
-      onPress={onPress}
-    >
+    style={[styles.quizCard, { backgroundColor: theme.surface }]}
+    onPress={onPress}  // This will use the fixed onPress from above
+  >
       <View style={[styles.quizIcon, { backgroundColor: color + '20' }]}>
         <Ionicons name={icon} size={24} color={color} />
       </View>
@@ -361,23 +361,26 @@ export default function QuizzesIndex() {
               {isDefLevel ? 'Quiz DEF' : `Quiz ${user?.level}`}
             </Text>
           </View>
-          
           {filteredQuizzes.length > 0 ? (
-            filteredQuizzes.map((quiz, index) => (
-              <QuizCard
-                key={index}
-                icon={quiz.icon}
-                title={quiz.title}
-                subject={quiz.subject}
-                questions={quiz.questions}
-                duration={quiz.duration}
-                difficulty={quiz.difficulty}
-                score={quiz.score}
-                color={quiz.color}
-                onPress={() => console.log(`Start quiz: ${quiz.title}`)}
-              />
-            ))
-          ) : hasSearchResults ? (
+          filteredQuizzes.map((quiz, index) => (
+            <QuizCard
+              key={index}
+              icon={quiz.icon}
+              title={quiz.title}
+              subject={quiz.subject}
+              questions={quiz.questions}
+              duration={quiz.duration}
+              difficulty={quiz.difficulty}
+              score={quiz.score}
+              color={quiz.color}
+              onPress={() => {
+                const userLevel = isDefLevel ? 'DEF' : user?.level || 'TSE';
+                const quizTitle = quiz.title.replace(/\s+/g, '_');
+                router.push(`/quizzes/${userLevel}/${quizTitle}`);
+              }}
+            />
+          ))
+        ) : hasSearchResults ? (
             <View style={[styles.emptyState, { backgroundColor: theme.surface }]}>
               <Ionicons name="search-outline" size={48} color={theme.textSecondary} />
               <Text style={[styles.emptyTitle, { color: theme.text }]}>Aucun résultat</Text>
