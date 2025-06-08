@@ -1,5 +1,6 @@
 // hooks/useQuiz.ts - FIXED VERSION
 
+// hooks/useQuiz.ts - FIXED TypeScript version
 import { useState, useEffect, useCallback } from "react";
 import { shuffleArray } from "../utils/shuffleArray";
 
@@ -9,6 +10,9 @@ export interface Question {
   options: string[];
   correctAnswerIndex: number;
   explanation?: string;
+  hint?: string;
+  timeLimit?: number;
+  points?: number;
 }
 
 interface UseQuizResult {
@@ -22,74 +26,126 @@ interface UseQuizResult {
   selectOption: (index: number) => void;
   goToNextQuestion: () => void;
   resetQuiz: () => void;
+  timeRemaining: number | null;
+  setTimeRemaining: (time: number) => void;
 }
 
-// SAMPLE DATA - Replace with your actual data later
-const SAMPLE_QUESTIONS: Question[] = [
-  {
-    id: "1",
-    prompt: "Combien fait 2 + 2 ?",
-    options: ["3", "4", "5", "6"],
-    correctAnswerIndex: 1,
-    explanation: "2 + 2 = 4"
+// Type the quiz data properly
+const ENHANCED_QUIZ_DATA: Record<string, Record<string, Question[]>> = {
+  'DEF': {
+    'Les_Fractions': [
+      {
+        id: "1",
+        prompt: "Combien fait 1/2 + 1/4 ?",
+        options: ["1/6", "2/6", "3/4", "1/8"],
+        correctAnswerIndex: 2,
+        explanation: "1/2 = 2/4, donc 2/4 + 1/4 = 3/4. Pour additionner des fractions, il faut d'abord les mettre au même dénominateur.",
+        hint: "Convertissez 1/2 en quarts pour avoir le même dénominateur.",
+        timeLimit: 45,
+        points: 10
+      },
+      {
+        id: "2",
+        prompt: "Quelle fraction est équivalente à 50% ?",
+        options: ["1/4", "1/2", "3/4", "2/3"],
+        correctAnswerIndex: 1,
+        explanation: "50% = 50/100 = 1/2. Pour convertir un pourcentage en fraction, divisez par 100 et simplifiez.",
+        hint: "50% signifie 50 sur 100, quelle fraction cela donne-t-il ?",
+        timeLimit: 30,
+        points: 10
+      },
+      {
+        id: "3",
+        prompt: "Simplifiez 4/8",
+        options: ["1/2", "2/4", "1/4", "8/4"],
+        correctAnswerIndex: 0,
+        explanation: "4/8 = 1/2 car 4 et 8 ont un diviseur commun de 4. 4÷4 = 1 et 8÷4 = 2.",
+        hint: "Cherchez le plus grand diviseur commun de 4 et 8.",
+        timeLimit: 30,
+        points: 10
+      }
+    ],
+    'États_de_la_matière': [
+      {
+        id: "1",
+        prompt: "Quels sont les trois états principaux de la matière ?",
+        options: ["Solide, Liquide, Gaz", "Chaud, Froid, Tiède", "Dur, Mou, Flexible", "Grand, Moyen, Petit"],
+        correctAnswerIndex: 0,
+        explanation: "Les trois états principaux de la matière sont : solide (forme et volume définis), liquide (volume défini, forme variable) et gazeux (forme et volume variables).",
+        hint: "Pensez à l'eau sous ses différentes formes.",
+        timeLimit: 30,
+        points: 10
+      },
+      {
+        id: "2",
+        prompt: "À quelle température l'eau bout-elle au niveau de la mer ?",
+        options: ["0°C", "50°C", "100°C", "200°C"],
+        correctAnswerIndex: 2,
+        explanation: "L'eau bout à 100°C au niveau de la mer. C'est le point d'ébullition standard.",
+        hint: "C'est la température de l'eau bouillante dans une casserole.",
+        timeLimit: 20,
+        points: 10
+      }
+    ]
   },
-  {
-    id: "2", 
-    prompt: "Quelle est la capitale de la France ?",
-    options: ["Lyon", "Marseille", "Paris", "Toulouse"],
-    correctAnswerIndex: 2,
-    explanation: "Paris est la capitale de la France"
-  },
-  {
-    id: "3",
-    prompt: "Combien y a-t-il de continents ?",
-    options: ["5", "6", "7", "8"],
-    correctAnswerIndex: 2,
-    explanation: "Il y a 7 continents sur Terre"
-  },
-  {
-    id: "4",
-    prompt: "Quel est le résultat de 5 × 3 ?",
-    options: ["12", "15", "18", "20"],
-    correctAnswerIndex: 1,
-    explanation: "5 × 3 = 15"
-  },
-  {
-    id: "5",
-    prompt: "Quelle planète est la plus proche du Soleil ?",
-    options: ["Vénus", "Mercure", "Mars", "Terre"],
-    correctAnswerIndex: 1,
-    explanation: "Mercure est la planète la plus proche du Soleil"
+  'TSE': {
+    'Intégrales': [
+      {
+        id: "1",
+        prompt: "Quelle est une primitive de f(x) = 2x ?",
+        options: ["x²", "x² + C", "2", "2x + C"],
+        correctAnswerIndex: 1,
+        explanation: "Une primitive de 2x est x² + C, où C est une constante d'intégration.",
+        hint: "Rappelez-vous que l'intégration est l'opération inverse de la dérivation.",
+        timeLimit: 45,
+        points: 15
+      }
+    ]
   }
-];
+};
 
-export function useQuiz(
-  level: string,
-  stream: string,
-  course: string
-): UseQuizResult {
+export function useQuiz(level: string, stream: string, course: string): UseQuizResult {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [selectedOptionIndex, setSelectedOptionIndex] = useState<number | null>(null);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [isFinished, setIsFinished] = useState(false);
+  const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
 
   useEffect(() => {
     try {
       console.log(`Loading quiz for: ${level}/${stream}/${course}`);
       
-      const shuffledQuestions = shuffleArray([...SAMPLE_QUESTIONS]).map((q) => ({
+      // Get quiz data with proper type checking
+      const quizKey = course.replace(/[_\s]/g, '_');
+      const levelData = ENHANCED_QUIZ_DATA[level];
+      
+      if (!levelData) {
+        console.warn('No level data found');
+        setQuestions([]);
+        return;
+      }
+      
+      const quizData = levelData[quizKey] || levelData['Les_Fractions'] || [];
+      
+      if (quizData.length === 0) {
+        console.warn('No quiz data found, using fallback');
+        setQuestions([]);
+        return;
+      }
+
+      const shuffledQuestions = shuffleArray([...quizData]).map((q) => ({
         ...q,
         options: shuffleArray([...q.options]),
       }));
 
       const recalculated = shuffledQuestions.map((q) => {
-        const originalQuestion = SAMPLE_QUESTIONS.find((orig) => orig.id === q.id);
+        const originalQuestion = quizData.find((orig: Question) => orig.id === q.id);
         if (!originalQuestion) return q;
         
         const correctText = originalQuestion.options[originalQuestion.correctAnswerIndex];
-        const newCorrectIndex = q.options.findIndex((opt) => opt === correctText);
+        const newCorrectIndex = q.options.findIndex((opt: string) => opt === correctText);
         
         return { ...q, correctAnswerIndex: newCorrectIndex };
       });
@@ -100,16 +156,16 @@ export function useQuiz(
       setSelectedOptionIndex(null);
       setIsCorrect(null);
       setIsFinished(false);
+      setTimeRemaining(15 * 60);
     } catch (err) {
       console.error("Error loading quiz:", err);
       setQuestions([]);
     }
   }, [level, stream, course]);
 
-  const progressPercent =
-    questions.length > 0
-      ? (currentQuestionIndex + (isCorrect !== null ? 1 : 0)) / questions.length
-      : 0;
+  const progressPercent = questions.length > 0
+    ? (currentQuestionIndex + (isCorrect !== null ? 1 : 0)) / questions.length
+    : 0;
 
   const selectOption = useCallback(
     (index: number) => {
@@ -138,27 +194,12 @@ export function useQuiz(
   }, [currentQuestionIndex, questions.length]);
 
   const resetQuiz = useCallback(() => {
-    const reshuffled = shuffleArray([...SAMPLE_QUESTIONS]).map((q) => ({
-      ...q,
-      options: shuffleArray([...q.options]),
-    }));
-
-    const recalculated = reshuffled.map((q) => {
-      const originalQuestion = SAMPLE_QUESTIONS.find((orig) => orig.id === q.id);
-      if (!originalQuestion) return q;
-      
-      const correctText = originalQuestion.options[originalQuestion.correctAnswerIndex];
-      const newCorrectIndex = q.options.findIndex((opt) => opt === correctText);
-      
-      return { ...q, correctAnswerIndex: newCorrectIndex };
-    });
-
-    setQuestions(recalculated);
     setCurrentQuestionIndex(0);
     setScore(0);
     setSelectedOptionIndex(null);
     setIsCorrect(null);
     setIsFinished(false);
+    setTimeRemaining(15 * 60);
   }, []);
 
   return {
@@ -172,5 +213,7 @@ export function useQuiz(
     selectOption,
     goToNextQuestion,
     resetQuiz,
+    timeRemaining,
+    setTimeRemaining,
   };
 }
