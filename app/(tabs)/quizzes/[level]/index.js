@@ -1,5 +1,5 @@
-// app/(tabs)/quizzes/[level]/index.js - Updated with navigation to quiz taking
-import React, { useContext, useState, useRef } from 'react';
+// app/(tabs)/quizzes/[level]/index.js - CONNECTED TO QUIZ MANAGER
+import React, { useContext, useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { ThemeContext } from '../../../../constants/ThemeContext';
 import { useUser } from '../../../../constants/UserContext';
+import { QuizManager, UserProgressManager } from '../../../../utils/quizDataManager';
 
 export default function LevelQuizzesScreen() {
   const { level } = useLocalSearchParams();
@@ -23,13 +24,37 @@ export default function LevelQuizzesScreen() {
   const { user } = useUser();
   const router = useRouter();
   
-  // Search state
+  // Quiz manager instances
+  const [quizManager] = useState(() => new QuizManager(level));
+  const [progressManager] = useState(() => new UserProgressManager());
+  
+  // State
   const [searchVisible, setSearchVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [userProgress, setUserProgress] = useState({});
+  const [quizStats, setQuizStats] = useState(null);
   const searchInputRef = useRef(null);
   const searchAnimValue = useRef(new Animated.Value(0)).current;
 
   const isDefLevel = level === 'DEF';
+
+  // Load user progress on mount
+  useEffect(() => {
+    loadUserProgress();
+  }, []);
+
+  const loadUserProgress = async () => {
+    try {
+      const progress = await progressManager.getUserProgress();
+      const stats = quizManager.getQuizStats(progress);
+      setUserProgress(progress);
+      setQuizStats(stats);
+    } catch (error) {
+      console.error('Error loading progress:', error);
+      setUserProgress({});
+      setQuizStats(null);
+    }
+  };
 
   // Toggle search functionality
   const toggleSearch = () => {
@@ -62,50 +87,48 @@ export default function LevelQuizzesScreen() {
     searchInputRef.current?.focus();
   };
 
-  const QuizCard = ({ icon, title, subject, questions, duration, difficulty, score, color, onPress }) => (
-    <TouchableOpacity 
-      style={[styles.quizCard, { backgroundColor: theme.surface }]}
-      onPress={onPress}
-    >
-      <View style={[styles.quizIcon, { backgroundColor: color + '20' }]}>
-        <Ionicons name={icon} size={24} color={color} />
-      </View>
+  // Get all quizzes for this level
+  const getAllQuizzes = () => {
+    const allQuizzes = [];
+    const subjects = quizManager.getSubjects();
+    
+    subjects.forEach(subjectName => {
+      const subject = quizManager.getSubject(subjectName);
+      const quizzes = Object.values(subject.quizzes);
       
-      <View style={styles.quizContent}>
-        <Text style={[styles.quizTitle, { color: theme.text }]}>{title}</Text>
-        <Text style={[styles.quizSubject, { color: theme.text + '80' }]}>{subject}</Text>
-        
-        <View style={styles.quizInfo}>
-          <View style={styles.infoRow}>
-            <View style={styles.infoItem}>
-              <Ionicons name="help-circle-outline" size={14} color={theme.text + '60'} />
-              <Text style={[styles.infoText, { color: theme.text + '60' }]}>{questions} questions</Text>
-            </View>
-            <View style={styles.infoItem}>
-              <Ionicons name="time-outline" size={14} color={theme.text + '60'} />
-              <Text style={[styles.infoText, { color: theme.text + '60' }]}>{duration} min</Text>
-            </View>
-          </View>
-          
-          <View style={styles.quizMeta}>
-            <View style={[styles.difficultyBadge, { backgroundColor: getDifficultyColor(difficulty) + '20' }]}>
-              <Text style={[styles.difficultyText, { color: getDifficultyColor(difficulty) }]}>
-                {difficulty}
-              </Text>
-            </View>
-            {score !== undefined && (
-              <Text style={[styles.scoreText, { color: getScoreColor(score) }]}>
-                {score}%
-              </Text>
-            )}
-          </View>
-        </View>
-      </View>
+      quizzes.forEach(quiz => {
+        const progress = userProgress[quiz.id];
+        allQuizzes.push({
+          ...quiz,
+          icon: subject.icon,
+          color: subject.color,
+          score: progress?.bestScore,
+          attempts: progress?.attempts || 0,
+          lastAttempt: progress?.history?.[progress.history.length - 1]?.completedAt
+        });
+      });
+    });
+    
+    return allQuizzes;
+  };
 
-      <Ionicons name="chevron-forward" size={20} color={theme.text + '40'} />
-    </TouchableOpacity>
-  );
+  // Filter quizzes based on search
+  const filterQuizzes = (quizzes) => {
+    if (!searchQuery.trim()) return quizzes;
+    const query = searchQuery.toLowerCase();
+    return quizzes.filter(quiz => 
+      quiz.title.toLowerCase().includes(query) ||
+      quiz.subject.toLowerCase().includes(query) ||
+      quiz.difficulty.toLowerCase().includes(query) ||
+      (quiz.tags && quiz.tags.some(tag => tag.toLowerCase().includes(query)))
+    );
+  };
 
+  const allQuizzes = getAllQuizzes();
+  const filteredQuizzes = filterQuizzes(allQuizzes);
+  const hasSearchResults = searchQuery.trim().length > 0;
+
+  // Utility functions
   const getDifficultyColor = (difficulty) => {
     switch (difficulty) {
       case 'Facile': return '#4CAF50';
@@ -121,218 +144,100 @@ export default function LevelQuizzesScreen() {
     return '#F44336';
   };
 
-  const getDefQuizzes = () => [
-    {
-      icon: 'calculator-outline',
-      title: 'Les Fractions',
-      subject: 'Mathématiques',
-      questions: 10,
-      duration: 15,
-      difficulty: 'Facile',
-      score: 85,
-      color: '#2196F3'
-    },
-    {
-      icon: 'calculator-outline',
-      title: 'Géométrie',
-      subject: 'Mathématiques',
-      questions: 12,
-      duration: 20,
-      difficulty: 'Moyen',
-      color: '#2196F3'
-    },
-    {
-      icon: 'flask-outline',
-      title: 'États de la matière',
-      subject: 'Physique-Chimie',
-      questions: 8,
-      duration: 12,
-      difficulty: 'Facile',
-      score: 92,
-      color: '#E91E63'
-    },
-    {
-      icon: 'language-outline',
-      title: 'Conjugaison',
-      subject: 'Français',
-      questions: 15,
-      duration: 18,
-      difficulty: 'Moyen',
-      score: 76,
-      color: '#FF9800'
-    },
-    {
-      icon: 'globe-outline',
-      title: 'La Renaissance',
-      subject: 'Histoire-Géographie',
-      questions: 10,
-      duration: 15,
-      difficulty: 'Facile',
-      color: '#9C27B0'
-    },
-    {
-      icon: 'leaf-outline',
-      title: 'Les animaux',
-      subject: 'Sciences de la Vie et de la Terre',
-      questions: 12,
-      duration: 20,
-      difficulty: 'Facile',
-      score: 88,
-      color: '#4CAF50'
-    },
-    {
-      icon: 'globe',
-      title: 'Present Simple',
-      subject: 'Anglais',
-      questions: 8,
-      duration: 12,
-      difficulty: 'Facile',
-      color: '#607D8B'
-    },
-    {
-      icon: 'people-outline',
-      title: 'Droits et devoirs',
-      subject: 'Éducation Civique et Morale',
-      questions: 6,
-      duration: 10,
-      difficulty: 'Facile',
-      score: 94,
-      color: '#795548'
-    }
-  ];
-
-  const getBacQuizzes = () => {
-    const quizzesByTrack = {
-      TSE: [
-        {
-          icon: 'calculator-outline',
-          title: 'Intégrales',
-          subject: 'Mathématiques',
-          questions: 20,
-          duration: 45,
-          difficulty: 'Difficile',
-          score: 78,
-          color: '#2196F3'
-        },
-        {
-          icon: 'nuclear-outline',
-          title: 'Mécanique quantique',
-          subject: 'Physique',
-          questions: 15,
-          duration: 35,
-          difficulty: 'Difficile',
-          color: '#E91E63'
-        },
-        {
-          icon: 'flask-outline',
-          title: 'Chimie organique',
-          subject: 'Chimie',
-          questions: 18,
-          duration: 40,
-          difficulty: 'Difficile',
-          score: 82,
-          color: '#9C27B0'
-        },
-        {
-          icon: 'desktop-outline',
-          title: 'Algorithmes',
-          subject: 'Informatique',
-          questions: 12,
-          duration: 30,
-          difficulty: 'Moyen',
-          color: '#607D8B'
-        },
-        {
-          icon: 'bulb-outline',
-          title: 'Logique',
-          subject: 'Philosophie',
-          questions: 10,
-          duration: 25,
-          difficulty: 'Moyen',
-          score: 85,
-          color: '#795548'
-        }
-      ],
-      TSEXP: [
-        {
-          icon: 'calculator-outline',
-          title: 'Statistiques',
-          subject: 'Mathématiques',
-          questions: 16,
-          duration: 35,
-          difficulty: 'Difficile',
-          score: 74,
-          color: '#2196F3'
-        },
-        {
-          icon: 'leaf-outline',
-          title: 'Écologie',
-          subject: 'Sciences de la Vie et de la Terre',
-          questions: 14,
-          duration: 30,
-          difficulty: 'Moyen',
-          color: '#4CAF50'
-        },
-        {
-          icon: 'flask-outline',
-          title: 'Chimie analytique',
-          subject: 'Chimie',
-          questions: 12,
-          duration: 28,
-          difficulty: 'Difficile',
-          color: '#9C27B0'
-        }
-      ],
-      TSECO: [
-        {
-          icon: 'trending-up-outline',
-          title: 'Microéconomie',
-          subject: 'Économie',
-          questions: 20,
-          duration: 40,
-          difficulty: 'Moyen',
-          score: 88,
-          color: '#4CAF50'
-        },
-        {
-          icon: 'briefcase-outline',
-          title: 'Management',
-          subject: 'Gestion',
-          questions: 15,
-          duration: 30,
-          difficulty: 'Moyen',
-          color: '#607D8B'
-        },
-        {
-          icon: 'document-text-outline',
-          title: 'Droit commercial',
-          subject: 'Droit',
-          questions: 18,
-          duration: 35,
-          difficulty: 'Moyen',
-          score: 79,
-          color: '#795548'
-        }
-      ]
-    };
-
-    return quizzesByTrack[level] || quizzesByTrack.TSE;
+  const handleQuizPress = (quiz) => {
+    const userLevel = isDefLevel ? 'DEF' : user?.level || 'TSE';
+    const quizTitle = quiz.title.replace(/\s+/g, '_');
+    router.push(`/quizzes/${userLevel}/${quizTitle}`);
   };
 
-  // Filter quizzes based on search
-  const filterQuizzes = (quizzes) => {
-    if (!searchQuery.trim()) return quizzes;
-    const query = searchQuery.toLowerCase();
-    return quizzes.filter(quiz => 
-      quiz.title.toLowerCase().includes(query) ||
-      quiz.subject.toLowerCase().includes(query) ||
-      quiz.difficulty.toLowerCase().includes(query)
-    );
-  };
+  // Enhanced Quiz Card
+  const QuizCard = ({ quiz }) => (
+    <TouchableOpacity 
+      style={[styles.quizCard, { backgroundColor: theme.surface }]}
+      onPress={() => handleQuizPress(quiz)}
+    >
+      <View style={[styles.quizIcon, { backgroundColor: quiz.color + '20' }]}>
+        <Ionicons name={quiz.icon} size={24} color={quiz.color} />
+      </View>
+      
+      <View style={styles.quizContent}>
+        <View style={styles.quizHeader}>
+          <Text style={[styles.quizTitle, { color: theme.text }]}>{quiz.title}</Text>
+          {quiz.attempts > 0 && (
+            <View style={[styles.attemptsBadge, { backgroundColor: theme.primary + '20' }]}>
+              <Text style={[styles.attemptsText, { color: theme.primary }]}>
+                {quiz.attempts}x
+              </Text>
+            </View>
+          )}
+        </View>
+        
+        <Text style={[styles.quizSubject, { color: theme.textSecondary }]}>
+          {quiz.subject}
+        </Text>
+        
+        {quiz.description && (
+          <Text style={[styles.quizDescription, { color: theme.textSecondary }]} numberOfLines={2}>
+            {quiz.description}
+          </Text>
+        )}
+        
+        <View style={styles.quizMeta}>
+          <View style={styles.quizMetaRow}>
+            <View style={styles.quizMetaItem}>
+              <Ionicons name="help-circle-outline" size={14} color={theme.textSecondary} />
+              <Text style={[styles.quizMetaText, { color: theme.textSecondary }]}>
+                {quiz.questions?.length || 0} questions
+              </Text>
+            </View>
+            <View style={styles.quizMetaItem}>
+              <Ionicons name="time-outline" size={14} color={theme.textSecondary} />
+              <Text style={[styles.quizMetaText, { color: theme.textSecondary }]}>
+                {quiz.duration} min
+              </Text>
+            </View>
+            <View style={[styles.difficultyBadge, { backgroundColor: getDifficultyColor(quiz.difficulty) + '20' }]}>
+              <Text style={[styles.difficultyText, { color: getDifficultyColor(quiz.difficulty) }]}>
+                {quiz.difficulty}
+              </Text>
+            </View>
+          </View>
+          
+          {quiz.score !== undefined && (
+            <View style={styles.scoreContainer}>
+              <Text style={[styles.scoreText, { color: getScoreColor(quiz.score) }]}>
+                {quiz.score}%
+              </Text>
+              {quiz.lastAttempt && (
+                <Text style={[styles.lastAttemptText, { color: theme.textSecondary }]}>
+                  {new Date(quiz.lastAttempt).toLocaleDateString('fr-FR')}
+                </Text>
+              )}
+            </View>
+          )}
+        </View>
+        
+        {/* Progress indicator */}
+        {quiz.score !== undefined && (
+          <View style={styles.progressContainer}>
+            <View style={[styles.progressBarContainer, { backgroundColor: theme.neutralLight }]}>
+              <View 
+                style={[
+                  styles.progressBar, 
+                  { 
+                    width: `${quiz.score}%`,
+                    backgroundColor: getScoreColor(quiz.score)
+                  }
+                ]} 
+              />
+            </View>
+          </View>
+        )}
+      </View>
 
-  const quizzesData = isDefLevel ? getDefQuizzes() : getBacQuizzes();
-  const filteredQuizzes = filterQuizzes(quizzesData);
-  const hasSearchResults = searchQuery.trim().length > 0;
+      <Ionicons name="chevron-forward" size={20} color={theme.textSecondary} />
+    </TouchableOpacity>
+  );
 
   // Header Component
   const Header = () => (
@@ -371,27 +276,80 @@ export default function LevelQuizzesScreen() {
     </View>
   );
 
-  // Stats Card
+  // Enhanced Stats Card with real data
   const StatsCard = () => (
     <View style={[styles.statsCard, { backgroundColor: theme.surface }]}>
-      <View style={styles.statItem}>
-        <Text style={[styles.statValue, { color: theme.primary }]}>
-          {quizzesData.filter(q => q.score).length}
-        </Text>
-        <Text style={[styles.statLabel, { color: theme.text + '80' }]}>Terminés</Text>
+      <View style={styles.statsGrid}>
+        <View style={styles.statItem}>
+          <Text style={[styles.statValue, { color: theme.primary }]}>
+            {quizStats?.completedQuizzes || 0}
+          </Text>
+          <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Terminés</Text>
+        </View>
+        <View style={styles.statItem}>
+          <Text style={[styles.statValue, { color: '#4CAF50' }]}>
+            {quizStats?.averageScore || 0}%
+          </Text>
+          <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Moyenne</Text>
+        </View>
+        <View style={styles.statItem}>
+          <Text style={[styles.statValue, { color: '#FF9800' }]}>
+            {quizStats?.totalQuizzes - (quizStats?.completedQuizzes || 0) || allQuizzes.length}
+          </Text>
+          <Text style={[styles.statLabel, { color: theme.textSecondary }]}>À faire</Text>
+        </View>
       </View>
-      <View style={styles.statItem}>
-        <Text style={[styles.statValue, { color: '#4CAF50' }]}>
-          {Math.round(quizzesData.filter(q => q.score).reduce((acc, q) => acc + q.score, 0) / quizzesData.filter(q => q.score).length) || 0}%
-        </Text>
-        <Text style={[styles.statLabel, { color: theme.text + '80' }]}>Moyenne</Text>
-      </View>
-      <View style={styles.statItem}>
-        <Text style={[styles.statValue, { color: '#FF9800' }]}>
-          {quizzesData.length - quizzesData.filter(q => q.score).length}
-        </Text>
-        <Text style={[styles.statLabel, { color: theme.text + '80' }]}>À faire</Text>
-      </View>
+      
+      {/* Completion progress bar */}
+      {quizStats && (
+        <View style={styles.overallProgressContainer}>
+          <View style={styles.overallProgressHeader}>
+            <Text style={[styles.overallProgressLabel, { color: theme.text }]}>
+              Progression générale
+            </Text>
+            <Text style={[styles.overallProgressPercent, { color: theme.primary }]}>
+              {quizStats.completionRate}%
+            </Text>
+          </View>
+          <View style={[styles.overallProgressBar, { backgroundColor: theme.neutralLight }]}>
+            <View 
+              style={[
+                styles.overallProgressFill,
+                { 
+                  width: `${quizStats.completionRate}%`,
+                  backgroundColor: theme.primary
+                }
+              ]}
+            />
+          </View>
+        </View>
+      )}
+    </View>
+  );
+
+  // Filter/Sort Options
+  const FilterOptions = () => (
+    <View style={styles.filterContainer}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        <TouchableOpacity style={[styles.filterChip, { backgroundColor: theme.primary + '20' }]}>
+          <Text style={[styles.filterChipText, { color: theme.primary }]}>Tous</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.filterChip, { backgroundColor: theme.surface }]}>
+          <Text style={[styles.filterChipText, { color: theme.text }]}>Non commencés</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.filterChip, { backgroundColor: theme.surface }]}>
+          <Text style={[styles.filterChipText, { color: theme.text }]}>En cours</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.filterChip, { backgroundColor: theme.surface }]}>
+          <Text style={[styles.filterChipText, { color: theme.text }]}>Terminés</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.filterChip, { backgroundColor: theme.surface }]}>
+          <Text style={[styles.filterChipText, { color: theme.text }]}>Facile</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.filterChip, { backgroundColor: theme.surface }]}>
+          <Text style={[styles.filterChipText, { color: theme.text }]}>Difficile</Text>
+        </TouchableOpacity>
+      </ScrollView>
     </View>
   );
 
@@ -458,37 +416,49 @@ export default function LevelQuizzesScreen() {
         </View>
       )}
 
+      {/* Filter Options */}
+      {!hasSearchResults && <FilterOptions />}
+
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>
+              {hasSearchResults ? 'Résultats de recherche' : 'Tous les quiz'}
+            </Text>
+            <Text style={[styles.sectionCount, { color: theme.textSecondary }]}>
+              {filteredQuizzes.length} quiz{filteredQuizzes.length !== 1 ? 's' : ''}
+            </Text>
+          </View>
           
-{filteredQuizzes.length > 0 ? (
-  filteredQuizzes.map((quiz, index) => (
-    <QuizCard
-      key={index}
-      icon={quiz.icon}
-      title={quiz.title}
-      subject={quiz.subject}
-      questions={quiz.questions}
-      duration={quiz.duration}
-      difficulty={quiz.difficulty}
-      score={quiz.score}
-      color={quiz.color}
-      onPress={() => {
-        const userLevel = isDefLevel ? 'DEF' : user?.level || 'TSE';
-        const quizTitle = quiz.title.replace(/\s+/g, '_');
-        router.push(`/quizzes/${userLevel}/${quizTitle}`);
-      }}
-    />
-  ))
+          {filteredQuizzes.length > 0 ? (
+            filteredQuizzes.map((quiz, index) => (
+              <QuizCard key={quiz.id || index} quiz={quiz} />
+            ))
           ) : hasSearchResults ? (
             <View style={[styles.emptyState, { backgroundColor: theme.surface }]}>
               <Ionicons name="search-outline" size={48} color={theme.textSecondary} />
               <Text style={[styles.emptyTitle, { color: theme.text }]}>Aucun résultat</Text>
               <Text style={[styles.emptyMessage, { color: theme.textSecondary }]}>
-                Essayez des mots-clés différents
+                Essayez des mots-clés différents ou ajustez vos filtres
+              </Text>
+              <TouchableOpacity 
+                style={[styles.clearSearchButton, { backgroundColor: theme.primary + '15' }]}
+                onPress={clearSearch}
+              >
+                <Text style={[styles.clearSearchText, { color: theme.primary }]}>
+                  Effacer la recherche
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={[styles.emptyState, { backgroundColor: theme.surface }]}>
+              <Ionicons name="help-circle-outline" size={48} color={theme.textSecondary} />
+              <Text style={[styles.emptyTitle, { color: theme.text }]}>Aucun quiz disponible</Text>
+              <Text style={[styles.emptyMessage, { color: theme.textSecondary }]}>
+                Les quiz pour ce niveau seront bientôt disponibles
               </Text>
             </View>
-          ) : null}
+          )}
         </View>
 
         <View style={styles.bottomPadding} />
@@ -540,19 +510,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  
+  // Enhanced Stats Card
   statsCard: {
-    flexDirection: 'row',
     marginTop: -15,
     marginHorizontal: 20,
     marginBottom: 20,
     padding: 20,
     borderRadius: 20,
-    justifyContent: 'space-around',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
     shadowRadius: 8,
     elevation: 3,
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 16,
   },
   statItem: {
     alignItems: 'center',
@@ -564,7 +539,36 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: 12,
+    fontWeight: '500',
   },
+  overallProgressContainer: {
+    marginTop: 8,
+  },
+  overallProgressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  overallProgressLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  overallProgressPercent: {
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  overallProgressBar: {
+    height: 6,
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  overallProgressFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+
+  // Search
   searchContainer: {
     overflow: 'hidden',
     borderBottomWidth: 1,
@@ -609,12 +613,48 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
+
+  // Filter Options
+  filterContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  filterChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  filterChipText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+
+  // Content
   section: {
     paddingHorizontal: 20,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  sectionCount: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+
+  // Enhanced Quiz Card
   quizCard: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     padding: 16,
     borderRadius: 16,
     marginBottom: 12,
@@ -631,38 +671,60 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
+    marginTop: 4,
   },
   quizContent: {
     flex: 1,
   },
+  quizHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 4,
+  },
   quizTitle: {
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 2,
+    flex: 1,
+    marginRight: 8,
+  },
+  attemptsBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  attemptsText: {
+    fontSize: 10,
+    fontWeight: 'bold',
   },
   quizSubject: {
     fontSize: 12,
+    marginBottom: 4,
+  },
+  quizDescription: {
+    fontSize: 12,
+    lineHeight: 16,
     marginBottom: 8,
-  },
-  quizInfo: {
-    gap: 6,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    gap: 16,
-  },
-  infoItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  infoText: {
-    fontSize: 11,
   },
   quizMeta: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    marginBottom: 8,
+  },
+  quizMetaRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  quizMetaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  quizMetaText: {
+    fontSize: 11,
   },
   difficultyBadge: {
     paddingHorizontal: 6,
@@ -671,12 +733,33 @@ const styles = StyleSheet.create({
   },
   difficultyText: {
     fontSize: 10,
-    fontWeight: '600',
-  },
-  scoreText: {
-    fontSize: 14,
     fontWeight: 'bold',
   },
+  scoreContainer: {
+    alignItems: 'flex-end',
+  },
+  scoreText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 2,
+  },
+  lastAttemptText: {
+    fontSize: 10,
+  },
+  progressContainer: {
+    marginTop: 4,
+  },
+  progressBarContainer: {
+    height: 4,
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  progressBar: {
+    height: '100%',
+    borderRadius: 2,
+  },
+
+  // Empty State
   emptyState: {
     alignItems: 'center',
     padding: 40,
@@ -693,6 +776,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 20,
+    marginBottom: 16,
+  },
+  clearSearchButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 12,
+  },
+  clearSearchText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
   bottomPadding: {
     height: 40,
