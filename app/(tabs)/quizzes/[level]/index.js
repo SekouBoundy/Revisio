@@ -460,21 +460,26 @@ export default function LevelQuizzesScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.section}>
-          {filteredQuizzes.length > 0 ? (
-            filteredQuizzes.map((quiz, index) => (
-              <QuizCard
-                key={index}
-                icon={quiz.icon}
-                title={quiz.title}
-                subject={quiz.subject}
-                questions={quiz.questions}
-                duration={quiz.duration}
-                difficulty={quiz.difficulty}
-                score={quiz.score}
-                color={quiz.color}
-                onPress={() => router.push(`/quizzes/${level}/${quiz.title.replace(/\s+/g, '_')}`)}
-              />
-            ))
+          
+{filteredQuizzes.length > 0 ? (
+  filteredQuizzes.map((quiz, index) => (
+    <QuizCard
+      key={index}
+      icon={quiz.icon}
+      title={quiz.title}
+      subject={quiz.subject}
+      questions={quiz.questions}
+      duration={quiz.duration}
+      difficulty={quiz.difficulty}
+      score={quiz.score}
+      color={quiz.color}
+      onPress={() => {
+        const userLevel = isDefLevel ? 'DEF' : user?.level || 'TSE';
+        const quizTitle = quiz.title.replace(/\s+/g, '_');
+        router.push(`/quizzes/${userLevel}/${quizTitle}`);
+      }}
+    />
+  ))
           ) : hasSearchResults ? (
             <View style={[styles.emptyState, { backgroundColor: theme.surface }]}>
               <Ionicons name="search-outline" size={48} color={theme.textSecondary} />
