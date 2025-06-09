@@ -1,5 +1,5 @@
-// app/(tabs)/schedule.js - COMPLETE VERSION WITH COURSE NAVIGATION
-import React, { useContext, useState, useCallback } from 'react';
+// app/(tabs)/schedule.js - ENHANCED VERSION WITH ALL IMPROVEMENTS
+import React, { useContext, useState, useCallback, useEffect, useRef } from 'react';
 import { 
   SafeAreaView, 
   ScrollView, 
@@ -11,22 +11,102 @@ import {
   TextInput,
   Alert,
   KeyboardAvoidingView,
-  Platform
+  Platform,
+  Switch,
+  Animated,
+  PanResponder,
+  Vibration,
+  Share
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { ThemeContext } from '../../constants/ThemeContext';
 import { useUser } from '../../constants/UserContext';
 
-export default function ScheduleScreen() {
+export default function EnhancedScheduleScreen() {
   const { theme } = useContext(ThemeContext);
   const { user } = useUser();
   const router = useRouter();
   const isDefLevel = user?.level === 'DEF';
   
-  // Date and week management
-  const getCurrentWeekDates = () => {
+  // Enhanced state management
+  const [loading, setLoading] = useState(false);
+  const [currentWeek, setCurrentWeek] = useState(0);
+  const [weekDates, setWeekDates] = useState(getCurrentWeekDates());
+  const [selectedDayIndex, setSelectedDayIndex] = useState(() => {
+    const today = new Date().getDay();
+    return today === 0 ? 0 : today - 1;
+  });
+  
+  // UI States
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
+  const [showRecurringModal, setShowRecurringModal] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [selectedView, setSelectedView] = useState('day');
+  const [quickAddPosition, setQuickAddPosition] = useState({ day: 0, time: '08:00' });
+  const [conflicts, setConflicts] = useState([]);
+  const [suggestions, setSuggestions] = useState([]);
+  const [studyTimers, setStudyTimers] = useState({});
+  
+  // Enhanced form state
+  const [quickForm, setQuickForm] = useState({
+    subject: '',
+    startTime: '08:00',
+    endTime: '09:00',
+    type: 'Cours',
+    isRecurring: false,
+    recurringType: 'weekly',
+    recurringEnd: null,
+    room: '',
+    teacher: '',
+    notes: '',
+    reminderMinutes: 15,
+    color: '#2196F3'
+  });
+
+  // Animation refs
+  const dragAnimation = useRef(new Animated.ValueXY()).current;
+  const scaleAnimation = useRef(new Animated.Value(1)).current;
+
+  // Enhanced schedule data with persistence
+  const [scheduleData, setScheduleData] = useState(() => getScheduleForWeek(0));
+
+  // Load schedule from storage
+  useEffect(() => {
+    loadScheduleData();
+  }, []);
+
+  // Save schedule to storage
+  useEffect(() => {
+    saveScheduleData();
+  }, [scheduleData]);
+
+  const loadScheduleData = async () => {
+    try {
+      setLoading(true);
+      const stored = await AsyncStorage.getItem('userSchedule');
+      if (stored) {
+        setScheduleData(JSON.parse(stored));
+      }
+    } catch (error) {
+      console.error('Error loading schedule:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveScheduleData = async () => {
+    try {
+      await AsyncStorage.setItem('userSchedule', JSON.stringify(scheduleData));
+    } catch (error) {
+      console.error('Error saving schedule:', error);
+    }
+  };
+
+  function getCurrentWeekDates() {
     const today = new Date();
     const currentDay = today.getDay();
     const monday = new Date(today);
@@ -48,217 +128,173 @@ export default function ScheduleScreen() {
       });
     }
     return weekDates;
-  };
+  }
 
-  const [currentWeek, setCurrentWeek] = useState(0);
-  const [weekDates, setWeekDates] = useState(getCurrentWeekDates());
-  const [selectedDayIndex, setSelectedDayIndex] = useState(() => {
-    const today = new Date().getDay();
-    return today === 0 ? 0 : today - 1;
-  });
-  
-  // UI States
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [showQuickAdd, setShowQuickAdd] = useState(false);
-  const [selectedView, setSelectedView] = useState('day'); // 'day' or 'week'
-  const [quickAddPosition, setQuickAddPosition] = useState({ day: 0, time: '08:00' });
-  
-  // Ultra-simplified form state - just essentials
-  const [quickForm, setQuickForm] = useState({
-    subject: '',
-    startTime: '08:00',
-    endTime: '09:00',
-    type: 'Cours'
-  });
-
-  // Dynamic schedule data based on current week
   const getScheduleForWeek = useCallback((weekOffset) => {
-    // Base schedule template
     const baseSchedule = {
-      1: [ // Lundi
+      1: [
         { 
           id: `${weekOffset}-1-1`,
           time: '08:00-09:00', 
           subject: 'Mathématiques', 
-          teacher: '', 
-          room: '', 
+          teacher: 'M. Dubois', 
+          room: 'Salle 101', 
           type: 'Cours', 
           color: '#2196F3',
           description: 'Géométrie - Les triangles',
+          notes: 'Apporter calculatrice',
+          isRecurring: true,
+          studyTime: 0
         },
         { 
           id: `${weekOffset}-1-2`,
           time: '09:00-10:00', 
           subject: 'Français', 
-          teacher: '', 
-          room: '', 
+          teacher: 'Mme Martin', 
+          room: 'Salle 203', 
           type: 'Cours', 
           color: '#FF9800',
           description: 'Analyse de texte',
-        },
-        { 
-          id: `${weekOffset}-1-3`,
-          time: '14:00-15:00', 
-          subject: 'Sciences de la Vie et de la Terre', 
-          teacher: '', 
-          room: '', 
-          type: 'TP', 
-          color: '#4CAF50',
-          description: 'Observation cellulaire',
+          notes: '',
+          isRecurring: true,
+          studyTime: 0
         }
       ],
-      2: [ // Mardi
+      2: [
         { 
           id: `${weekOffset}-2-1`,
           time: '08:00-09:00', 
           subject: 'Informatique', 
-          teacher: '', 
-          room: '', 
+          teacher: 'M. Tech', 
+          room: 'Lab Info', 
           type: 'TP', 
           color: '#607D8B',
-          description: 'Programmation',
-        },
-        { 
-          id: `${weekOffset}-2-2`,
-          time: '14:00-15:00', 
-          subject: 'Français', 
-          teacher: '', 
-          room: '', 
-          type: 'Cours', 
-          color: '#FF9800',
-          description: 'Expression écrite',
+          description: 'Programmation Python',
+          notes: 'Apporter clé USB',
+          isRecurring: true,
+          studyTime: 0
         }
       ],
-      3: [ // Mercredi
-        { 
-          id: `${weekOffset}-3-1`,
-          time: '08:00-09:00', 
-          subject: 'Mathématiques', 
-          teacher: '', 
-          room: '', 
-          type: weekOffset === 0 ? 'Contrôle' : 'Cours', // Only current week has exam
-          color: '#2196F3',
-          description: weekOffset === 0 ? 'Contrôle - Géométrie' : 'Exercices - Géométrie',
-          isExam: weekOffset === 0
-        }
-      ],
-      4: [ // Jeudi
-        { 
-          id: `${weekOffset}-4-1`,
-          time: '08:00-09:00', 
-          subject: 'Physique-Chimie', 
-          teacher: '', 
-          room: '', 
-          type: 'Cours', 
-          color: '#E91E63',
-          description: 'Les états de la matière',
-        }
-      ],
-      5: [ // Vendredi - Different content per week
-        ...(weekOffset === 0 ? [
-          { 
-            id: `${weekOffset}-5-1`,
-            time: '08:00-09:00', 
-            subject: 'Anglais', 
-            teacher: '', 
-            room: '', 
-            type: 'Test', 
-            color: '#607D8B',
-            description: 'Test - Present Perfect',
-            isExam: true
-          }
-        ] : weekOffset === 1 ? [
-          { 
-            id: `${weekOffset}-5-1`,
-            time: '08:00-09:00', 
-            subject: 'Histoire-Géographie', 
-            teacher: '', 
-            room: '', 
-            type: 'Cours', 
-            color: '#9C27B0',
-            description: 'La Renaissance',
-          },
-          { 
-            id: `${weekOffset}-5-2`,
-            time: '14:00-15:00', 
-            subject: 'Mathématiques', 
-            teacher: '', 
-            room: '', 
-            type: 'Révisions', 
-            color: '#2196F3',
-            description: 'Révisions générales',
-          }
-        ] : [
-          { 
-            id: `${weekOffset}-5-1`,
-            time: '10:00-11:00', 
-            subject: 'Français', 
-            teacher: '', 
-            room: '', 
-            type: 'Cours', 
-            color: '#FF9800',
-            description: 'Littérature française',
-          }
-        ])
-      ],
-      6: [] // Samedi
+      3: [], 4: [], 5: [], 6: []
     };
-
     return baseSchedule;
   }, []);
 
-  const [scheduleData, setScheduleData] = useState(() => getScheduleForWeek(0));
-
-  // Time slots for grid view
+  // Enhanced time slots
   const timeSlots = [
-    '08:00', '09:00', '10:00', '10:15', '11:15', '12:15', 
-    '14:00', '15:00', '16:00', '17:00'
+    '07:00', '08:00', '09:00', '10:00', '10:15', '11:15', '12:15', 
+    '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'
   ];
 
-  // Common subjects for quick selection
   const commonSubjects = isDefLevel ? [
-    'Mathématiques', 'Français', 'Anglais', 'Histoire-Géographie', 
-    'Physique-Chimie', 'Sciences de la Vie et de la Terre', 'Informatique'
+    { name: 'Mathématiques', color: '#2196F3', icon: 'calculator' },
+    { name: 'Français', color: '#FF9800', icon: 'book' },
+    { name: 'Anglais', color: '#607D8B', icon: 'globe' },
+    { name: 'Histoire-Géographie', color: '#9C27B0', icon: 'map' },
+    { name: 'Physique-Chimie', color: '#E91E63', icon: 'flask' },
+    { name: 'Sciences de la Vie et de la Terre', color: '#4CAF50', icon: 'leaf' },
+    { name: 'Informatique', color: '#607D8B', icon: 'laptop' }
   ] : [
-    'Mathématiques', 'Physique', 'Chimie', 'Informatique', 
-    'Français', 'Philosophie', 'Anglais'
+    { name: 'Mathématiques', color: '#2196F3', icon: 'calculator' },
+    { name: 'Physique', color: '#E91E63', icon: 'nuclear' },
+    { name: 'Chimie', color: '#9C27B0', icon: 'flask' },
+    { name: 'Informatique', color: '#607D8B', icon: 'laptop' },
+    { name: 'Français', color: '#FF9800', icon: 'book' },
+    { name: 'Philosophie', color: '#795548', icon: 'bulb' },
+    { name: 'Anglais', color: '#607D8B', icon: 'globe' }
   ];
 
   // COURSE NAVIGATION FUNCTION
   const navigateToCourse = (classItem) => {
     const courseName = classItem.subject.replace(/\s+/g, '_').replace(/\//g, '_');
     const userLevel = isDefLevel ? 'DEF' : user?.level || 'TSE';
-    
     router.push(`/courses/${userLevel}/${courseName}`);
   };
 
-  // Get current week date range
-  const getWeekDateRange = () => {
-    const startDate = weekDates[0];
-    const endDate = weekDates[5];
+  // CONFLICT DETECTION
+  const detectTimeConflicts = (newClass, dayClasses) => {
+    const newStart = parseTime(newClass.startTime);
+    const newEnd = parseTime(newClass.endTime);
     
-    const months = [
-      'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
-      'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
-    ];
-    
-    const startMonth = months[startDate.month];
-    const endMonth = months[endDate.month];
-    const year = startDate.fullDate.getFullYear();
-    
-    if (startDate.month === endDate.month) {
-      return `${startDate.date} - ${endDate.date} ${startMonth} ${year}`;
-    } else {
-      return `${startDate.date} ${startMonth} - ${endDate.date} ${endMonth} ${year}`;
-    }
+    return dayClasses.filter(existing => {
+      if (existing.id === newClass.id) return false;
+      const [existingStartStr, existingEndStr] = existing.time.split('-');
+      const existingStart = parseTime(existingStartStr);
+      const existingEnd = parseTime(existingEndStr);
+      
+      return (newStart < existingEnd && newEnd > existingStart);
+    });
   };
 
-  // Navigation functions
+  const parseTime = (timeStr) => {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return hours * 60 + minutes;
+  };
+
+  // SMART SCHEDULING SUGGESTIONS
+  const getSchedulingSuggestions = (dayClasses, newClass) => {
+    const suggestions = [];
+    
+    timeSlots.forEach(slot => {
+      const testClass = { ...newClass, startTime: slot, endTime: getNextTimeSlot(slot) };
+      const conflicts = detectTimeConflicts(testClass, dayClasses);
+      
+      if (conflicts.length === 0) {
+        const score = calculateOptimalityScore(slot, dayClasses);
+        suggestions.push({
+          time: slot,
+          score,
+          reason: getSchedulingReason(score, slot)
+        });
+      }
+    });
+    
+    return suggestions.sort((a, b) => b.score - a.score).slice(0, 3);
+  };
+
+  const calculateOptimalityScore = (timeSlot, dayClasses) => {
+    const hour = parseInt(timeSlot.split(':')[0]);
+    let score = 50; // Base score
+    
+    // Prefer morning hours for difficult subjects
+    if (hour >= 8 && hour <= 11) score += 30;
+    
+    // Avoid lunch time
+    if (hour >= 12 && hour <= 13) score -= 20;
+    
+    // Check for gaps (prefer continuous scheduling)
+    const adjacentSlots = dayClasses.filter(cls => {
+      const [startHour] = cls.time.split('-')[0].split(':').map(Number);
+      return Math.abs(startHour - hour) === 1;
+    });
+    if (adjacentSlots.length > 0) score += 15;
+    
+    return Math.max(0, Math.min(100, score));
+  };
+
+  const getSchedulingReason = (score, timeSlot) => {
+    const hour = parseInt(timeSlot.split(':')[0]);
+    if (score >= 80) return 'Créneau optimal';
+    if (hour >= 8 && hour <= 11) return 'Bon pour la concentration';
+    if (hour >= 14 && hour <= 16) return 'Après-midi calme';
+    return 'Créneau disponible';
+  };
+
+  const getNextTimeSlot = (currentTime) => {
+    const currentIndex = timeSlots.indexOf(currentTime);
+    if (currentIndex === -1 || currentIndex === timeSlots.length - 1) {
+      const [hours, minutes] = currentTime.split(':').map(Number);
+      const nextHour = hours + 1;
+      return `${nextHour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    }
+    return timeSlots[currentIndex + 1];
+  };
+
+  // NAVIGATION
   const navigateWeek = (direction) => {
     const newWeek = currentWeek + direction;
     setCurrentWeek(newWeek);
     
-    // Update schedule data for the new week
     const newScheduleData = getScheduleForWeek(newWeek);
     setScheduleData(newScheduleData);
     
@@ -288,62 +324,84 @@ export default function ScheduleScreen() {
     setWeekDates(newWeekDates);
   };
 
-  // Subject color mapping
-  const getSubjectColor = (subject) => {
-    const colorMap = {
-      'Mathématiques': '#2196F3',
-      'Français': '#FF9800',
-      'Anglais': '#607D8B',
-      'Histoire-Géographie': '#9C27B0',
-      'Physique-Chimie': '#E91E63',
-      'Physique': '#E91E63',
-      'Chimie': '#9C27B0',
-      'Sciences de la Vie et de la Terre': '#4CAF50',
-      'Informatique': '#607D8B',
-      'Philosophie': '#795548',
-      'Éducation Civique et Morale': '#795548',
-      'Langue Arabe': '#FF5722',
-      'Activités Sportives': '#FF5722'
-    };
-    return colorMap[subject] || '#757575';
+  const getWeekDateRange = () => {
+    const startDate = weekDates[0];
+    const endDate = weekDates[5];
+    
+    const months = [
+      'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+      'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
+    ];
+    
+    const startMonth = months[startDate.month];
+    const endMonth = months[endDate.month];
+    const year = startDate.fullDate.getFullYear();
+    
+    if (startDate.month === endDate.month) {
+      return `${startDate.date} - ${endDate.date} ${startMonth} ${year}`;
+    } else {
+      return `${startDate.date} ${startMonth} - ${endDate.date} ${endMonth} ${year}`;
+    }
   };
 
-  // Quick add functions
+  // QUICK ADD FUNCTIONS
   const openQuickAdd = (dayIndex = selectedDayIndex, timeSlot = '08:00') => {
+    const dayClasses = scheduleData[dayIndex + 1] || [];
+    const newSuggestions = getSchedulingSuggestions(dayClasses, quickForm);
+    
     setQuickAddPosition({ day: dayIndex, time: timeSlot });
-    setQuickForm({
-      subject: '',
+    setQuickForm(prev => ({
+      ...prev,
       startTime: timeSlot,
-      endTime: getNextTimeSlot(timeSlot),
-      type: 'Cours'
-    });
+      endTime: getNextTimeSlot(timeSlot)
+    }));
+    setSuggestions(newSuggestions);
     setShowQuickAdd(true);
   };
 
-  const getNextTimeSlot = (currentTime) => {
-    const currentIndex = timeSlots.indexOf(currentTime);
-    return timeSlots[currentIndex + 1] || '17:00';
-  };
-
-  // Ultra-simplified save function
-  const saveQuickClass = () => {
+  // ENHANCED SAVE FUNCTION WITH CONFLICT DETECTION
+  const saveQuickClass = async () => {
     if (!quickForm.subject.trim()) {
       Alert.alert('Erreur', 'Veuillez choisir une matière');
       return;
     }
 
+    const dayKey = quickAddPosition.day + 1;
+    const dayClasses = scheduleData[dayKey] || [];
+    
+    // Check for conflicts
+    const detectedConflicts = detectTimeConflicts(quickForm, dayClasses);
+    
+    if (detectedConflicts.length > 0) {
+      Alert.alert(
+        'Conflit détecté',
+        `Ce créneau entre en conflit avec: ${detectedConflicts[0].subject}. Voulez-vous continuer ?`,
+        [
+          { text: 'Annuler', style: 'cancel' },
+          { text: 'Continuer', onPress: () => proceedWithSave() }
+        ]
+      );
+      return;
+    }
+    
+    proceedWithSave();
+  };
+
+  const proceedWithSave = async () => {
+    const subjectInfo = commonSubjects.find(s => s.name === quickForm.subject) || commonSubjects[0];
+    
     const newClass = {
       id: `${currentWeek}-${quickAddPosition.day + 1}-${Date.now()}`,
       time: `${quickForm.startTime}-${quickForm.endTime}`,
       subject: quickForm.subject,
-      teacher: '',
-      room: '',
+      teacher: quickForm.teacher || '',
+      room: quickForm.room || '',
       type: quickForm.type,
-      color: getSubjectColor(quickForm.subject),
+      color: subjectInfo.color,
       description: `${quickForm.type} - ${quickForm.subject}`,
-      isExam: quickForm.isExam || false,
-      isRecurring: quickForm.isRecurring || false,
-      weekOffset: quickForm.isExam && !quickForm.isRecurring ? currentWeek : null
+      notes: quickForm.notes || '',
+      isRecurring: quickForm.isRecurring,
+      studyTime: 0
     };
 
     const dayKey = quickAddPosition.day + 1;
@@ -362,17 +420,64 @@ export default function ScheduleScreen() {
 
     setScheduleData(updatedSchedule);
     setShowQuickAdd(false);
-
-    setQuickForm({
+    
+    // Schedule notification
+    if (quickForm.reminderMinutes > 0) {
+      scheduleNotification(newClass, quickForm.reminderMinutes);
+    }
+    
+    // Reset form
+    setQuickForm(prev => ({
+      ...prev,
       subject: '',
-      startTime: '08:00',
-      endTime: '09:00',
-      type: 'Cours',
-      isExam: false,
+      teacher: '',
+      room: '',
+      notes: '',
       isRecurring: false
+    }));
+    
+    Vibration.vibrate(100);
+    Alert.alert('Succès', 'Cours ajouté avec succès');
+  };
+
+  const scheduleNotification = (classItem, minutes) => {
+    // Implementation would depend on notification library
+    console.log(`Notification scheduled for ${classItem.subject} - ${minutes} minutes before`);
+  };
+
+  // EXPORT FUNCTIONALITY
+  const exportSchedule = async () => {
+    try {
+      const scheduleText = generateScheduleText();
+      await Share.share({
+        message: scheduleText,
+        title: 'Mon emploi du temps'
+      });
+    } catch (error) {
+      Alert.alert('Erreur', 'Impossible d\'exporter l\'emploi du temps');
+    }
+  };
+
+  const generateScheduleText = () => {
+    let text = `📅 EMPLOI DU TEMPS - ${getWeekDateRange()}\n\n`;
+    
+    weekDates.forEach((dayInfo, index) => {
+      const dayClasses = scheduleData[index + 1] || [];
+      text += `${dayInfo.day} ${dayInfo.date}\n`;
+      
+      if (dayClasses.length === 0) {
+        text += '  Aucun cours\n';
+      } else {
+        dayClasses.forEach(cls => {
+          text += `  ${cls.time} - ${cls.subject}`;
+          if (cls.room) text += ` (${cls.room})`;
+          text += '\n';
+        });
+      }
+      text += '\n';
     });
     
-    Alert.alert('Succès', 'Cours ajouté avec succès');
+    return text;
   };
 
   const deleteClass = (classItem) => {
@@ -396,6 +501,7 @@ export default function ScheduleScreen() {
               const updatedSchedule = { ...scheduleData };
               updatedSchedule[dayKey] = updatedSchedule[dayKey].filter(c => c.id !== classItem.id);
               setScheduleData(updatedSchedule);
+              Vibration.vibrate(50);
               Alert.alert('Succès', 'Cours supprimé');
             }
           }
@@ -414,17 +520,7 @@ export default function ScheduleScreen() {
   const dayHasExam = (dayIndex) => {
     const dayKey = dayIndex + 1;
     const dayClasses = scheduleData[dayKey] || [];
-    return dayClasses.some(classItem => classItem.isExam);
-  };
-
-  // Get class for specific time and day (for grid view)
-  const getClassForTimeAndDay = (timeSlot, dayIndex) => {
-    const dayKey = dayIndex + 1;
-    const dayClasses = scheduleData[dayKey] || [];
-    return dayClasses.find(classItem => {
-      const [startTime] = classItem.time.split('-');
-      return startTime === timeSlot;
-    });
+    return dayClasses.some(classItem => ['Contrôle', 'Test', 'Examen'].includes(classItem.type));
   };
 
   // ENHANCED HEADER COMPONENT
@@ -436,7 +532,6 @@ export default function ScheduleScreen() {
             {isDefLevel ? 'Mon Planning DEF' : `Planning ${user?.level}`}
           </Text>
           
-          {/* Enhanced Week Navigation in Title Area */}
           <View style={styles.weekNavigationContainer}>
             <TouchableOpacity 
               style={styles.weekNavButton}
@@ -473,7 +568,6 @@ export default function ScheduleScreen() {
             </TouchableOpacity>
           </View>
           
-          {/* Current Week Status */}
           <View style={styles.weekStatus}>
             <Text style={[styles.weekStatusText, { color: '#FFFFFF99' }]}>
               {currentWeek === 0 ? 'Cette semaine' : 
@@ -492,15 +586,28 @@ export default function ScheduleScreen() {
               <View style={styles.weekStat}>
                 <Ionicons name="alert-circle" size={12} color="#FFFFFF99" />
                 <Text style={[styles.weekStatText, { color: '#FFFFFF99' }]}>
-                  {Object.values(scheduleData).flat().filter(c => c.isExam).length} examens
+                  {Object.values(scheduleData).flat().filter(c => ['Contrôle', 'Test', 'Examen'].includes(c.type)).length} examens
                 </Text>
               </View>
             </View>
           </View>
         </View>
         
-        {/* Action Buttons - Reduced to 2 */}
         <View style={styles.headerActions}>
+          <TouchableOpacity 
+            style={[styles.actionButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}
+            onPress={() => setShowCalendar(true)}
+          >
+            <Ionicons name="calendar-outline" size={20} color="#FFFFFF" />
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[styles.actionButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}
+            onPress={exportSchedule}
+          >
+            <Ionicons name="share-outline" size={20} color="#FFFFFF" />
+          </TouchableOpacity>
+          
           <TouchableOpacity 
             style={[
               styles.actionButton, 
@@ -585,88 +692,7 @@ export default function ScheduleScreen() {
     </View>
   );
 
-  // Week Grid View
-  const WeekGridView = () => (
-    <View style={styles.gridContainer}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header with days */}
-        <View style={styles.gridHeader}>
-          <View style={styles.timeColumn}>
-            <Text style={[styles.gridHeaderText, { color: theme.textSecondary }]}>Heure</Text>
-          </View>
-          {weekDates.map((dayInfo, index) => (
-            <View key={index} style={styles.dayColumn}>
-              <Text style={[styles.gridHeaderText, { color: theme.text }]}>{dayInfo.day}</Text>
-              <Text style={[styles.gridHeaderDate, { color: theme.textSecondary }]}>{dayInfo.date}</Text>
-            </View>
-          ))}
-        </View>
-
-        {/* Time slots with classes */}
-        {timeSlots.map((timeSlot, timeIndex) => (
-          <View key={timeSlot} style={styles.gridRow}>
-            <View style={styles.timeColumn}>
-              <Text style={[styles.timeSlotText, { color: theme.textSecondary }]}>{timeSlot}</Text>
-            </View>
-            {weekDates.map((dayInfo, dayIndex) => {
-              const classItem = getClassForTimeAndDay(timeSlot, dayIndex);
-              return (
-                <TouchableOpacity
-                  key={`${timeSlot}-${dayIndex}`}
-                  style={[
-                    styles.gridCell,
-                    { backgroundColor: classItem ? classItem.color + '20' : theme.surface }
-                  ]}
-                  onPress={() => {
-                    if (classItem) {
-                      if (isEditMode) {
-                        deleteClass(classItem);
-                      } else {
-                        // Navigate to course page
-                        navigateToCourse(classItem);
-                      }
-                    } else if (isEditMode) {
-                      openQuickAdd(dayIndex, timeSlot);
-                    }
-                  }}
-                >
-                  {classItem ? (
-                    <View style={styles.gridClassContent}>
-                      <Text style={[styles.gridSubject, { color: classItem.color }]} numberOfLines={1}>
-                        {classItem.subject}
-                      </Text>
-                      <Text style={[styles.gridType, { color: theme.textSecondary }]} numberOfLines={1}>
-                        {classItem.type}
-                      </Text>
-                      {classItem.isExam && (
-                        <View style={[styles.examBadge, { backgroundColor: theme.error }]}>
-                          <Ionicons name="alert-circle" size={10} color="#fff" />
-                        </View>
-                      )}
-                      {isEditMode && (
-                        <TouchableOpacity
-                          style={[styles.deleteButton, { backgroundColor: theme.error }]}
-                          onPress={() => deleteClass(classItem)}
-                        >
-                          <Ionicons name="close" size={12} color="#fff" />
-                        </TouchableOpacity>
-                      )}
-                    </View>
-                  ) : isEditMode ? (
-                    <View style={styles.addClassCell}>
-                      <Ionicons name="add" size={16} color={theme.textSecondary} />
-                    </View>
-                  ) : null}
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        ))}
-      </ScrollView>
-    </View>
-  );
-
-  // Simplified Class Card Component - with course navigation
+  // Enhanced Class Card Component
   const ClassCard = ({ classItem, index }) => {
     const isUpcoming = () => {
       const now = new Date();
@@ -674,6 +700,35 @@ export default function ScheduleScreen() {
       const classTime = new Date();
       classTime.setHours(hour, minute, 0, 0);
       return classTime > now && weekDates[selectedDayIndex].isToday;
+    };
+
+    const [isTracking, setIsTracking] = useState(false);
+    const [studyTime, setStudyTime] = useState(classItem.studyTime || 0);
+
+    useEffect(() => {
+      let interval = null;
+      if (isTracking) {
+        interval = setInterval(() => {
+          setStudyTime(time => time + 1);
+        }, 1000);
+      } else if (studyTime !== classItem.studyTime) {
+        // Update the class with new study time
+        const dayKey = selectedDayIndex + 1;
+        const updatedSchedule = { ...scheduleData };
+        const classIndex = updatedSchedule[dayKey].findIndex(c => c.id === classItem.id);
+        if (classIndex !== -1) {
+          updatedSchedule[dayKey][classIndex].studyTime = studyTime;
+          setScheduleData(updatedSchedule);
+        }
+      }
+      return () => clearInterval(interval);
+    }, [isTracking, studyTime]);
+
+    const formatTime = (seconds) => {
+      const hrs = Math.floor(seconds / 3600);
+      const mins = Math.floor((seconds % 3600) / 60);
+      const secs = seconds % 60;
+      return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
     return (
@@ -688,7 +743,6 @@ export default function ScheduleScreen() {
         ]}
         onPress={() => {
           if (!isEditMode) {
-            // Navigate to course page
             navigateToCourse(classItem);
           }
         }}
@@ -702,15 +756,15 @@ export default function ScheduleScreen() {
                 {classItem.subject}
               </Text>
               <View style={[styles.classType, { 
-                backgroundColor: classItem.isExam ? theme.error + '20' : classItem.color + '20'
+                backgroundColor: ['Contrôle', 'Test', 'Examen'].includes(classItem.type) ? theme.error + '20' : classItem.color + '20'
               }]}>
                 <Text style={[styles.classTypeText, { 
-                  color: classItem.isExam ? theme.error : classItem.color,
-                  fontWeight: classItem.isExam ? 'bold' : '600'
+                  color: ['Contrôle', 'Test', 'Examen'].includes(classItem.type) ? theme.error : classItem.color,
+                  fontWeight: ['Contrôle', 'Test', 'Examen'].includes(classItem.type) ? 'bold' : '600'
                 }]}>
                   {classItem.type}
                 </Text>
-                {classItem.isExam && (
+                {['Contrôle', 'Test', 'Examen'].includes(classItem.type) && (
                   <Ionicons name="alert-circle" size={12} color={theme.error} />
                 )}
               </View>
@@ -727,9 +781,52 @@ export default function ScheduleScreen() {
               )}
             </View>
           </View>
+
+          {/* Enhanced class details */}
+          <View style={styles.classDetails}>
+            {classItem.teacher && (
+              <Text style={[styles.classTeacher, { color: theme.textSecondary }]}>
+                👨‍🏫 {classItem.teacher}
+              </Text>
+            )}
+            {classItem.room && (
+              <Text style={[styles.classRoom, { color: theme.textSecondary }]}>
+                📍 {classItem.room}
+              </Text>
+            )}
+            {classItem.notes && (
+              <Text style={[styles.classNotes, { color: theme.textSecondary }]}>
+                📝 {classItem.notes}
+              </Text>
+            )}
+          </View>
+
+          {/* Study time tracker */}
+          <View style={styles.studyTracker}>
+            <View style={styles.studyTrackerLeft}>
+              <Text style={[styles.studyTrackerLabel, { color: theme.textSecondary }]}>
+                Temps d'étude:
+              </Text>
+              <Text style={[styles.studyTrackerTime, { color: theme.text }]}>
+                {formatTime(studyTime)}
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={[
+                styles.studyTrackerButton,
+                { backgroundColor: isTracking ? theme.error : theme.primary }
+              ]}
+              onPress={() => setIsTracking(!isTracking)}
+            >
+              <Ionicons 
+                name={isTracking ? "pause" : "play"} 
+                size={14} 
+                color="#fff" 
+              />
+            </TouchableOpacity>
+          </View>
         </View>
 
-        {/* Always show delete button when in edit mode */}
         {isEditMode && (
           <TouchableOpacity 
             style={[styles.deleteClassButton, { backgroundColor: theme.error }]}
@@ -745,7 +842,7 @@ export default function ScheduleScreen() {
     );
   };
 
-  // ULTRA-CLEAN Quick Add Modal
+  // ENHANCED Quick Add Modal
   const QuickAddModal = () => {
     const hours = Array.from({ length: 12 }, (_, i) => {
       const hour = 8 + i;
@@ -774,6 +871,47 @@ export default function ScheduleScreen() {
           </View>
 
           <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
+            {/* Smart Suggestions */}
+            {suggestions.length > 0 && (
+              <View style={styles.suggestionsContainer}>
+                <Text style={[styles.suggestionsTitle, { color: theme.text }]}>
+                  💡 Créneaux recommandés
+                </Text>
+                {suggestions.map((suggestion, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={[styles.suggestionItem, { backgroundColor: theme.surface }]}
+                    onPress={() => {
+                      setQuickForm(prev => ({
+                        ...prev,
+                        startTime: suggestion.time,
+                        endTime: updateEndTime(suggestion.time)
+                      }));
+                    }}
+                  >
+                    <View style={styles.suggestionContent}>
+                      <Text style={[styles.suggestionTime, { color: theme.text }]}>
+                        {suggestion.time}
+                      </Text>
+                      <Text style={[styles.suggestionReason, { color: theme.textSecondary }]}>
+                        {suggestion.reason}
+                      </Text>
+                    </View>
+                    <View style={styles.suggestionScore}>
+                      {[...Array(5)].map((_, i) => (
+                        <Ionicons
+                          key={i}
+                          name="star"
+                          size={12}
+                          color={i < suggestion.score / 20 ? theme.warning : theme.neutralLight}
+                        />
+                      ))}
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+
             {/* Subject Selection */}
             <View style={styles.formGroup}>
               <Text style={[styles.formLabel, { color: theme.text }]}>Matière</Text>
@@ -781,23 +919,29 @@ export default function ScheduleScreen() {
                 <View style={styles.horizontalScroll}>
                   {commonSubjects.map(subject => (
                     <TouchableOpacity
-                      key={subject}
+                      key={subject.name}
                       style={[
                         styles.courseChip,
                         { 
-                          backgroundColor: quickForm.subject === subject ? theme.primary : theme.surface,
-                          borderColor: quickForm.subject === subject ? theme.primary : theme.neutralLight
+                          backgroundColor: quickForm.subject === subject.name ? subject.color : theme.surface,
+                          borderColor: quickForm.subject === subject.name ? subject.color : theme.neutralLight
                         }
                       ]}
                       onPress={() => {
-                        setQuickForm(prev => ({...prev, subject}));
+                        setQuickForm(prev => ({...prev, subject: subject.name, color: subject.color}));
                       }}
                     >
+                      <Ionicons 
+                        name={subject.icon} 
+                        size={16} 
+                        color={quickForm.subject === subject.name ? '#fff' : subject.color}
+                        style={{ marginRight: 6 }}
+                      />
                       <Text style={[
                         styles.courseChipText,
-                        { color: quickForm.subject === subject ? '#fff' : theme.text }
+                        { color: quickForm.subject === subject.name ? '#fff' : theme.text }
                       ]}>
-                        {subject}
+                        {subject.name}
                       </Text>
                     </TouchableOpacity>
                   ))}
@@ -805,7 +949,7 @@ export default function ScheduleScreen() {
               </ScrollView>
             </View>
 
-            {/* Time Selection */}
+            {/* Enhanced Time Selection */}
             <View style={styles.formGroup}>
               <Text style={[styles.formLabel, { color: theme.text }]}>Heure</Text>
               
@@ -816,36 +960,51 @@ export default function ScheduleScreen() {
               </View>
 
               <View style={styles.timeGrid}>
-                {hours.map(hour => (
-                  <TouchableOpacity
-                    key={hour}
-                    style={[
-                      styles.timeGridItem,
-                      { 
-                        backgroundColor: quickForm.startTime === hour ? theme.primary : theme.surface,
-                        borderColor: quickForm.startTime === hour ? theme.primary : theme.neutralLight
-                      }
-                    ]}
-                    onPress={() => {
-                      const endTime = updateEndTime(hour);
-                      setQuickForm(prev => ({
-                        ...prev, 
-                        startTime: hour,
-                        endTime: endTime
-                      }));
-                    }}
-                  >
-                    <Text style={[
-                      styles.timeGridText,
-                      { 
-                        color: quickForm.startTime === hour ? '#fff' : theme.text,
-                        fontWeight: quickForm.startTime === hour ? 'bold' : 'normal'
-                      }
-                    ]}>
-                      {hour}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+                {hours.map(hour => {
+                  const dayClasses = scheduleData[quickAddPosition.day + 1] || [];
+                  const testClass = { startTime: hour, endTime: updateEndTime(hour) };
+                  const hasConflict = detectTimeConflicts(testClass, dayClasses).length > 0;
+                  
+                  return (
+                    <TouchableOpacity
+                      key={hour}
+                      style={[
+                        styles.timeGridItem,
+                        { 
+                          backgroundColor: quickForm.startTime === hour ? theme.primary : 
+                                          hasConflict ? theme.error + '20' : theme.surface,
+                          borderColor: quickForm.startTime === hour ? theme.primary : 
+                                      hasConflict ? theme.error : theme.neutralLight
+                        }
+                      ]}
+                      onPress={() => {
+                        if (!hasConflict) {
+                          const endTime = updateEndTime(hour);
+                          setQuickForm(prev => ({
+                            ...prev, 
+                            startTime: hour,
+                            endTime: endTime
+                          }));
+                        }
+                      }}
+                      disabled={hasConflict}
+                    >
+                      <Text style={[
+                        styles.timeGridText,
+                        { 
+                          color: quickForm.startTime === hour ? '#fff' : 
+                                 hasConflict ? theme.error : theme.text,
+                          fontWeight: quickForm.startTime === hour ? 'bold' : 'normal'
+                        }
+                      ]}>
+                        {hour}
+                      </Text>
+                      {hasConflict && (
+                        <Ionicons name="warning" size={12} color={theme.error} />
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             </View>
 
@@ -857,10 +1016,10 @@ export default function ScheduleScreen() {
                   { type: 'Cours', icon: 'book-outline', color: theme.primary },
                   { type: 'TP', icon: 'flask-outline', color: theme.accent },
                   { type: 'TD', icon: 'create-outline', color: theme.info },
-                  { type: 'Contrôle', icon: 'alert-circle-outline', color: theme.warning, isExam: true },
-                  { type: 'Test', icon: 'checkmark-circle-outline', color: theme.success, isExam: true },
-                  { type: 'Examen', icon: 'school-outline', color: theme.error, isExam: true }
-                ].map(({ type, icon, color, isExam }) => (
+                  { type: 'Contrôle', icon: 'alert-circle-outline', color: theme.warning },
+                  { type: 'Test', icon: 'checkmark-circle-outline', color: theme.success },
+                  { type: 'Examen', icon: 'school-outline', color: theme.error }
+                ].map(({ type, icon, color }) => (
                   <TouchableOpacity
                     key={type}
                     style={[
@@ -871,7 +1030,7 @@ export default function ScheduleScreen() {
                       }
                     ]}
                     onPress={() => {
-                      setQuickForm(prev => ({...prev, type, isExam: !!isExam}));
+                      setQuickForm(prev => ({...prev, type}));
                     }}
                   >
                     <Ionicons 
@@ -891,20 +1050,103 @@ export default function ScheduleScreen() {
               </View>
             </View>
 
+            {/* Additional Details */}
+            <View style={styles.formGroup}>
+              <Text style={[styles.formLabel, { color: theme.text }]}>Détails</Text>
+              
+              <TextInput
+                style={[styles.detailInput, { backgroundColor: theme.surface, color: theme.text }]}
+                placeholder="Professeur"
+                placeholderTextColor={theme.textSecondary}
+                value={quickForm.teacher}
+                onChangeText={(text) => setQuickForm(prev => ({...prev, teacher: text}))}
+              />
+              
+              <TextInput
+                style={[styles.detailInput, { backgroundColor: theme.surface, color: theme.text }]}
+                placeholder="Salle"
+                placeholderTextColor={theme.textSecondary}
+                value={quickForm.room}
+                onChangeText={(text) => setQuickForm(prev => ({...prev, room: text}))}
+              />
+              
+              <TextInput
+                style={[styles.detailInputMulti, { backgroundColor: theme.surface, color: theme.text }]}
+                placeholder="Notes (matériel à apporter, etc.)"
+                placeholderTextColor={theme.textSecondary}
+                value={quickForm.notes}
+                onChangeText={(text) => setQuickForm(prev => ({...prev, notes: text}))}
+                multiline
+                numberOfLines={3}
+              />
+            </View>
+
+            {/* Recurring Options */}
+            <View style={styles.formGroup}>
+              <View style={styles.recurringToggle}>
+                <Text style={[styles.formLabel, { color: theme.text }]}>Cours récurrent</Text>
+                <Switch
+                  value={quickForm.isRecurring}
+                  onValueChange={(value) => setQuickForm(prev => ({...prev, isRecurring: value}))}
+                  trackColor={{ false: theme.neutralLight, true: theme.primary + '40' }}
+                  thumbColor={quickForm.isRecurring ? theme.primary : theme.textSecondary}
+                />
+              </View>
+              
+              {quickForm.isRecurring && (
+                <TouchableOpacity
+                  style={[styles.recurringButton, { backgroundColor: theme.surface }]}
+                  onPress={() => setShowRecurringModal(true)}
+                >
+                  <Text style={[styles.recurringButtonText, { color: theme.text }]}>
+                    Configurer la récurrence
+                  </Text>
+                  <Ionicons name="chevron-forward" size={16} color={theme.textSecondary} />
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {/* Notification Settings */}
+            <View style={styles.formGroup}>
+              <Text style={[styles.formLabel, { color: theme.text }]}>Rappel</Text>
+              <View style={styles.reminderGrid}>
+                {[0, 5, 15, 30].map(minutes => (
+                  <TouchableOpacity
+                    key={minutes}
+                    style={[
+                      styles.reminderChip,
+                      { 
+                        backgroundColor: quickForm.reminderMinutes === minutes ? theme.primary : theme.surface,
+                        borderColor: quickForm.reminderMinutes === minutes ? theme.primary : theme.neutralLight
+                      }
+                    ]}
+                    onPress={() => setQuickForm(prev => ({...prev, reminderMinutes: minutes}))}
+                  >
+                    <Text style={[
+                      styles.reminderChipText,
+                      { color: quickForm.reminderMinutes === minutes ? '#fff' : theme.text }
+                    ]}>
+                      {minutes === 0 ? 'Aucun' : `${minutes} min`}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
             {/* Preview */}
             {quickForm.subject && (
-              <View style={[styles.previewCard, { backgroundColor: theme.primary + '10' }]}>
+              <View style={[styles.previewCard, { backgroundColor: quickForm.color + '10' }]}>
                 <View style={styles.previewHeader}>
-                  <Ionicons name="eye-outline" size={20} color={theme.primary} />
-                  <Text style={[styles.previewTitle, { color: theme.primary }]}>Aperçu</Text>
+                  <Ionicons name="eye-outline" size={20} color={quickForm.color} />
+                  <Text style={[styles.previewTitle, { color: quickForm.color }]}>Aperçu</Text>
                 </View>
                 <View style={styles.previewContent}>
                   <Text style={[styles.previewSubject, { color: theme.text }]}>
                     {quickForm.subject}
                   </Text>
                   <View style={styles.previewMeta}>
-                    <View style={[styles.previewTypeBadge, { backgroundColor: theme.primary + '20' }]}>
-                      <Text style={[styles.previewTypeText, { color: theme.primary }]}>
+                    <View style={[styles.previewTypeBadge, { backgroundColor: quickForm.color + '20' }]}>
+                      <Text style={[styles.previewTypeText, { color: quickForm.color }]}>
                         {quickForm.type}
                       </Text>
                     </View>
@@ -912,6 +1154,16 @@ export default function ScheduleScreen() {
                       {quickForm.startTime} - {quickForm.endTime}
                     </Text>
                   </View>
+                  {quickForm.teacher && (
+                    <Text style={[styles.previewDetail, { color: theme.textSecondary }]}>
+                      👨‍🏫 {quickForm.teacher}
+                    </Text>
+                  )}
+                  {quickForm.room && (
+                    <Text style={[styles.previewDetail, { color: theme.textSecondary }]}>
+                      📍 {quickForm.room}
+                    </Text>
+                  )}
                 </View>
               </View>
             )}
@@ -928,7 +1180,7 @@ export default function ScheduleScreen() {
               style={[
                 styles.saveButton, 
                 { 
-                  backgroundColor: quickForm.subject ? theme.primary : theme.neutralLight,
+                  backgroundColor: quickForm.subject ? quickForm.color : theme.neutralLight,
                   opacity: quickForm.subject ? 1 : 0.5
                 }
               ]}
@@ -968,13 +1220,35 @@ export default function ScheduleScreen() {
     </View>
   );
 
+  // Loading Component
+  const LoadingSchedule = () => (
+    <View style={styles.loadingContainer}>
+      {[...Array(3)].map((_, index) => (
+        <View key={index} style={[styles.skeletonCard, { backgroundColor: theme.surface }]}>
+          <View style={[styles.skeletonLine, { backgroundColor: theme.neutralLight }]} />
+          <View style={[styles.skeletonLine, { backgroundColor: theme.neutralLight, width: '60%' }]} />
+          <View style={[styles.skeletonLine, { backgroundColor: theme.neutralLight, width: '40%' }]} />
+        </View>
+      ))}
+    </View>
+  );
+
   const todaysClasses = getCurrentDayClasses();
+
+  if (loading) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+        <ScheduleHeader />
+        <LoadingSchedule />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <ScheduleHeader />
       
-      {selectedView === 'day' ? (
+      {selectedView === 'day' && (
         <>
           <DaySelector />
           <ScrollView showsVerticalScrollIndicator={false}>
@@ -999,8 +1273,6 @@ export default function ScheduleScreen() {
             <View style={styles.bottomPadding} />
           </ScrollView>
         </>
-      ) : (
-        <WeekGridView />
       )}
 
       <QuickAddModal />
@@ -1012,7 +1284,24 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  // ENHANCED HEADER STYLES
+  loadingContainer: {
+    padding: 20,
+  },
+  skeletonCard: {
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  skeletonLine: {
+    height: 12,
+    borderRadius: 4,
+    marginBottom: 8,
+  },
   header: {
     paddingTop: 60,
     paddingBottom: 35,
@@ -1034,8 +1323,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginBottom: 12,
   },
-  
-  // Enhanced Week Navigation
   weekNavigationContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1069,8 +1356,6 @@ const styles = StyleSheet.create({
     height: 4,
     borderRadius: 2,
   },
-  
-  // Week Status
   weekStatus: {
     alignItems: 'flex-start',
   },
@@ -1092,8 +1377,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '500',
   },
-  
-  // Action Buttons
   headerActions: {
     flexDirection: 'row',
     gap: 8,
@@ -1107,8 +1390,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  
-  // Enhanced Day Selector
   daySelector: {
     marginTop: -20,
     marginHorizontal: 20,
@@ -1164,100 +1445,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginLeft: 12,
   },
-  
-  // Grid View Styles
-  gridContainer: {
-    flex: 1,
-    paddingTop: 20,
-    paddingHorizontal: 10,
-  },
-  gridHeader: {
-    flexDirection: 'row',
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-    marginBottom: 10,
-    paddingHorizontal: 5,
-  },
-  timeColumn: {
-    width: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dayColumn: {
-    flex: 1,
-    alignItems: 'center',
-    paddingHorizontal: 1,
-    minWidth: 45,
-  },
-  gridHeaderText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  gridHeaderDate: {
-    fontSize: 16,
-    marginTop: 2,
-    fontWeight: 'bold',
-  },
-  gridRow: {
-    flexDirection: 'row',
-    marginBottom: 2,
-  },
-  timeSlotText: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  gridCell: {
-    flex: 1,
-    minHeight: 50,
-    marginHorizontal: 0.5,
-    borderRadius: 4,
-    padding: 3,
-    borderWidth: 0.5,
-    borderColor: '#E0E0E0',
-    position: 'relative',
-  },
-  gridClassContent: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  gridSubject: {
-    fontSize: 11,
-    fontWeight: 'bold',
-    marginBottom: 2,
-  },
-  gridType: {
-    fontSize: 9,
-    fontWeight: '500',
-  },
-  examBadge: {
-    position: 'absolute',
-    top: 2,
-    right: 2,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  deleteButton: {
-    position: 'absolute',
-    top: 2,
-    left: 2,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  addClassCell: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    opacity: 0.5,
-  },
-
-  // Day View Styles
   section: {
     paddingHorizontal: 20,
     marginBottom: 24,
@@ -1341,6 +1528,48 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: 'bold',
   },
+  classDetails: {
+    marginBottom: 8,
+  },
+  classTeacher: {
+    fontSize: 12,
+    marginBottom: 2,
+  },
+  classRoom: {
+    fontSize: 12,
+    marginBottom: 2,
+  },
+  classNotes: {
+    fontSize: 12,
+    fontStyle: 'italic',
+  },
+  studyTracker: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(0,0,0,0.02)',
+    borderRadius: 8,
+    padding: 8,
+  },
+  studyTrackerLeft: {
+    flex: 1,
+  },
+  studyTrackerLabel: {
+    fontSize: 10,
+    marginBottom: 2,
+  },
+  studyTrackerTime: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    fontFamily: 'monospace',
+  },
+  studyTrackerButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   deleteClassButton: {
     width: 36,
     height: 36,
@@ -1395,6 +1624,43 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
   },
+  
+  // Smart Suggestions
+  suggestionsContainer: {
+    backgroundColor: 'rgba(0,0,0,0.02)',
+    borderRadius: 12,
+    padding: 16,
+    marginVertical: 16,
+  },
+  suggestionsTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 12,
+  },
+  suggestionItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  suggestionContent: {
+    flex: 1,
+  },
+  suggestionTime: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 2,
+  },
+  suggestionReason: {
+    fontSize: 12,
+  },
+  suggestionScore: {
+    flexDirection: 'row',
+    gap: 2,
+  },
+  
   formGroup: {
     marginBottom: 28,
   },
@@ -1403,8 +1669,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 12,
   },
-  
-  // Course selection
   horizontalScroll: {
     flexDirection: 'row',
     gap: 10,
@@ -1412,20 +1676,19 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   courseChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 20,
     borderWidth: 2,
-    minWidth: 100,
-    alignItems: 'center',
+    minWidth: 120,
   },
   courseChipText: {
     fontSize: 14,
     fontWeight: '600',
     textAlign: 'center',
   },
-  
-  // Time picker
   timeDisplayRow: {
     paddingHorizontal: 20,
     paddingVertical: 16,
@@ -1473,8 +1736,53 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
   },
-  
-  // Preview section
+  detailInput: {
+    height: 48,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    marginBottom: 12,
+    fontSize: 16,
+  },
+  detailInputMulti: {
+    minHeight: 80,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    textAlignVertical: 'top',
+  },
+  recurringToggle: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  recurringButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+  },
+  recurringButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  reminderGrid: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  reminderChip: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    borderWidth: 2,
+    alignItems: 'center',
+  },
+  reminderChipText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
   previewCard: {
     padding: 16,
     borderRadius: 12,
@@ -1515,8 +1823,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
-  
-  // Modal footer
+  previewDetail: {
+    fontSize: 12,
+  },
   modalFooter: {
     flexDirection: 'row',
     gap: 12,

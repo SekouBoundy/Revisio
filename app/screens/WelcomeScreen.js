@@ -4,8 +4,8 @@ import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useContext } from 'react';
-import { ThemeContext } from '../constants/ThemeContext';
-import Mascot from '../components/Mascot';
+import { ThemeContext } from '../../constants/ThemeContext';
+import Mascot from '../../components/Mascot';
 
 export default function WelcomeScreen() {
   const { theme } = useContext(ThemeContext);
