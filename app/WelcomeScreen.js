@@ -5,6 +5,10 @@ import { View, Text, Image, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useContext } from 'react';
 import { ThemeContext } from '../constants/ThemeContext';
+import Mascot from '../components/Mascot';
+
+<Mascot variant="full" />
+
 
 export default function WelcomeScreen() {
   const { theme } = useContext(ThemeContext);
@@ -27,7 +31,7 @@ export default function WelcomeScreen() {
         resizeMode="contain"
       />
       <Text style={[styles.title, { color: theme.primary }]}>
-        Bienvenue sur Revisio
+        Apprends avec moi !
       </Text>
       <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
         Chargement en cours...
@@ -45,8 +49,8 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   logo: {
-    width: 180,
-    height: 180,
+    width: 300,
+    height: 300,
     marginBottom: 24,
   },
   title: {
