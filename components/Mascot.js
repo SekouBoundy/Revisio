@@ -1,14 +1,33 @@
-// components/Mascot.js
+// components/Mascot.js - WITH FALLBACK
 
 import React from 'react';
-import { Image, StyleSheet } from 'react-native';
+import { View, Image, Text, StyleSheet } from 'react-native';
 
-const mascotSources = {
-  full: require('../assets/mascot/mascot_full.png'),
-  small: require('../assets/mascot/mascot_small.png'),
-  quizStart: require('../assets/mascot/Quiz-start.png'),
-  quizFail: require('../assets/mascot/Quiz-fail.png'),
-  quizSuccess: require('../assets/mascot/Quiz-success.png'),
+// Try to load mascot images, with fallbacks
+const getMascotSource = (variant) => {
+  try {
+    switch (variant) {
+      case 'full':
+        return require('../assets/mascot/mascot_full.png');
+      case 'small':
+        return require('../assets/mascot/mascot_small.png');
+      case 'quizStart':
+        return require('../assets/mascot/Quiz-start.png');
+      case 'quizFail':
+        return require('../assets/mascot/Quiz-fail.png');
+      case 'quizSuccess':
+        return require('../assets/mascot/Quiz-success.png');
+      default:
+        return require('../assets/icons/app-icon.png'); // Fallback
+    }
+  } catch (error) {
+    // If mascot images don't exist, try the app icon
+    try {
+      return require('../assets/icons/app-icon.png');
+    } catch (fallbackError) {
+      return null; // No image available
+    }
+  }
 };
 
 const mascotSizes = {
@@ -19,15 +38,37 @@ const mascotSizes = {
   quizSuccess: { width: 200, height: 200 },
 };
 
+const mascotEmojis = {
+  full: '🦸‍♂️',
+  small: '📚',
+  quizStart: '🎯',
+  quizFail: '😔',
+  quizSuccess: '🎉',
+};
+
 export default function Mascot({ variant = 'full' }) {
-  const source = mascotSources[variant] || mascotSources.full;
+  const source = getMascotSource(variant);
   const size = mascotSizes[variant] || mascotSizes.full;
+  const emoji = mascotEmojis[variant] || mascotEmojis.full;
+
+  // If no image source available, show emoji fallback
+  if (!source) {
+    return (
+      <View style={[styles.fallbackContainer, size]}>
+        <Text style={styles.fallbackEmoji}>{emoji}</Text>
+        <Text style={styles.fallbackText}>Revisio</Text>
+      </View>
+    );
+  }
 
   return (
     <Image
       source={source}
       style={[styles.image, size]}
       resizeMode="contain"
+      onError={() => {
+        console.warn(`Failed to load mascot image for variant: ${variant}`);
+      }}
     />
   );
 }
@@ -35,5 +76,24 @@ export default function Mascot({ variant = 'full' }) {
 const styles = StyleSheet.create({
   image: {
     alignSelf: 'center',
+  },
+  fallbackContainer: {
+    alignSelf: 'center',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFA726',
+    borderRadius: 20,
+    padding: 20,
+  },
+  fallbackEmoji: {
+    fontSize: 60,
+    textAlign: 'center',
+  },
+  fallbackText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: 'white',
+    marginTop: 8,
+    textAlign: 'center',
   },
 });

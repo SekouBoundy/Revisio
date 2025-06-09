@@ -1,21 +1,18 @@
-// app/WelcomeScreen.js
+// app/WelcomeScreen.js - FIXED VERSION
 
 import React, { useEffect } from 'react';
-import { View, Text, Image, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useContext } from 'react';
 import { ThemeContext } from '../constants/ThemeContext';
 import Mascot from '../components/Mascot';
-
-<Mascot variant="full" />
-
 
 export default function WelcomeScreen() {
   const { theme } = useContext(ThemeContext);
   const router = useRouter();
 
   useEffect(() => {
-    // After 2 seconds → go to dashboard (change this if needed)
+    // After 2 seconds → go to dashboard
     const timer = setTimeout(() => {
       router.replace('/(tabs)/dashboard');
     }, 2000);
@@ -25,11 +22,9 @@ export default function WelcomeScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <Image
-        source={require('../assets/icons/app-icon.png')} // your mascot icon
-        style={styles.logo}
-        resizeMode="contain"
-      />
+      {/* Use the Mascot component instead of Image */}
+      <Mascot variant="full" />
+      
       <Text style={[styles.title, { color: theme.primary }]}>
         Apprends avec moi !
       </Text>
@@ -48,19 +43,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
   },
-  logo: {
-    width: 300,
-    height: 300,
-    marginBottom: 24,
-  },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
     marginBottom: 8,
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
     marginBottom: 16,
+    textAlign: 'center',
   },
   loader: {
     marginTop: 16,
