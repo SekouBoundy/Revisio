@@ -3,7 +3,7 @@
 import React from "react";
 import { View, Text, FlatList, TouchableOpacity, StyleSheet } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Colors, FontSizes, Spacing } from "../../constants/ThemeContext";
+import { Colors, FontSizes, Spacing } from "../constants/ThemeContext";
 
 type RouteParams = {
   level: "DEF" | "BAC";
