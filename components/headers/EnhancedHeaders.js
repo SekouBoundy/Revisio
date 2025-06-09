@@ -1,10 +1,10 @@
-// components/headers/EnhancedHeaders.js - HEADERS WITH MASCOT
+// components/headers/EnhancedHeaders.js - FIXED VERSION
 
 import React, { useContext } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemeContext } from '../../constants/ThemeContext';
-import { HeaderMascot } from '../Mascot';
+import { HeaderMascot } from '../Mascot'; // ✅ Now this import will work
 
 // Dashboard Header with Mascot
 export function DashboardHeader({ user, onProfilePress, onNotificationPress }) {
@@ -88,53 +88,6 @@ export function CoursesHeader({ user, onSearchPress, onFilterPress }) {
   );
 }
 
-// Timetable Header with Mascot
-export function TimetableHeader({ user, onCalendarPress, onEditPress, isEditMode }) {
-  const { theme } = useContext(ThemeContext);
-  
-  return (
-    <View style={[styles.header, { backgroundColor: theme.primary }]}>
-      <View style={styles.headerContent}>
-        <View style={styles.headerLeft}>
-          <HeaderMascot 
-            screen="timetable" 
-            theme={theme}
-            onPress={() => console.log('Time to check schedule!')}
-          />
-          <View style={styles.headerText}>
-            <Text style={[styles.headerSubtitle, { color: '#FFFFFF99' }]}>
-              {user?.level === 'DEF' ? 'Mon Planning DEF' : `Planning ${user?.level}`}
-            </Text>
-            <Text style={[styles.headerTitle, { color: '#FFFFFF' }]}>
-              Emploi du Temps
-            </Text>
-          </View>
-        </View>
-        <View style={styles.headerActions}>
-          <TouchableOpacity 
-            style={[styles.headerButton, { 
-              backgroundColor: isEditMode ? '#FFFFFF' : 'rgba(255, 255, 255, 0.15)'
-            }]}
-            onPress={onEditPress}
-          >
-            <Ionicons 
-              name={isEditMode ? "checkmark" : "pencil"} 
-              size={18} 
-              color={isEditMode ? theme.primary : '#FFFFFF'} 
-            />
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.headerButton}
-            onPress={onCalendarPress}
-          >
-            <Ionicons name="calendar" size={24} color="#FFFFFF" />
-          </TouchableOpacity>
-        </View>
-      </View>
-    </View>
-  );
-}
-
 // Quiz Header with Mascot
 export function QuizHeader({ 
   quizTitle, 
@@ -201,47 +154,6 @@ export function QuizHeader({
         </View>
         
         <View style={styles.headerRight} />
-      </View>
-    </View>
-  );
-}
-
-// Profile Header with Mascot
-export function ProfileHeader({ user, onEditPress, onSettingsPress }) {
-  const { theme } = useContext(ThemeContext);
-  
-  return (
-    <View style={[styles.header, { backgroundColor: theme.primary }]}>
-      <View style={styles.headerContent}>
-        <View style={styles.headerLeft}>
-          <HeaderMascot 
-            screen="profile" 
-            theme={theme}
-            onPress={() => console.log('Hello champion!')}
-          />
-          <View style={styles.headerText}>
-            <Text style={[styles.headerSubtitle, { color: '#FFFFFF99' }]}>
-              Mon Profil
-            </Text>
-            <Text style={[styles.headerTitle, { color: '#FFFFFF' }]}>
-              {user?.name || 'Utilisateur'}
-            </Text>
-          </View>
-        </View>
-        <View style={styles.headerActions}>
-          <TouchableOpacity 
-            style={styles.headerButton}
-            onPress={onEditPress}
-          >
-            <Ionicons name="pencil" size={20} color="#FFFFFF" />
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.headerButton}
-            onPress={onSettingsPress}
-          >
-            <Ionicons name="settings-outline" size={24} color="#FFFFFF" />
-          </TouchableOpacity>
-        </View>
       </View>
     </View>
   );
