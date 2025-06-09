@@ -1,7 +1,9 @@
+// app/_layout.js
+
 import { Stack } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { ThemeProvider } from '../constants/ThemeContext';
 import { AuthProvider } from '../constants/AuthContext';
+import { ThemeProvider } from '../constants/ThemeContext';
 import { UserProvider } from '../constants/UserContext';
 
 export default function RootLayout() {
@@ -10,7 +12,9 @@ export default function RootLayout() {
       <ThemeProvider>
         <AuthProvider>
           <UserProvider>
-            <Stack screenOptions={{ headerShown: false }} />
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="WelcomeScreen" />
+            </Stack>
           </UserProvider>
         </AuthProvider>
       </ThemeProvider>

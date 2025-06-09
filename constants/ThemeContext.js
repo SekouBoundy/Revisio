@@ -1,16 +1,16 @@
-// constants/ThemeContext.js - FIXED VERSION
+// constants/ThemeContext.js - UPDATED WITH MASCOT COLORS
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Export these constants that other files expect
+// Keep these for compatibility with older components
 export const Colors = {
-  primary: "#4E8CEE",
-  background: "#F6F7FB",
-  cardBackground: "#FFFFFF",
-  correct: "#27AE60",
-  incorrect: "#C0392B",
-  textPrimary: "#1B2127",
-  textSecondary: "#52606D",
+  primary: "#FFA726",           // Warm orange
+  background: "#FFF8F0",        // Light warm background
+  cardBackground: "#FFFFFF",    // Cards & surfaces
+  correct: "#66BB6A",           // Success green
+  incorrect: "#EF5350",         // Error red
+  textPrimary: "#212121",       // Main text
+  textSecondary: "#555555",     // Secondary text
   border: "#E0E0E0",
 };
 
@@ -30,38 +30,38 @@ export const Spacing = {
 
 const ThemeContext = createContext(null);
 
-// Light theme
+// Light theme → mascot colors
 const lightTheme = {
-  primary: '#4E8CEE',
-  secondary: '#2E3A59',
-  accent: '#F57C00',
+  primary: '#FFA726',           // Warm orange
+  secondary: '#4E342E',         // Deep brown
+  accent: '#FFB74D',            // Accent orange
   neutralDark: '#424242',
-  neutralLight: '#F5F7FA',
-  surface: '#FFFFFF',
-  background: '#F6F7FB',
-  text: '#1B2127',
-  textSecondary: '#52606D',
-  success: '#43A047',
-  warning: '#FFB300',
-  error: '#E53935',
-  info: '#1976D2',
+  neutralLight: '#FFF8F0',      // Light background
+  surface: '#FFFFFF',           // Cards & surfaces
+  background: '#FFF8F0',        // App background
+  text: '#212121',              // Main text
+  textSecondary: '#555555',     // Secondary text
+  success: '#66BB6A',           // Green
+  warning: '#FFC107',           // Yellow
+  error: '#EF5350',             // Red
+  info: '#2196F3',              // Blue info
 };
 
-// Dark theme
+// Dark theme → mascot colors
 const darkTheme = {
-  primary: '#4E8CEE',
-  secondary: '#8FA9C8',
-  accent: '#FFA040',
-  neutralDark: '#F5F7FA',
-  neutralLight: '#2E3A59',
-  surface: '#232A36',
-  background: '#19202A',
-  text: '#F5F7FA',
-  textSecondary: '#B2BFD1',
-  success: '#66BB6A',
-  warning: '#FFD54F',
-  error: '#EF5350',
-  info: '#64B5F6',
+  primary: '#FFA726',           // Warm orange
+  secondary: '#D7CCC8',         // Light brown
+  accent: '#FFB74D',            // Accent orange
+  neutralDark: '#E0E0E0',
+  neutralLight: '#121212',      // Deep dark background
+  surface: '#1E1E1E',           // Cards & surfaces
+  background: '#121212',        // App background dark
+  text: '#FFFFFF',              // Main text
+  textSecondary: '#AAAAAA',     // Secondary text
+  success: '#81C784',           // Light green
+  warning: '#FFC107',           // Yellow
+  error: '#E57373',             // Light red
+  info: '#64B5F6',              // Light blue
 };
 
 export function ThemeProvider({ children }) {
@@ -96,7 +96,7 @@ export function ThemeProvider({ children }) {
     }
   };
 
-  // ✅ FIX: Actually switch between themes based on isDarkMode
+  // Apply theme
   const theme = isDarkMode ? darkTheme : lightTheme;
 
   return (
