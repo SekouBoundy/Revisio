@@ -11,10 +11,10 @@ export default function WelcomeScreen() {
   const router = useRouter();
 
   useEffect(() => {
-    // After 3 seconds → go to dashboard (change this if needed)
+    // After 2 seconds → go to dashboard (change this if needed)
     const timer = setTimeout(() => {
       router.replace('/(tabs)/dashboard');
-    }, 3000);
+    }, 2000);
 
     return () => clearTimeout(timer);
   }, []);

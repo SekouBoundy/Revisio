@@ -1,17 +1,6 @@
-// app/index.js
-
+// app/index.js - Fixed
 import { Redirect } from 'expo-router';
 
 export default function Index() {
-  return <Redirect href="/dashboard" />;
+  return <Redirect href="/WelcomeScreen" />;
 }
-
-// import { Text, View } from 'react-native';
-
-// export default function App() {
-//   return (
-//     <View style={{flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'white'}}>
-//       <Text style={{fontSize: 24}}>App Works!</Text>
-//     </View>
-//   );
-// }

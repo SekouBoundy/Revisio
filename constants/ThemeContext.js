@@ -1,5 +1,6 @@
-// constants/ThemeContext.js - UPDATED WITH MASCOT COLORS
+// constants/ThemeContext.js - SIMPLIFIED SYSTEM THEME
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import { Appearance } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Keep these for compatibility with older components
@@ -30,80 +31,148 @@ export const Spacing = {
 
 const ThemeContext = createContext(null);
 
-// Light theme → mascot colors
+// Light theme
 const lightTheme = {
-  primary: '#FFA726',           // Warm orange
-  secondary: '#4E342E',         // Deep brown
-  accent: '#FFB74D',            // Accent orange
+  primary: '#FFA726',
+  secondary: '#4E342E',
+  accent: '#FFB74D',
   neutralDark: '#424242',
-  neutralLight: '#FFF8F0',      // Light background
-  surface: '#FFFFFF',           // Cards & surfaces
-  background: '#FFF8F0',        // App background
-  text: '#212121',              // Main text
-  textSecondary: '#555555',     // Secondary text
-  success: '#66BB6A',           // Green
-  warning: '#FFC107',           // Yellow
-  error: '#EF5350',             // Red
-  info: '#2196F3',              // Blue info
+  neutralLight: '#FFF8F0',
+  surface: '#FFFFFF',
+  background: '#FFF8F0',
+  text: '#212121',
+  textSecondary: '#555555',
+  success: '#66BB6A',
+  warning: '#FFC107',
+  error: '#EF5350',
+  info: '#2196F3',
 };
 
-// Dark theme → mascot colors
+// Dark theme
 const darkTheme = {
-  primary: '#FFA726',           // Warm orange
-  secondary: '#D7CCC8',         // Light brown
-  accent: '#FFB74D',            // Accent orange
+  primary: '#FFA726',
+  secondary: '#D7CCC8',
+  accent: '#FFB74D',
   neutralDark: '#E0E0E0',
-  neutralLight: '#121212',      // Deep dark background
-  surface: '#1E1E1E',           // Cards & surfaces
-  background: '#121212',        // App background dark
-  text: '#FFFFFF',              // Main text
-  textSecondary: '#AAAAAA',     // Secondary text
-  success: '#81C784',           // Light green
-  warning: '#FFC107',           // Yellow
-  error: '#E57373',             // Light red
-  info: '#64B5F6',              // Light blue
+  neutralLight: '#121212',
+  surface: '#1E1E1E',
+  background: '#121212',
+  text: '#FFFFFF',
+  textSecondary: '#AAAAAA',
+  success: '#81C784',
+  warning: '#FFC107',
+  error: '#E57373',
+  info: '#64B5F6',
 };
 
 export function ThemeProvider({ children }) {
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [useSystemTheme, setUseSystemTheme] = useState(true);
 
-  // Load theme preference on startup
+  // Load settings on startup
   useEffect(() => {
-    loadThemePreference();
+    loadThemeSettings();
   }, []);
 
-  const loadThemePreference = async () => {
+  // Listen to system theme changes when enabled
+  useEffect(() => {
+    if (!useSystemTheme) return;
+
+    // Set initial system theme
+    const currentSystemTheme = Appearance.getColorScheme();
+    setIsDarkMode(currentSystemTheme === 'dark');
+
+    // Listen for changes
+    const subscription = Appearance.addChangeListener(({ colorScheme }) => {
+      console.log('🎨 System theme changed to:', colorScheme);
+      setIsDarkMode(colorScheme === 'dark');
+    });
+
+    return () => subscription?.remove();
+  }, [useSystemTheme]);
+
+  const loadThemeSettings = async () => {
     try {
-      const savedTheme = await AsyncStorage.getItem('theme');
-      if (savedTheme) {
-        setIsDarkMode(savedTheme === 'dark');
+      const savedUseSystem = await AsyncStorage.getItem('use_system_theme');
+      const savedTheme = await AsyncStorage.getItem('manual_theme');
+      
+      if (savedUseSystem !== null) {
+        const useSystem = JSON.parse(savedUseSystem);
+        setUseSystemTheme(useSystem);
+        
+        if (useSystem) {
+          // Use system theme
+          const systemTheme = Appearance.getColorScheme();
+          setIsDarkMode(systemTheme === 'dark');
+        } else if (savedTheme) {
+          // Use manual theme
+          setIsDarkMode(savedTheme === 'dark');
+        }
+      } else {
+        // Default: use system theme
+        const systemTheme = Appearance.getColorScheme();
+        setIsDarkMode(systemTheme === 'dark');
+        setUseSystemTheme(true);
       }
     } catch (error) {
-      console.error('Error loading theme preference:', error);
+      console.error('Error loading theme settings:', error);
     }
   };
 
+  // Toggle theme (works in both modes)
   const toggleTheme = async () => {
-    console.log('🎨 Theme toggle - Before:', isDarkMode);
     const newTheme = !isDarkMode;
     setIsDarkMode(newTheme);
+
+    if (!useSystemTheme) {
+      // Save manual preference
+      try {
+        await AsyncStorage.setItem('manual_theme', newTheme ? 'dark' : 'light');
+      } catch (error) {
+        console.error('Error saving manual theme:', error);
+      }
+    }
+    // If using system theme, just toggle temporarily (will reset on next system change)
+  };
+
+  // Switch to system theme mode
+  const enableSystemTheme = async () => {
+    setUseSystemTheme(true);
+    
+    // Apply current system theme
+    const systemTheme = Appearance.getColorScheme();
+    setIsDarkMode(systemTheme === 'dark');
     
     try {
-      await AsyncStorage.setItem('theme', newTheme ? 'dark' : 'light');
-      console.log('🎨 Theme toggle - After:', newTheme);
+      await AsyncStorage.setItem('use_system_theme', JSON.stringify(true));
     } catch (error) {
-      console.error('Error saving theme preference:', error);
+      console.error('Error enabling system theme:', error);
     }
   };
 
-  // Apply theme
+  // Switch to manual theme mode
+  const enableManualTheme = async () => {
+    setUseSystemTheme(false);
+    
+    try {
+      await AsyncStorage.setItem('use_system_theme', JSON.stringify(false));
+      await AsyncStorage.setItem('manual_theme', isDarkMode ? 'dark' : 'light');
+    } catch (error) {
+      console.error('Error enabling manual theme:', error);
+    }
+  };
+
   const theme = isDarkMode ? darkTheme : lightTheme;
 
   return (
     <ThemeContext.Provider value={{ 
       theme, 
       isDarkMode, 
-      toggleTheme 
+      useSystemTheme,
+      toggleTheme,           // Always works - can click in profile
+      enableSystemTheme,     // Switch to system mode
+      enableManualTheme,     // Switch to manual mode
+      systemTheme: Appearance.getColorScheme()
     }}>
       {children}
     </ThemeContext.Provider>
