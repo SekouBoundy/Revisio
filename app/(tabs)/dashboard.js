@@ -1,4 +1,4 @@
-// app/(tabs)/dashboard.js - ENHANCED MODERN DASHBOARD
+// app/(tabs)/dashboard.js - IMPROVED VERSION (NO IMAGES ON RELOAD)
 import React, { useContext, useState, useEffect, useRef } from 'react';
 import { 
   View, 
@@ -11,6 +11,7 @@ import {
   Animated,
   RefreshControl
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { ThemeContext } from '../../constants/ThemeContext';
@@ -25,6 +26,8 @@ export default function DashboardScreen() {
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [mascotLoaded, setMascotLoaded] = useState(false);
+  const [skipMascotReload, setSkipMascotReload] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
 
@@ -51,6 +54,40 @@ export default function DashboardScreen() {
       })
     ]).start();
   }, []);
+
+  // Check if this is a page reload (mascot was already loaded)
+  useEffect(() => {
+    const checkMascotCache = async () => {
+      try {
+        // Check if mascot was loaded in this session
+        const mascotCached = await AsyncStorage.getItem('mascotLoaded');
+        if (mascotCached === 'true') {
+          setSkipMascotReload(true);
+        } else {
+          // First load - allow mascot to load and cache it
+          await AsyncStorage.setItem('mascotLoaded', 'true');
+          setMascotLoaded(true);
+        }
+      } catch (error) {
+        console.log('AsyncStorage error:', error);
+        // Fallback to normal loading
+        setMascotLoaded(true);
+      }
+    };
+    
+    checkMascotCache();
+  }, []);
+
+  // Delay image loading until after initial render
+  useEffect(() => {
+    if (!skipMascotReload) {
+      const imageTimer = setTimeout(() => {
+        setMascotLoaded(true);
+      }, 1000); // Load mascot 1 second after initial load
+      
+      return () => clearTimeout(imageTimer);
+    }
+  }, [skipMascotReload]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -87,15 +124,15 @@ export default function DashboardScreen() {
   };
 
   const getWeeklyProgress = () => {
-    // Mock weekly data - this would come from real analytics
+    // Enhanced weekly data with more details
     return [
-      { day: 'L', value: 80, isToday: false },
-      { day: 'M', value: 65, isToday: false },
-      { day: 'M', value: 90, isToday: false },
-      { day: 'J', value: 45, isToday: false },
-      { day: 'V', value: 70, isToday: false },
-      { day: 'S', value: 30, isToday: false },
-      { day: 'D', value: 85, isToday: true }
+      { day: 'L', value: 80, isToday: false, activities: 4, streak: true },
+      { day: 'M', value: 65, isToday: false, activities: 3, streak: true },
+      { day: 'M', value: 90, isToday: false, activities: 5, streak: true },
+      { day: 'J', value: 45, isToday: false, activities: 2, streak: true },
+      { day: 'V', value: 70, isToday: false, activities: 3, streak: true },
+      { day: 'S', value: 30, isToday: false, activities: 1, streak: false },
+      { day: 'D', value: 85, isToday: true, activities: 4, streak: true }
     ];
   };
 
@@ -337,16 +374,24 @@ export default function DashboardScreen() {
                 il y a {activity.time}
               </Text>
             </View>
-          </View>
+                    </View>
         </View>
       ))}
     </View>
   );
 
-  // Welcome Section with Mascot
+  // Welcome Section with conditional Mascot loading
   const WelcomeSection = () => (
     <View style={[styles.welcomeSection, { backgroundColor: theme.surface }]}>
-      <Mascot variant="full" />
+      {/* Show mascot only if not skipping reload or if already loaded */}
+      {(mascotLoaded || skipMascotReload) ? (
+        <Mascot variant="full" />
+      ) : (
+        <View style={[styles.mascotPlaceholder, { backgroundColor: theme.primary + '20' }]}>
+          <Text style={styles.mascotEmoji}>🎯</Text>
+        </View>
+      )}
+      
       <Text style={[styles.welcomeText, { color: theme.text }]}>
         Prêt pour une nouvelle session d'apprentissage ?
       </Text>
@@ -534,7 +579,7 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   
-  // Welcome Section
+  // Welcome Section - No image loading
   welcomeSection: {
     marginHorizontal: 20,
     marginBottom: 20,
@@ -547,10 +592,21 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
+  mascotPlaceholder: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  mascotEmoji: {
+    fontSize: 60,
+    textAlign: 'center',
+  },
   welcomeText: {
     fontSize: 16,
     textAlign: 'center',
-    marginTop: 16,
     marginBottom: 20,
     lineHeight: 22,
   },
