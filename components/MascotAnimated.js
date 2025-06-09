@@ -1,10 +1,11 @@
-import React from 'react';
-import { Image, Animated } from 'react-native';
+// components/MascotAnimated.js
+import React, { useRef, useEffect } from 'react';
+import { Animated } from 'react-native';
 
 export default function MascotAnimated({ source, style }) {
-  const fadeAnim = React.useRef(new Animated.Value(0)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  React.useEffect(() => {
+  useEffect(() => {
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 500,

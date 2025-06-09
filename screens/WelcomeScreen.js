@@ -6,6 +6,8 @@ import { useRouter } from 'expo-router';
 import { useContext } from 'react';
 import { ThemeContext } from '../constants/ThemeContext';
 import Mascot from '../components/Mascot';
+import Button from '../components/Button';
+
 
 export default function WelcomeScreen() {
   const { theme } = useContext(ThemeContext);
@@ -24,6 +26,7 @@ export default function WelcomeScreen() {
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Use the Mascot component instead of Image */}
       <Mascot variant="full" />
+      <Button title="Start Quiz" onPress={() => console.log('Quiz started')} />
       
       <Text style={[styles.title, { color: theme.primary }]}>
         Apprends avec moi !
