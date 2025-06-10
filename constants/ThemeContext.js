@@ -164,19 +164,12 @@ export function ThemeProvider({ children }) {
 
   const theme = isDarkMode ? darkTheme : lightTheme;
 
-  return (
-    <ThemeContext.Provider value={{ 
-      theme, 
-      isDarkMode, 
-      useSystemTheme,
-      toggleTheme,           // Always works - can click in profile
-      enableSystemTheme,     // Switch to system mode
-      enableManualTheme,     // Switch to manual mode
-      systemTheme: Appearance.getColorScheme()
-    }}>
-      {children}
-    </ThemeContext.Provider>
-  );
+return (
+  <ThemeContext.Provider value={{ theme }}>
+    {children}
+  </ThemeContext.Provider>
+);
+
 }
 
 export { ThemeContext };
