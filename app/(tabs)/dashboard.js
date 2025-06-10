@@ -258,9 +258,11 @@ export default function EnhancedDashboardScreen() {
         {/* Welcome Mascot Section */}
         <View style={styles.welcomeSection}>
           <View style={[styles.welcomeCard, { backgroundColor: theme.surface }]}>
-            <View style={[styles.welcomeMascotContainer, { backgroundColor: theme.primary + '20' }]}>
-              <Text style={[styles.welcomeMascotEmoji, { color: theme.primary }]}>🦉</Text>
-            </View>
+            <Image 
+              source={require('../../assets/mascots/mascot-welcome.png')}
+              style={styles.welcomeMascot}
+              resizeMode="contain"
+            />
             <View style={styles.welcomeText}>
               <Text style={[styles.welcomeTitle, { color: theme.text }]}>
                 Prêt à apprendre ?
@@ -599,15 +601,9 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
   },
-  welcomeMascotContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  welcomeMascotEmoji: {
-    fontSize: 36,
+  welcomeMascot: {
+    width: 100,
+    height: 100,
   },
   welcomeText: {
     flex: 1,
@@ -863,4 +859,4 @@ const styles = StyleSheet.create({
   bottomPadding: {
     height: 40,
   },
-}); 
+});
