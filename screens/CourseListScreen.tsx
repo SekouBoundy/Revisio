@@ -3,25 +3,24 @@
 import React from "react";
 import { View, Text, FlatList, TouchableOpacity, StyleSheet } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Colors, FontSizes, Spacing } from "../constants/ThemeContext";
 import { coursesByLevelStream } from "../data/coursesByLevelStream";
+import { Colors, FontSizes, Spacing } from "../constants/ThemeContext";
 
 type RouteParams = {
   level: "DEF" | "BAC";
-  stream: string; // "" for DEF or e.g. "Sciences_Exactes_TSE"
+  stream: string;
 };
 
 const CourseListScreen = () => {
   const router = useRouter();
   const { level, stream } = useLocalSearchParams<RouteParams>();
 
-// const courses = coursesByLevelStream[level as keyof typeof coursesByLevelStream][stream as keyof typeof coursesByLevelStream[typeof level]];
   const levelData = coursesByLevelStream[level as keyof typeof coursesByLevelStream];
-const courses = levelData[stream as keyof typeof levelData];
+  const courses = levelData[stream as keyof typeof levelData];
 
   const handleCoursePress = (courseId: string) => {
     router.push({
-      pathname: "/quiz",
+      pathname: "/CourseDetailsScreen",
       params: {
         level,
         stream,
@@ -29,6 +28,22 @@ const courses = levelData[stream as keyof typeof levelData];
       },
     });
   };
+  const handleNotePress = (note: any) => {
+  if (!note.isDownloaded) {
+    // Show alert
+    alert("Vous devez d'abord télécharger cette note avant de la consulter.");
+    return; // Stop here → do not open PDF
+  }
+
+  // If downloaded → open PDF
+  router.push({
+    pathname: "/PDFViewerScreen",
+    params: {
+      url: note.downloadUrl,
+    },
+  });
+};
+
 
   const renderItem = ({ item }: { item: { id: string; title: string } }) => (
     <TouchableOpacity style={styles.courseItem} onPress={() => handleCoursePress(item.id)}>
@@ -77,6 +92,5 @@ const styles = StyleSheet.create({
     color: Colors.primary,
   },
 });
-
 
 export default CourseListScreen;
