@@ -31,16 +31,19 @@ export default function EnhancedDashboardScreen() {
   // Animation values
   const fadeAnim = new Animated.Value(0);
   const slideAnim = new Animated.Value(50);
-  const mascotAnim = new Animated.Value(0);
+  // const mascotAnim = new Animated.Value(0);
+  const mascotAnim = React.useRef(new Animated.Value(1)).current; // start as visible
+  const hasAnimatedOnce = React.useRef(false);
 
-  useEffect(() => {
-    // Set greeting based on time
-    const hour = new Date().getHours();
-    if (hour < 12) setGreeting('Bonjour');
-    else if (hour < 18) setGreeting('Bon après-midi');
-    else setGreeting('Bonsoir');
 
-    // Animate entry
+
+useEffect(() => {
+  if (!hasAnimatedOnce.current) {
+    // Run the animation only once
+    fadeAnim.setValue(0);
+    slideAnim.setValue(50);
+    mascotAnim.setValue(0);
+
     Animated.sequence([
       Animated.parallel([
         Animated.timing(fadeAnim, {
@@ -60,8 +63,12 @@ export default function EnhancedDashboardScreen() {
         friction: 8,
         useNativeDriver: true,
       })
-    ]).start();
-  }, []);
+    ]).start(() => {
+      hasAnimatedOnce.current = true; // Mark as done
+    });
+  }
+}, []);
+
 
   const onRefresh = React.useCallback(() => {
     setRefreshing(true);
@@ -155,10 +162,13 @@ export default function EnhancedDashboardScreen() {
   );
 
   // Big Mascot Welcome Section
-  const MascotWelcomeSection = () => (
-    <Animated.View style={[
+const MascotWelcomeSection = () => {
+  const Wrapper = hasAnimatedOnce.current ? View : Animated.View;
+
+  return (
+    <Wrapper style={[
       styles.mascotWelcomeContainer,
-      {
+      !hasAnimatedOnce.current && {
         opacity: mascotAnim,
         transform: [{
           scale: mascotAnim.interpolate({
@@ -225,8 +235,9 @@ export default function EnhancedDashboardScreen() {
           </TouchableOpacity>
         </View>
       </View>
-    </Animated.View>
+    </Wrapper>
   );
+};
 
   // Enhanced Stats Card Component
   const StatsCard = ({ icon, title, value, subtitle, color, trend, onPress }) => (
