@@ -1,4 +1,4 @@
-// app/(tabs)/dashboard.js - ENHANCED VERSION
+// app/(tabs)/dashboard.js - ENHANCED VERSION WITH MASCOT WELCOME & PROGRESS
 import React, { useContext, useState, useEffect } from 'react';
 import { 
   View, 
@@ -15,6 +15,7 @@ import { useRouter } from 'expo-router';
 
 import { ThemeContext } from '../../constants/ThemeContext';
 import { useUser } from '../../constants/UserContext';
+import { Image } from 'react-native';
 
 export default function EnhancedDashboardScreen() {
   const { theme } = useContext(ThemeContext);
@@ -57,8 +58,8 @@ export default function EnhancedDashboardScreen() {
   // Calculate days until exams
   const getExamCountdown = () => {
     const examDates = {
-      DEF: new Date('2025-06-15'), // Example DEF exam date
-      BAC: new Date('2025-06-20'), // Example BAC exam date
+      DEF: new Date('2025-06-15'),
+      BAC: new Date('2025-06-20'),
     };
     
     const today = new Date();
@@ -78,6 +79,17 @@ export default function EnhancedDashboardScreen() {
     averageScore: 78,
     studyStreak: 5,
     totalStudyTime: 1240, // minutes
+  };
+
+  // Progress data
+  const progressData = {
+    weeklyGoal: 20, // hours
+    currentWeekStudy: 14, // hours
+    monthlyQuizzes: 25,
+    currentMonthQuizzes: 18,
+    overallProgress: 68, // percentage
+    strongSubjects: ['Mathématiques', 'Physique'],
+    improvementAreas: ['Français', 'Histoire']
   };
 
   const upcomingClasses = [
@@ -158,6 +170,35 @@ export default function EnhancedDashboardScreen() {
     </TouchableOpacity>
   );
 
+  // Progress Item Component
+  const ProgressItem = ({ title, current, total, unit, color, icon }) => {
+    const percentage = Math.round((current / total) * 100);
+    return (
+      <View style={[styles.progressItem, { backgroundColor: theme.surface }]}>
+        <View style={styles.progressHeader}>
+          <View style={styles.progressTitleContainer}>
+            <Ionicons name={icon} size={20} color={color} />
+            <Text style={[styles.progressTitle, { color: theme.text }]}>{title}</Text>
+          </View>
+          <Text style={[styles.progressValue, { color: color }]}>
+            {current}/{total} {unit}
+          </Text>
+        </View>
+        <View style={[styles.progressBarContainer, { backgroundColor: theme.neutralLight }]}>
+          <View 
+            style={[
+              styles.progressBar, 
+              { width: `${percentage}%`, backgroundColor: color }
+            ]} 
+          />
+        </View>
+        <Text style={[styles.progressPercentage, { color: theme.textSecondary }]}>
+          {percentage}% complété
+        </Text>
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <DashboardHeader />
@@ -213,6 +254,110 @@ export default function EnhancedDashboardScreen() {
             />
           </View>
         </Animated.View>
+
+        {/* Welcome Mascot Section */}
+        <View style={styles.welcomeSection}>
+          <View style={[styles.welcomeCard, { backgroundColor: theme.surface }]}>
+            <View style={[styles.welcomeMascotContainer, { backgroundColor: theme.primary + '20' }]}>
+              <Text style={[styles.welcomeMascotEmoji, { color: theme.primary }]}>🦉</Text>
+            </View>
+            <View style={styles.welcomeText}>
+              <Text style={[styles.welcomeTitle, { color: theme.text }]}>
+                Prêt à apprendre ?
+              </Text>
+              <Text style={[styles.welcomeSubtitle, { color: theme.textSecondary }]}>
+                Continuons ensemble ton parcours d'apprentissage ! 🚀
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Ma Progression Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>
+              Ma progression
+            </Text>
+            <TouchableOpacity onPress={() => router.push('/profile')}>
+              <Text style={[styles.sectionLink, { color: theme.primary }]}>
+                Détails →
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Overall Progress */}
+          <View style={[styles.overallProgress, { backgroundColor: theme.surface }]}>
+            <View style={styles.overallProgressHeader}>
+              <Text style={[styles.overallProgressTitle, { color: theme.text }]}>
+                Progression générale
+              </Text>
+              <Text style={[styles.overallProgressValue, { color: theme.primary }]}>
+                {progressData.overallProgress}%
+              </Text>
+            </View>
+            <View style={[styles.overallProgressBar, { backgroundColor: theme.neutralLight }]}>
+              <View 
+                style={[
+                  styles.overallProgressFill, 
+                  { 
+                    width: `${progressData.overallProgress}%`,
+                    backgroundColor: theme.primary 
+                  }
+                ]} 
+              />
+            </View>
+          </View>
+
+          {/* Progress Items */}
+          <ProgressItem
+            title="Objectif hebdomadaire"
+            current={progressData.currentWeekStudy}
+            total={progressData.weeklyGoal}
+            unit="h"
+            color={theme.success}
+            icon="time-outline"
+          />
+          
+          <ProgressItem
+            title="Quiz ce mois-ci"
+            current={progressData.currentMonthQuizzes}
+            total={progressData.monthlyQuizzes}
+            unit="quiz"
+            color={theme.info}
+            icon="help-circle-outline"
+          />
+
+          {/* Subject Performance */}
+          <View style={[styles.subjectPerformance, { backgroundColor: theme.surface }]}>
+            <Text style={[styles.subjectPerformanceTitle, { color: theme.text }]}>
+              Performance par matière
+            </Text>
+            
+            <View style={styles.subjectSection}>
+              <Text style={[styles.subjectSectionTitle, { color: theme.success }]}>
+                💪 Points forts
+              </Text>
+              {progressData.strongSubjects.map((subject, index) => (
+                <View key={index} style={styles.subjectItem}>
+                  <Ionicons name="checkmark-circle" size={16} color={theme.success} />
+                  <Text style={[styles.subjectName, { color: theme.text }]}>{subject}</Text>
+                </View>
+              ))}
+            </View>
+
+            <View style={styles.subjectSection}>
+              <Text style={[styles.subjectSectionTitle, { color: theme.warning }]}>
+                📈 À améliorer
+              </Text>
+              {progressData.improvementAreas.map((subject, index) => (
+                <View key={index} style={styles.subjectItem}>
+                  <Ionicons name="trending-up" size={16} color={theme.warning} />
+                  <Text style={[styles.subjectName, { color: theme.text }]}>{subject}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        </View>
 
         {/* Quick Actions */}
         <View style={styles.section}>
@@ -438,6 +583,46 @@ const styles = StyleSheet.create({
     fontSize: 10,
     marginTop: 2,
   },
+  // Welcome Section Styles
+  welcomeSection: {
+    paddingHorizontal: 20,
+    marginTop: 24,
+  },
+  welcomeCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 20,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  welcomeMascotContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  welcomeMascotEmoji: {
+    fontSize: 36,
+  },
+  welcomeText: {
+    flex: 1,
+    marginLeft: 16,
+  },
+  welcomeTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  welcomeSubtitle: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  // Progress Section Styles
   section: {
     paddingHorizontal: 20,
     marginTop: 24,
@@ -455,6 +640,113 @@ const styles = StyleSheet.create({
   sectionLink: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  overallProgress: {
+    padding: 20,
+    borderRadius: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  overallProgressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  overallProgressTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  overallProgressValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  overallProgressBar: {
+    height: 12,
+    borderRadius: 6,
+    overflow: 'hidden',
+  },
+  overallProgressFill: {
+    height: '100%',
+    borderRadius: 6,
+  },
+  progressItem: {
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  progressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  progressTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  progressTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  progressValue: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  progressBarContainer: {
+    height: 8,
+    borderRadius: 4,
+    overflow: 'hidden',
+    marginBottom: 4,
+  },
+  progressBar: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  progressPercentage: {
+    fontSize: 12,
+    textAlign: 'right',
+  },
+  subjectPerformance: {
+    padding: 20,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  subjectPerformanceTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 16,
+  },
+  subjectSection: {
+    marginBottom: 16,
+  },
+  subjectSectionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  subjectItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
+  subjectName: {
+    fontSize: 14,
   },
   quickActionsGrid: {
     flexDirection: 'row',
@@ -571,4 +863,4 @@ const styles = StyleSheet.create({
   bottomPadding: {
     height: 40,
   },
-});
+}); 
