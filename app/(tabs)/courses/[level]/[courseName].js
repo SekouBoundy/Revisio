@@ -316,54 +316,109 @@ export default function CourseDetailScreen() {
     </TouchableOpacity>
   );
 
-  const handleDownload = (item, type) => {
-    Alert.alert(
-      'Télécharger',
-      `Voulez-vous télécharger ${item.title} ?`,
-      [
-        { text: 'Annuler', style: 'cancel' },
-        { 
-          text: 'Télécharger', 
-          onPress: () => {
-            console.log(`Downloading ${type}:`, item.title);
-            Alert.alert('Succès', 'Téléchargement commencé');
-          }
-        }
-      ]
-    );
+const NoteCard = ({ note }) => (
+  <TouchableOpacity 
+    style={[styles.contentCard, { backgroundColor: theme.surface }]}
+    onPress={() => handleViewNote(note)} // View the note content
+  >
+    <View style={styles.contentHeader}>
+      <View style={[styles.contentIcon, { backgroundColor: theme.info + '20' }]}>
+        <Ionicons name="document-text" size={24} color={theme.info} />
+      </View>
+      
+      <View style={styles.contentInfo}>
+        <Text style={[styles.contentTitle, { color: theme.text }]}>
+          {note.title}
+        </Text>
+        <Text style={[styles.contentSubtitle, { color: theme.textSecondary }]}>
+          {note.chapter} • {note.pages} pages
+        </Text>
+        <Text style={[styles.contentDate, { color: theme.textSecondary }]}>
+          Mis à jour le {new Date(note.lastUpdated).toLocaleDateString('fr-FR')}
+        </Text>
+      </View>
+
+      <View style={styles.contentActions}>
+        {note.isDownloaded && (
+          <View style={[styles.downloadBadge, { backgroundColor: theme.success + '20' }]}>
+            <Ionicons name="checkmark-circle" size={16} color={theme.success} />
+          </View>
+        )}
+        {/* Separate download button */}
+        <TouchableOpacity 
+          style={[styles.actionButton, { backgroundColor: theme.primary + '15' }]}
+          onPress={(e) => {
+            e.stopPropagation(); // Prevent triggering the card's onPress
+            handleDownload(note, 'note');
+          }}
+        >
+          <Ionicons name="download" size={16} color={theme.primary} />
+        </TouchableOpacity>
+      </View>
+    </View>
+  </TouchableOpacity>
+);
+
+// Fixed ExamCard - clickable for viewing, separate download button
+const ExamCard = ({ exam }) => {
+  const getDifficultyColor = (difficulty) => {
+    switch (difficulty) {
+      case 'Facile': return theme.success;
+      case 'Moyen': return theme.warning;
+      case 'Difficile': return theme.error;
+      default: return theme.primary;
+    }
   };
 
-  const NoteCard = ({ note }) => (
+  return (
     <TouchableOpacity 
       style={[styles.contentCard, { backgroundColor: theme.surface }]}
-      onPress={() => handleDownload(note, 'note')}
+      onPress={() => handleViewExam(exam)} // View the exam content
     >
       <View style={styles.contentHeader}>
-        <View style={[styles.contentIcon, { backgroundColor: theme.info + '20' }]}>
-          <Ionicons name="document-text" size={24} color={theme.info} />
+        <View style={[styles.contentIcon, { backgroundColor: theme.warning + '20' }]}>
+          <Ionicons name="school" size={24} color={theme.warning} />
         </View>
         
         <View style={styles.contentInfo}>
           <Text style={[styles.contentTitle, { color: theme.text }]}>
-            {note.title}
+            {exam.title}
           </Text>
           <Text style={[styles.contentSubtitle, { color: theme.textSecondary }]}>
-            {note.chapter} • {note.pages} pages
+            Session {exam.session} • {exam.duration} • {exam.pages} pages
           </Text>
-          <Text style={[styles.contentDate, { color: theme.textSecondary }]}>
-            Mis à jour le {new Date(note.lastUpdated).toLocaleDateString('fr-FR')}
-          </Text>
+          
+          <View style={styles.examMeta}>
+            <View style={[styles.difficultyBadge, { backgroundColor: getDifficultyColor(exam.difficulty) + '20' }]}>
+              <Text style={[styles.difficultyText, { color: getDifficultyColor(exam.difficulty) }]}>
+                {exam.difficulty}
+              </Text>
+            </View>
+            <Text style={[styles.averageScore, { color: theme.textSecondary }]}>
+              Moyenne: {exam.averageScore}/20
+            </Text>
+          </View>
         </View>
 
         <View style={styles.contentActions}>
-          {note.isDownloaded && (
-            <View style={[styles.downloadBadge, { backgroundColor: theme.success + '20' }]}>
-              <Ionicons name="checkmark-circle" size={16} color={theme.success} />
-            </View>
+          {exam.hasCorrection && (
+            <TouchableOpacity 
+              style={[styles.actionButton, { backgroundColor: theme.success + '15' }]}
+              onPress={(e) => {
+                e.stopPropagation();
+                Alert.alert('Correction', `Voir la correction de ${exam.title}`);
+              }}
+            >
+              <Ionicons name="checkmark-done" size={16} color={theme.success} />
+            </TouchableOpacity>
           )}
+          {/* Separate download button */}
           <TouchableOpacity 
             style={[styles.actionButton, { backgroundColor: theme.primary + '15' }]}
-            onPress={() => handleDownload(note, 'note')}
+            onPress={(e) => {
+              e.stopPropagation(); // Prevent triggering the card's onPress
+              handleDownload(exam, 'exam');
+            }}
           >
             <Ionicons name="download" size={16} color={theme.primary} />
           </TouchableOpacity>
@@ -371,69 +426,60 @@ export default function CourseDetailScreen() {
       </View>
     </TouchableOpacity>
   );
-
-  const ExamCard = ({ exam }) => {
-    const getDifficultyColor = (difficulty) => {
-      switch (difficulty) {
-        case 'Facile': return theme.success;
-        case 'Moyen': return theme.warning;
-        case 'Difficile': return theme.error;
-        default: return theme.primary;
-      }
-    };
-
-    return (
-      <TouchableOpacity 
-        style={[styles.contentCard, { backgroundColor: theme.surface }]}
-        onPress={() => handleDownload(exam, 'exam')}
-      >
-        <View style={styles.contentHeader}>
-          <View style={[styles.contentIcon, { backgroundColor: theme.warning + '20' }]}>
-            <Ionicons name="school" size={24} color={theme.warning} />
-          </View>
-          
-          <View style={styles.contentInfo}>
-            <Text style={[styles.contentTitle, { color: theme.text }]}>
-              {exam.title}
-            </Text>
-            <Text style={[styles.contentSubtitle, { color: theme.textSecondary }]}>
-              Session {exam.session} • {exam.duration} • {exam.pages} pages
-            </Text>
-            
-            <View style={styles.examMeta}>
-              <View style={[styles.difficultyBadge, { backgroundColor: getDifficultyColor(exam.difficulty) + '20' }]}>
-                <Text style={[styles.difficultyText, { color: getDifficultyColor(exam.difficulty) }]}>
-                  {exam.difficulty}
-                </Text>
-              </View>
-              <Text style={[styles.averageScore, { color: theme.textSecondary }]}>
-                Moyenne: {exam.averageScore}/20
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.contentActions}>
-            {exam.hasCorrection && (
-              <TouchableOpacity 
-                style={[styles.actionButton, { backgroundColor: theme.success + '15' }]}
-                onPress={() => Alert.alert('Correction', `Voir la correction de ${exam.title}`)}
-              >
-                <Ionicons name="checkmark-done" size={16} color={theme.success} />
-              </TouchableOpacity>
-            )}
-            <TouchableOpacity 
-              style={[styles.actionButton, { backgroundColor: theme.primary + '15' }]}
-              onPress={() => handleDownload(exam, 'exam')}
-            >
-              <Ionicons name="download" size={16} color={theme.primary} />
-            </TouchableOpacity>
-          </View>
-        </View>
-      </TouchableOpacity>
+};
+const handleViewNote = (note) => {
+  if (!note.isDownloaded) {
+    Alert.alert(
+      'Document non téléchargé',
+      'Vous devez d\'abord télécharger ce document pour le consulter.',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        { 
+          text: 'Télécharger', 
+          onPress: () => handleDownload(note, 'note')
+        }
+      ]
     );
-  };
+    return;
+  }
 
-  const EmptyState = ({ title, message, icon }) => (
+  // Open PDF viewer for downloaded notes
+  router.push({
+    pathname: '/pdf-viewer',
+    params: {
+      url: note.downloadUrl || `https://example.com/pdf/${note.id}.pdf`,
+      title: note.title
+    }
+  });
+};
+
+const handleViewExam = (exam) => {
+  if (!exam.isDownloaded) {
+    Alert.alert(
+      'Examen non téléchargé',
+      'Vous devez d\'abord télécharger cet examen pour le consulter.',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        { 
+          text: 'Télécharger', 
+          onPress: () => handleDownload(exam, 'exam')
+        }
+      ]
+    );
+    return;
+  }
+
+  // Open PDF viewer for downloaded exams
+  router.push({
+    pathname: '/pdf-viewer',
+    params: {
+      url: exam.downloadUrl || `https://example.com/pdf/${exam.id}.pdf`,
+      title: exam.title
+    }
+  });
+};
+
+const EmptyState = ({ title, message, icon }) => (
     <View style={[styles.emptyState, { backgroundColor: theme.surface }]}>
       <Ionicons name={icon} size={48} color={theme.textSecondary} />
       <Text style={[styles.emptyTitle, { color: theme.text }]}>{title}</Text>

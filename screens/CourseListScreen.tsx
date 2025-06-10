@@ -1,5 +1,6 @@
 // path: screens/CourseListScreen.tsx
 
+// Fixed CourseListScreen.tsx
 import React from "react";
 import { View, Text, FlatList, TouchableOpacity, StyleSheet } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -18,36 +19,37 @@ const CourseListScreen = () => {
   const levelData = coursesByLevelStream[level as keyof typeof coursesByLevelStream];
   const courses = levelData[stream as keyof typeof levelData];
 
+  // Fixed: Navigate to the existing course detail screen
   const handleCoursePress = (courseId: string) => {
-    router.push({
-      pathname: "/CourseDetailsScreen",
-      params: {
-        level,
-        stream,
-        courseId,
-      },
-    });
+    const courseName = courseId.replace(/\s+/g, '_');
+    router.push(`/(tabs)/courses/${level}/${courseName}`);
   };
+
+  // This function is for when you click on individual notes/documents, not courses
   const handleNotePress = (note: any) => {
-  if (!note.isDownloaded) {
-    // Show alert
-    alert("Vous devez d'abord télécharger cette note avant de la consulter.");
-    return; // Stop here → do not open PDF
-  }
+    if (!note.isDownloaded) {
+      alert("Vous devez d'abord télécharger cette note avant de la consulter.");
+      return;
+    }
 
-  // If downloaded → open PDF
-  router.push({
-    pathname: "/PDFViewerScreen",
+    router.push({
+    pathname: '/pdf-viewer',  // Changed from '/screens/PDFViewerScreen'
     params: {
-      url: note.downloadUrl,
-    },
-  });
-};
-
+    url: note.downloadUrl,
+    title: note.title
+  }
+});
+  };
 
   const renderItem = ({ item }: { item: { id: string; title: string } }) => (
-    <TouchableOpacity style={styles.courseItem} onPress={() => handleCoursePress(item.id)}>
+    <TouchableOpacity 
+      style={styles.courseItem} 
+      onPress={() => handleCoursePress(item.id)}
+    >
       <Text style={styles.courseTitle}>{item.title}</Text>
+      <View style={styles.courseArrow}>
+        <Text style={styles.arrowText}>→</Text>
+      </View>
     </TouchableOpacity>
   );
 
@@ -86,10 +88,22 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginBottom: Spacing.lg,
     elevation: 3,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   courseTitle: {
     fontSize: FontSizes.large,
     color: Colors.primary,
+    flex: 1,
+  },
+  courseArrow: {
+    marginLeft: 12,
+  },
+  arrowText: {
+    fontSize: 18,
+    color: Colors.primary,
+    fontWeight: 'bold',
   },
 });
 
