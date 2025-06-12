@@ -1,3 +1,47 @@
 ﻿[
-  {"id":"1","prompt":"Sample question","options":["A","B","C","D"],"correctAnswerIndex":0,"explanation":"Sample answer"}
+  {
+    "id": "def_francais_1",
+    "question": "Comment conjugue-t-on le verbe \"être\" à la 1ère personne du singulier ?",
+    "options": ["je sers", "je suis", "j'ai", "je fais"],
+    "correctIndex": 1,
+    "explanation": "Le verbe \"être\" à la 1ère personne du singulier se conjugue \"je suis\".",
+    "hint": "C'est un verbe auxiliaire très irrégulier.",
+    "points": 10
+  },
+  {
+    "id": "def_francais_2",
+    "question": "Conjuguez \"finir\" à la 3ème personne du pluriel :",
+    "options": ["ils finissent", "ils finisent", "ils finirent", "ils finissaient"],
+    "correctIndex": 0,
+    "explanation": "Les verbes du 2ème groupe prennent -issent à la 3ème personne du pluriel au présent.",
+    "hint": "C'est un verbe du 2ème groupe, pensez à l'infixe -iss-.",
+    "points": 12
+  },
+  {
+    "id": "def_francais_3",
+    "question": "Comment conjugue-t-on \"aller\" à la 1ère personne du singulier ?",
+    "options": ["j'alle", "je va", "je vais", "j'aller"],
+    "correctIndex": 2,
+    "explanation": "Le verbe \"aller\" est irrégulier : \"je vais\".",
+    "hint": "C'est un verbe très irrégulier du 3ème groupe.",
+    "points": 12
+  },
+  {
+    "id": "def_francais_4",
+    "question": "Quelle est la terminaison des verbes du 1er groupe à la 2ème personne du singulier ?",
+    "options": ["-es", "-s", "-x", "-e"],
+    "correctIndex": 0,
+    "explanation": "Les verbes du 1er groupe se terminent par -es à la 2ème personne du singulier (tu chantes).",
+    "hint": "Pensez à \"tu chantes\", \"tu parles\"...",
+    "points": 10
+  },
+  {
+    "id": "def_francais_5",
+    "question": "Quel est le féminin de \"acteur\" ?",
+    "options": ["acteure", "actrice", "acteusse", "activer"],
+    "correctIndex": 1,
+    "explanation": "Le féminin d'\"acteur\" est \"actrice\". C'est une forme irrégulière.",
+    "hint": "Ce n'est pas une terminaison régulière en -e.",
+    "points": 10
+  }
 ]
