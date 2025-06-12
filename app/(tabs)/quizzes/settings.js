@@ -22,7 +22,7 @@ export default function QuizSettingsScreen() {
   const { user } = useUser();
   const router = useRouter();
   
-  const [progressManager] = useState(() => new UserProgressManager());
+  // const [progressManager] = useState(() => new UserProgressManager());
   const [settings, setSettings] = useState({
     soundEnabled: true,
     vibrationEnabled: true,
@@ -88,7 +88,7 @@ export default function QuizSettingsScreen() {
 
   const exportProgress = async () => {
     try {
-      const progress = await progressManager.getUserProgress();
+      const progress = await quizManager.getUserProgress();
       const stats = await progressManager.getOverallStats();
       
       const exportData = {

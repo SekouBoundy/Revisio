@@ -24,7 +24,7 @@ export default function QuizResultsScreen() {
   const { user } = useUser();
   const router = useRouter();
   
-  const [progressManager] = useState(() => new UserProgressManager());
+  // const [progressManager] = useState(() => new UserProgressManager());
   const [quizManager] = useState(() => new QuizManager(user?.level || 'DEF'));
   const [quizProgress, setQuizProgress] = useState(null);
   const [quiz, setQuiz] = useState(null);
@@ -38,7 +38,7 @@ export default function QuizResultsScreen() {
 
   const loadQuizData = async () => {
     try {
-      const progress = await progressManager.getQuizProgress(quizId);
+      const progress = await quizManager.getUserProgress();
       const quizData = quizManager.getQuizById(quizId);
       setQuizProgress(progress);
       setQuiz(quizData);

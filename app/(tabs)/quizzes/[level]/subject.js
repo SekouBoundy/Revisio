@@ -13,7 +13,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { ThemeContext } from '../../../../constants/ThemeContext';
 import { useUser } from '../../../../constants/UserContext';
-import { QuizManager, UserProgressManager } from '../../../../utils/quizDataManager';
+import { QuizManager } from '../../../../utils/quizManager';
 
 export default function SubjectQuizzesScreen() {
   const { level, subject } = useLocalSearchParams();
@@ -22,7 +22,7 @@ export default function SubjectQuizzesScreen() {
   const router = useRouter();
   
   const [quizManager] = useState(() => new QuizManager(level));
-  const [progressManager] = useState(() => new UserProgressManager());
+  // const [progressManager] = useState(() => new UserProgressManager());
   const [userProgress, setUserProgress] = useState({});
   const [subjectData, setSubjectData] = useState(null);
   const [quizzes, setQuizzes] = useState([]);
@@ -42,7 +42,7 @@ export default function SubjectQuizzesScreen() {
 
   const loadUserProgress = async () => {
     try {
-      const progress = await progressManager.getUserProgress();
+      const progress = await quizManager.getUserProgress();
       setUserProgress(progress);
     } catch (error) {
       console.error('Error loading progress:', error);
