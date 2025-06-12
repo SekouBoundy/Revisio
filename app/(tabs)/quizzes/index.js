@@ -1,4 +1,4 @@
-// app/(tabs)/quizzes/index.js - FIXED VERSION
+// app/(tabs)/quizzes/index.js - UNIFIED QUIZ SYSTEM
 import React, { useContext, useState, useRef, useEffect } from 'react';
 import {
   View,
@@ -10,7 +10,6 @@ import {
   TextInput,
   Animated,
   Keyboard,
-  Dimensions,
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,56 +17,55 @@ import { useRouter } from 'expo-router';
 
 import { ThemeContext } from '../../../constants/ThemeContext';
 import { useUser } from '../../../constants/UserContext';
-import { QuizManager, UserProgressManager } from '../../../utils/quizDataManager';
+import { UnifiedQuizManager } from '../../../utils/unifiedQuizManager';
 
-const { width } = Dimensions.get('window');
-
-export default function QuizzesIndex() {
+export default function UnifiedQuizzesIndex() {
   const { theme } = useContext(ThemeContext);
   const { user } = useUser();
   const router = useRouter();
   const isDefLevel = user?.level === 'DEF';
   
-  // Quiz manager instances
-  const [quizManager] = useState(() => new QuizManager(isDefLevel ? 'DEF' : user?.level));
-  const [progressManager] = useState(() => new UserProgressManager());
+  // Quiz manager instance
+  const [quizManager] = useState(() => new UnifiedQuizManager(isDefLevel ? 'DEF' : user?.level));
   
   // State
   const [loading, setLoading] = useState(true);
   const [searchVisible, setSearchVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [userProgress, setUserProgress] = useState({});
-  const [quizStats, setQuizStats] = useState(null);
+  const [stats, setStats] = useState(null);
   const [subjects, setSubjects] = useState([]);
-  const [error, setError] = useState(null);
+  const [allQuizzes, setAllQuizzes] = useState([]);
+  const [recommendations, setRecommendations] = useState([]);
   const searchInputRef = useRef(null);
   const searchAnimValue = useRef(new Animated.Value(0)).current;
 
-  // Load user progress on mount
+  // Load data on mount
   useEffect(() => {
-    loadUserProgress();
+    loadQuizData();
   }, []);
 
-  const loadUserProgress = async () => {
+  const loadQuizData = async () => {
     try {
       setLoading(true);
-      setError(null);
       
-      const progress = await progressManager.getUserProgress();
-      const stats = await progressManager.getOverallStats();
+      // Load all quiz data
+      const [progress, quizStats, quizRecommendations] = await Promise.all([
+        quizManager.getUserProgress(),
+        quizManager.getStats(),
+        quizManager.getRecommendations(3)
+      ]);
       
-      // Load subjects safely
-      const allSubjects = getAllSubjects();
+      const subjectsData = quizManager.getSubjects();
+      const allQuizzesData = quizManager.getAllQuizzes();
       
       setUserProgress(progress);
-      setQuizStats(stats);
-      setSubjects(allSubjects);
+      setStats(quizStats);
+      setSubjects(subjectsData);
+      setAllQuizzes(allQuizzesData);
+      setRecommendations(quizRecommendations);
     } catch (error) {
-      console.error('Error loading progress:', error);
-      setError('Failed to load quiz data');
-      setUserProgress({});
-      setQuizStats(null);
-      setSubjects([]);
+      console.error('Error loading quiz data:', error);
     } finally {
       setLoading(false);
     }
@@ -99,140 +97,18 @@ export default function QuizzesIndex() {
     }
   };
 
-  const clearSearch = () => {
-    setSearchQuery('');
-    searchInputRef.current?.focus();
-  };
-
-  // Get quiz data from manager with null checks
-  const getRecommendedQuizzes = () => {
-    try {
-      return quizManager.getRecommendedQuizzes(userProgress) || [];
-    } catch (error) {
-      console.error('Error getting recommended quizzes:', error);
-      return [];
-    }
-  };
-
-  const getRecentlyTaken = () => {
-    try {
-      const recentQuizzes = [];
-      for (const [quizId, progress] of Object.entries(userProgress)) {
-        if (progress?.attempts > 0) {
-          const quiz = quizManager.getQuizById(quizId);
-          if (quiz && progress.history && progress.history.length > 0) {
-            const lastAttempt = progress.history[progress.history.length - 1];
-            recentQuizzes.push({
-              ...quiz,
-              score: lastAttempt.score,
-              takenAt: lastAttempt.completedAt
-            });
-          }
-        }
-      }
-      return recentQuizzes
-        .sort((a, b) => new Date(b.takenAt) - new Date(a.takenAt))
-        .slice(0, 3);
-    } catch (error) {
-      console.error('Error getting recently taken quizzes:', error);
-      return [];
-    }
-  };
-
-  const getAllSubjects = () => {
-    try {
-      const subjectNames = quizManager.getSubjects();
-      if (!subjectNames || !Array.isArray(subjectNames)) {
-        return [];
-      }
-
-      return subjectNames.map(subjectName => {
-        try {
-          const subject = quizManager.getSubject(subjectName);
-          if (!subject || !subject.quizzes) {
-            return {
-              name: subjectName,
-              icon: 'help-circle',
-              color: '#2196F3',
-              description: 'Quiz subject',
-              totalQuizzes: 0,
-              completedQuizzes: 0,
-              averageScore: 0,
-              quizzes: []
-            };
-          }
-
-          const quizzes = Object.values(subject.quizzes);
-          
-          const completedQuizzes = quizzes.filter(quiz => 
-            userProgress[quiz.id]?.attempts > 0
-          ).length;
-          
-          const averageScore = completedQuizzes > 0 
-            ? Math.round(
-                quizzes
-                  .filter(quiz => userProgress[quiz.id]?.attempts > 0)
-                  .reduce((acc, quiz) => acc + (userProgress[quiz.id]?.bestScore || 0), 0) / completedQuizzes
-              )
-            : 0;
-
-          return {
-            name: subjectName,
-            icon: subject.icon || 'help-circle',
-            color: subject.color || '#2196F3',
-            description: subject.description || 'Quiz subject',
-            totalQuizzes: quizzes.length,
-            completedQuizzes,
-            averageScore,
-            quizzes
-          };
-        } catch (subjectError) {
-          console.error(`Error processing subject ${subjectName}:`, subjectError);
-          return {
-            name: subjectName,
-            icon: 'help-circle',
-            color: '#2196F3',
-            description: 'Quiz subject',
-            totalQuizzes: 0,
-            completedQuizzes: 0,
-            averageScore: 0,
-            quizzes: []
-          };
-        }
-      });
-    } catch (error) {
-      console.error('Error getting all subjects:', error);
-      return [];
-    }
-  };
-
-  // Navigation helper
   const navigateToQuiz = (quiz) => {
-    try {
-      const userLevel = isDefLevel ? 'DEF' : user?.level || 'TSE';
-      const quizTitle = quiz.title.replace(/\s+/g, '_');
-      router.push(`/quizzes/${userLevel}/${quizTitle}`);
-    } catch (error) {
-      console.error('Error navigating to quiz:', error);
-    }
+    const userLevel = isDefLevel ? 'DEF' : user?.level || 'TSE';
+    const quizTitle = quiz.title.replace(/\s+/g, '_');
+    router.push(`/quizzes/${userLevel}/${quizTitle}`);
   };
 
-  // Utility functions
-  const getPerformanceColor = (score) => {
-    if (score >= 80) return theme.success;
-    if (score >= 60) return theme.warning;
-    return theme.error;
+  const navigateToSubject = (subject) => {
+    const userLevel = isDefLevel ? 'DEF' : user?.level || 'TSE';
+    router.push(`/quizzes/${userLevel}?subject=${subject.name}`);
   };
 
-  const getDifficultyColor = (difficulty) => {
-    switch (difficulty) {
-      case 'Facile': return theme.success;
-      case 'Moyen': return theme.warning;
-      case 'Difficile': return theme.error;
-      default: return theme.primary;
-    }
-  };
-
+  // Get time-based greeting
   const getTimeOfDayGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Bonjour';
@@ -240,22 +116,9 @@ export default function QuizzesIndex() {
     return 'Bonsoir';
   };
 
-  // Search functionality with error handling
-  const searchResults = searchQuery ? (
-    (() => {
-      try {
-        return quizManager.searchQuizzes(searchQuery) || [];
-      } catch (error) {
-        console.error('Error searching quizzes:', error);
-        return [];
-      }
-    })()
-  ) : [];
+  // Search functionality
+  const searchResults = searchQuery ? quizManager.searchQuizzes(searchQuery) : [];
   const hasSearchResults = searchQuery.trim().length > 0;
-
-  // Component data with error handling
-  const recommendedQuizzes = getRecommendedQuizzes();
-  const recentlyTaken = getRecentlyTaken();
 
   // Loading state
   if (loading) {
@@ -266,29 +129,6 @@ export default function QuizzesIndex() {
           <Text style={[styles.loadingText, { color: theme.text }]}>
             Chargement des quiz...
           </Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  // Error state
-  if (error) {
-    return (
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-        <View style={styles.errorContainer}>
-          <Ionicons name="alert-circle" size={48} color={theme.error} />
-          <Text style={[styles.errorTitle, { color: theme.text }]}>
-            Erreur de chargement
-          </Text>
-          <Text style={[styles.errorMessage, { color: theme.textSecondary }]}>
-            {error}
-          </Text>
-          <TouchableOpacity
-            style={[styles.retryButton, { backgroundColor: theme.primary }]}
-            onPress={loadUserProgress}
-          >
-            <Text style={styles.retryButtonText}>Réessayer</Text>
-          </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
@@ -306,158 +146,185 @@ export default function QuizzesIndex() {
             Prêt pour un quiz ?
           </Text>
         </View>
-        <View style={styles.headerActions}>
-          <TouchableOpacity 
+        <TouchableOpacity 
+          style={[
+            styles.actionButton, 
+            { backgroundColor: searchVisible ? '#FFFFFF' : 'rgba(255, 255, 255, 0.15)' }
+          ]}
+          onPress={toggleSearch}
+        >
+          <Ionicons 
+            name={searchVisible ? "close" : "search"} 
+            size={20} 
+            color={searchVisible ? theme.primary : "#FFFFFF"} 
+          />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  // Stats Card
+  const StatsCard = () => (
+    <View style={[styles.statsCard, { backgroundColor: theme.surface }]}>
+      <View style={styles.statsGrid}>
+        <View style={styles.statItem}>
+          <Text style={[styles.statValue, { color: theme.primary }]}>
+            {stats?.completedQuizzes || 0}
+          </Text>
+          <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Terminés</Text>
+        </View>
+        <View style={styles.statItem}>
+          <Text style={[styles.statValue, { color: '#4CAF50' }]}>
+            {stats?.averageScore || 0}%
+          </Text>
+          <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Moyenne</Text>
+        </View>
+        <View style={styles.statItem}>
+          <Text style={[styles.statValue, { color: '#FF9800' }]}>
+            {(stats?.totalQuizzes || 0) - (stats?.completedQuizzes || 0)}
+          </Text>
+          <Text style={[styles.statLabel, { color: theme.textSecondary }]}>À faire</Text>
+        </View>
+      </View>
+      
+      <View style={styles.overallProgressContainer}>
+        <View style={styles.overallProgressHeader}>
+          <Text style={[styles.overallProgressLabel, { color: theme.text }]}>
+            Progression générale
+          </Text>
+          <Text style={[styles.overallProgressPercent, { color: theme.primary }]}>
+            {stats?.completionRate || 0}%
+          </Text>
+        </View>
+        <View style={[styles.overallProgressBar, { backgroundColor: theme.neutralLight }]}>
+          <View 
             style={[
-              styles.actionButton, 
-              { backgroundColor: searchVisible ? '#FFFFFF' : 'rgba(255, 255, 255, 0.15)' }
+              styles.overallProgressFill,
+              { 
+                width: `${stats?.completionRate || 0}%`,
+                backgroundColor: theme.primary
+              }
             ]}
-            onPress={toggleSearch}
-          >
-            <Ionicons 
-              name={searchVisible ? "close" : "search"} 
-              size={20} 
-              color={searchVisible ? theme.primary : "#FFFFFF"} 
-            />
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.actionButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}
-            onPress={() => router.push('/(tabs)/profile')}
-          >
-            <Ionicons name="person-circle" size={20} color="#FFFFFF" />
-          </TouchableOpacity>
+          />
         </View>
       </View>
     </View>
   );
 
-  // Enhanced Streak Card with real data
-  const StreakCard = () => {
-    const currentStreak = quizStats?.streak || 0;
-    const todayCompleted = 2; // This would come from daily tracking
-    const dailyGoal = 3;
-
+  // Quiz Card Component
+  const QuizCard = ({ quiz }) => {
+    const progress = userProgress[quiz.id];
+    const hasProgress = progress && progress.attempts > 0;
+    
     return (
-      <View style={[styles.streakCard, { backgroundColor: theme.surface }]}>
-        <View style={styles.streakContent}>
-          <View style={styles.streakLeft}>
-            <View style={styles.streakStats}>
-              <View style={[styles.streakBadge, { backgroundColor: theme.warning + '20' }]}>
-                <Ionicons name="flame" size={20} color={theme.warning} />
-                <Text style={[styles.streakNumber, { color: theme.warning }]}>{currentStreak}</Text>
-              </View>
-              <View style={styles.streakTextContainer}>
-                <Text style={[styles.streakTitle, { color: theme.text }]}>Série actuelle</Text>
-                <Text style={[styles.streakSubtitle, { color: theme.textSecondary }]}>
-                  {currentStreak} jour{currentStreak > 1 ? 's' : ''} consécutif{currentStreak > 1 ? 's' : ''}
-                </Text>
-              </View>
+      <TouchableOpacity 
+        style={[styles.quizCard, { backgroundColor: theme.surface }]}
+        onPress={() => navigateToQuiz(quiz)}
+      >
+        <View style={[styles.quizIcon, { backgroundColor: quiz.subjectColor + '20' }]}>
+          <Ionicons name={quiz.subjectIcon} size={24} color={quiz.subjectColor} />
+        </View>
+        
+        <View style={styles.quizContent}>
+          <Text style={[styles.quizTitle, { color: theme.text }]}>{quiz.title}</Text>
+          <Text style={[styles.quizSubject, { color: theme.textSecondary }]}>{quiz.subject}</Text>
+          <Text style={[styles.quizDescription, { color: theme.textSecondary }]} numberOfLines={2}>
+            {quiz.description}
+          </Text>
+          
+          <View style={styles.quizMeta}>
+            <View style={styles.quizMetaItem}>
+              <Ionicons name="help-circle-outline" size={14} color={theme.textSecondary} />
+              <Text style={[styles.quizMetaText, { color: theme.textSecondary }]}>
+                {quiz.totalQuestions} questions
+              </Text>
+            </View>
+            <View style={styles.quizMetaItem}>
+              <Ionicons name="time-outline" size={14} color={theme.textSecondary} />
+              <Text style={[styles.quizMetaText, { color: theme.textSecondary }]}>
+                {quiz.duration} min
+              </Text>
+            </View>
+            <View style={[styles.difficultyBadge, { backgroundColor: getDifficultyColor(quiz.difficulty) + '20' }]}>
+              <Text style={[styles.difficultyText, { color: getDifficultyColor(quiz.difficulty) }]}>
+                {quiz.difficulty}
+              </Text>
             </View>
           </View>
           
-          <View style={styles.streakRight}>
-            <Text style={[styles.dailyGoalLabel, { color: theme.textSecondary }]}>Objectif du jour</Text>
-            <View style={styles.dailyProgress}>
-              <Text style={[styles.dailyGoalText, { color: theme.text }]}>
-                {todayCompleted}/{dailyGoal} quiz
+          {hasProgress && (
+            <View style={styles.progressContainer}>
+              <Text style={[styles.scoreText, { color: getScoreColor(progress.bestScore) }]}>
+                Meilleur score: {progress.bestScore}%
               </Text>
-              <View style={[styles.progressBarContainer, { backgroundColor: theme.neutralLight }]}>
+              <View style={[styles.progressBar, { backgroundColor: theme.neutralLight }]}>
                 <View 
                   style={[
-                    styles.progressBar, 
+                    styles.progressFill,
                     { 
-                      width: `${Math.min((todayCompleted / dailyGoal) * 100, 100)}%`,
-                      backgroundColor: todayCompleted >= dailyGoal ? theme.success : theme.primary
+                      width: `${progress.bestScore}%`,
+                      backgroundColor: getScoreColor(progress.bestScore)
                     }
                   ]} 
                 />
               </View>
             </View>
-          </View>
+          )}
         </View>
-      </View>
+
+        <Ionicons name="chevron-forward" size={20} color={theme.textSecondary} />
+      </TouchableOpacity>
     );
   };
 
-  const QuickActionCard = ({ icon, title, subtitle, color, onPress, badge }) => (
-    <TouchableOpacity 
-      style={[styles.quickActionCard, { backgroundColor: color + '15' }]}
-      onPress={onPress}
-    >
-      <View style={[styles.quickActionIcon, { backgroundColor: color }]}>
-        <Ionicons name={icon} size={24} color="#fff" />
-        {badge && (
-          <View style={[styles.quickActionBadge, { backgroundColor: theme.error }]}>
-            <Text style={styles.quickActionBadgeText}>{badge}</Text>
+  // Subject Card Component
+  const SubjectCard = ({ subject }) => {
+    const subjectQuizzes = allQuizzes.filter(q => q.subjectName === subject.name);
+    const completedQuizzes = subjectQuizzes.filter(q => {
+      const progress = userProgress[q.id];
+      return progress && progress.attempts > 0;
+    }).length;
+    
+    return (
+      <TouchableOpacity 
+        style={[styles.subjectCard, { backgroundColor: theme.surface }]}
+        onPress={() => navigateToSubject(subject)}
+      >
+        <View style={styles.subjectHeader}>
+          <View style={[styles.subjectIcon, { backgroundColor: subject.color + '20' }]}>
+            <Ionicons name={subject.icon} size={20} color={subject.color} />
           </View>
-        )}
-      </View>
-      <Text style={[styles.quickActionTitle, { color: theme.text }]}>{title}</Text>
-      <Text style={[styles.quickActionSubtitle, { color: theme.textSecondary }]}>{subtitle}</Text>
-    </TouchableOpacity>
-  );
+          <Text style={[styles.subjectName, { color: theme.text }]}>{subject.name}</Text>
+        </View>
+        
+        <Text style={[styles.subjectDescription, { color: theme.textSecondary }]} numberOfLines={2}>
+          {subject.description}
+        </Text>
+        
+        <View style={styles.subjectStats}>
+          <Text style={[styles.subjectProgress, { color: theme.textSecondary }]}>
+            {completedQuizzes}/{subjectQuizzes.length} quiz terminés
+          </Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
-  const QuickActions = () => (
-    <View style={styles.quickActionsContainer}>
-      <Text style={[styles.sectionTitle, { color: theme.text }]}>Actions rapides</Text>
-      <View style={styles.quickActionsGrid}>
-        <QuickActionCard
-          icon="flash"
-          title="Quiz éclair"
-          subtitle="5 questions"
-          color={theme.warning}
-          onPress={() => {
-            if (recommendedQuizzes.length > 0) {
-              navigateToQuiz(recommendedQuizzes[0]);
-            }
-          }}
-        />
-        <QuickActionCard
-          icon="school"
-          title="Révisions"
-          subtitle="Sujets faibles"
-          color={theme.info}
-          onPress={() => {
-            // Find lowest scoring subject
-            const weakestSubject = subjects.find(s => s.averageScore > 0 && s.averageScore < 70);
-            if (weakestSubject && weakestSubject.quizzes.length > 0) {
-              navigateToQuiz(weakestSubject.quizzes[0]);
-            }
-          }}
-        />
-        <QuickActionCard
-          icon="trophy"
-          title="Défi"
-          subtitle="Difficile"
-          color={theme.accent}
-          onPress={() => {
-            // Find a difficult quiz
-            const difficultQuizzes = subjects.flatMap(s => s.quizzes)
-              .filter(quiz => quiz.difficulty === 'Difficile');
-            if (difficultQuizzes.length > 0) {
-              navigateToQuiz(difficultQuizzes[0]);
-            }
-          }}
-        />
-        <QuickActionCard
-          icon="refresh"
-          title="Reprendre"
-          subtitle="Quiz ratés"
-          color={theme.error}
-          badge={recentlyTaken.filter(q => q.score < 60).length || undefined}
-          onPress={() => {
-            const failedQuiz = recentlyTaken.find(q => q.score < 60);
-            if (failedQuiz) {
-              navigateToQuiz(failedQuiz);
-            }
-          }}
-        />
-      </View>
-    </View>
-  );
+  // Utility functions
+  const getDifficultyColor = (difficulty) => {
+    switch (difficulty) {
+      case 'Facile': return '#4CAF50';
+      case 'Moyen': return '#FF9800';
+      case 'Difficile': return '#F44336';
+      default: return theme.primary;
+    }
+  };
 
-  // Rest of your components remain the same...
-  // (RecommendedQuizCard, RecentQuizCard, SubjectCard, QuizCard components)
+  const getScoreColor = (score) => {
+    if (score >= 80) return '#4CAF50';
+    if (score >= 60) return '#FF9800';
+    return '#F44336';
+  };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
@@ -472,7 +339,7 @@ export default function QuizzesIndex() {
               backgroundColor: theme.surface,
               height: searchAnimValue.interpolate({
                 inputRange: [0, 1],
-                outputRange: [0, 80],
+                outputRange: [0, 70],
               }),
               opacity: searchAnimValue,
             }
@@ -493,7 +360,7 @@ export default function QuizzesIndex() {
                 autoCorrect={false}
               />
               {searchQuery.length > 0 && (
-                <TouchableOpacity onPress={clearSearch}>
+                <TouchableOpacity onPress={() => setSearchQuery('')}>
                   <Ionicons name="close-circle" size={20} color={theme.textSecondary} />
                 </TouchableOpacity>
               )}
@@ -505,31 +372,19 @@ export default function QuizzesIndex() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {!hasSearchResults ? (
           <>
-            {/* Streak Card */}
+            {/* Stats Card */}
             <View style={styles.section}>
-              <StreakCard />
-            </View>
-
-            {/* Quick Actions */}
-            <View style={styles.section}>
-              <QuickActions />
+              <StatsCard />
             </View>
 
             {/* Recommended Quizzes */}
-            {recommendedQuizzes.length > 0 && (
+            {recommendations.length > 0 && (
               <View style={styles.section}>
                 <Text style={[styles.sectionTitle, { color: theme.text }]}>
                   Recommandé pour vous
                 </Text>
-                {recommendedQuizzes.map((quiz, index) => (
-                  <TouchableOpacity 
-                    key={index}
-                    style={[styles.recommendedCard, { backgroundColor: theme.surface }]}
-                    onPress={() => navigateToQuiz(quiz)}
-                  >
-                    <Text style={[styles.quizTitle, { color: theme.text }]}>{quiz.title}</Text>
-                    <Text style={[styles.quizSubject, { color: theme.textSecondary }]}>{quiz.subject}</Text>
-                  </TouchableOpacity>
+                {recommendations.map((quiz, index) => (
+                  <QuizCard key={index} quiz={quiz} />
                 ))}
               </View>
             )}
@@ -541,34 +396,18 @@ export default function QuizzesIndex() {
               </Text>
               
               {subjects.map((subject) => (
-                <TouchableOpacity 
-                  key={subject.name}
-                  style={[styles.subjectCard, { backgroundColor: theme.surface }]}
-                  onPress={() => {
-                    router.push({
-                      pathname: '/quizzes/[level]/index',
-                      params: { level: isDefLevel ? 'DEF' : user?.level }
-                    });
-                  }}
-                >
-                  <View style={styles.subjectHeader}>
-                    <View style={[styles.subjectIcon, { backgroundColor: subject.color + '20' }]}>
-                      <Ionicons name={subject.icon} size={20} color={subject.color} />
-                    </View>
-                    <Text style={[styles.subjectName, { color: theme.text }]}>{subject.name}</Text>
-                  </View>
-                  
-                  <View style={styles.subjectStats}>
-                    <Text style={[styles.subjectProgress, { color: theme.textSecondary }]}>
-                      {subject.completedQuizzes}/{subject.totalQuizzes} quiz terminés
-                    </Text>
-                    {subject.averageScore > 0 && (
-                      <Text style={[styles.subjectAverage, { color: getPerformanceColor(subject.averageScore) }]}>
-                        Moyenne: {subject.averageScore}%
-                      </Text>
-                    )}
-                  </View>
-                </TouchableOpacity>
+                <SubjectCard key={subject.id} subject={subject} />
+              ))}
+            </View>
+
+            {/* All Quizzes */}
+            <View style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>
+                Tous les quiz
+              </Text>
+              
+              {allQuizzes.map((quiz, index) => (
+                <QuizCard key={index} quiz={quiz} />
               ))}
             </View>
           </>
@@ -576,19 +415,12 @@ export default function QuizzesIndex() {
           // Search Results
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: theme.text }]}>
-              Résultats de recherche
+              Résultats de recherche ({searchResults.length})
             </Text>
             
             {searchResults.length > 0 ? (
               searchResults.map((quiz, index) => (
-                <TouchableOpacity 
-                  key={index}
-                  style={[styles.quizCard, { backgroundColor: theme.surface }]}
-                  onPress={() => navigateToQuiz(quiz)}
-                >
-                  <Text style={[styles.quizTitle, { color: theme.text }]}>{quiz.title}</Text>
-                  <Text style={[styles.quizSubject, { color: theme.textSecondary }]}>{quiz.subject}</Text>
-                </TouchableOpacity>
+                <QuizCard key={index} quiz={quiz} />
               ))
             ) : (
               <View style={[styles.emptyState, { backgroundColor: theme.surface }]}>
@@ -623,35 +455,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
   },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  errorTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginTop: 16,
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  errorMessage: {
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 24,
-    lineHeight: 22,
-  },
-  retryButton: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 25,
-  },
-  retryButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
   header: {
     paddingTop: 60,
     paddingBottom: 30,
@@ -673,10 +476,6 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
   },
-  headerActions: {
-    flexDirection: 'row',
-    gap: 12,
-  },
   actionButton: {
     width: 40,
     height: 40,
@@ -693,13 +492,13 @@ const styles = StyleSheet.create({
   },
   searchContent: {
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 12,
   },
   searchInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 8,
     borderRadius: 12,
     gap: 12,
   },
@@ -712,16 +511,16 @@ const styles = StyleSheet.create({
   // Layout
   section: {
     paddingHorizontal: 20,
-    marginBottom: 32,
+    marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 16,
   },
 
-  // Cards
-  streakCard: {
+  // Stats Card
+  statsCard: {
     marginTop: -15,
     borderRadius: 20,
     padding: 20,
@@ -731,121 +530,54 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
   },
-  streakContent: {
+  statsGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 16,
+  },
+  statItem: {
+    alignItems: 'center',
+  },
+  statValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  overallProgressContainer: {
+    marginTop: 8,
+  },
+  overallProgressHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 8,
   },
-  streakLeft: {
-    flex: 1,
+  overallProgressLabel: {
+    fontSize: 14,
+    fontWeight: '600',
   },
-  streakStats: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  streakBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginRight: 12,
-    gap: 6,
-  },
-  streakNumber: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  streakTextContainer: {
-    flex: 1,
-  },
-  streakTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 2,
-  },
-  streakSubtitle: {
-    fontSize: 12,
-  },
-  streakRight: {
-    alignItems: 'flex-end',
-  },
-  dailyGoalLabel: {
-    fontSize: 12,
-    marginBottom: 4,
-  },
-  dailyProgress: {
-    alignItems: 'flex-end',
-  },
-  dailyGoalText: {
+  overallProgressPercent: {
     fontSize: 14,
     fontWeight: 'bold',
-    marginBottom: 6,
   },
-  progressBarContainer: {
-    width: 80,
+  overallProgressBar: {
     height: 6,
     borderRadius: 3,
     overflow: 'hidden',
   },
-  progressBar: {
+  overallProgressFill: {
     height: '100%',
     borderRadius: 3,
   },
 
-  // Quick Actions
-  quickActionsContainer: {
-    marginTop: 8,
-  },
-  quickActionsGrid: {
+  // Quiz Card
+  quizCard: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  quickActionCard: {
-    width: (width - 64) / 2,
-    padding: 16,
-    borderRadius: 16,
-    alignItems: 'center',
-    position: 'relative',
-  },
-  quickActionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-    position: 'relative',
-  },
-  quickActionBadge: {
-    position: 'absolute',
-    top: -4,
-    right: -4,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  quickActionBadgeText: {
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  quickActionTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginBottom: 4,
-    textAlign: 'center',
-  },
-  quickActionSubtitle: {
-    fontSize: 12,
-    textAlign: 'center',
-  },
-
-  // Generic Cards
-  recommendedCard: {
+    alignItems: 'flex-start',
     padding: 16,
     borderRadius: 16,
     marginBottom: 12,
@@ -855,6 +587,73 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
   },
+  quizIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  quizContent: {
+    flex: 1,
+  },
+  quizTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  quizSubject: {
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  quizDescription: {
+    fontSize: 12,
+    lineHeight: 16,
+    marginBottom: 8,
+  },
+  quizMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 8,
+  },
+  quizMetaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  quizMetaText: {
+    fontSize: 11,
+  },
+  difficultyBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  difficultyText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  progressContainer: {
+    marginTop: 4,
+  },
+  scoreText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  progressBar: {
+    height: 4,
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 2,
+  },
+
+  // Subject Card
   subjectCard: {
     padding: 16,
     borderRadius: 16,
@@ -882,33 +681,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+  subjectDescription: {
+    fontSize: 12,
+    lineHeight: 16,
+    marginBottom: 8,
+  },
   subjectStats: {
-    marginLeft: 48,
+    marginTop: 4,
   },
   subjectProgress: {
-    fontSize: 12,
-    marginBottom: 2,
-  },
-  subjectAverage: {
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  quizCard: {
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  quizTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  quizSubject: {
     fontSize: 12,
   },
 

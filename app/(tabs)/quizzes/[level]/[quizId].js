@@ -1,4 +1,4 @@
-// app/(tabs)/quizzes/[level]/[quizId].js - ENHANCED MVP VERSION
+// app/(tabs)/quizzes/[level]/[quizId].js - UNIFIED QUIZ TAKING
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import {
   View,
@@ -10,170 +10,48 @@ import {
   Alert,
   Modal,
   Animated,
-  Dimensions,
   Vibration,
+  ActivityIndicator,
 } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { ThemeContext } from '../../../../constants/ThemeContext';
 import { useUser } from '../../../../constants/UserContext';
+import { UnifiedQuizManager } from '../../../../utils/unifiedQuizManager';
 
-const { width, height } = Dimensions.get('window');
-
-export default function EnhancedQuizTakingScreen() {
+export default function UnifiedQuizTakingScreen() {
   const { level, quizId } = useLocalSearchParams();
   const { theme } = useContext(ThemeContext);
   const { user } = useUser();
   const router = useRouter();
 
+  // Quiz manager
+  const [quizManager] = useState(() => new UnifiedQuizManager(level));
+  
   // Quiz state
+  const [loading, setLoading] = useState(true);
+  const [quiz, setQuiz] = useState(null);
   const [quizStarted, setQuizStarted] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [selectedAnswers, setSelectedAnswers] = useState({});
+  const [answers, setAnswers] = useState({});
   const [timeRemaining, setTimeRemaining] = useState(null);
   const [showResults, setShowResults] = useState(false);
   const [quizCompleted, setQuizCompleted] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
   const [questionStartTime, setQuestionStartTime] = useState(null);
-  const [questionTimes, setQuestionTimes] = useState([]);
+  const [quizStartTime, setQuizStartTime] = useState(null);
   const [showHints, setShowHints] = useState(false);
+  const [results, setResults] = useState(null);
 
   // Animations
   const progressAnimation = useRef(new Animated.Value(0)).current;
   const questionAnimation = useRef(new Animated.Value(1)).current;
-  const pulseAnimation = useRef(new Animated.Value(1)).current;
 
-  // Enhanced quiz data
-  const getQuizData = () => {
-    const quizTitle = quizId.replace(/_/g, ' ');
-    
-    const quizMap = {
-      'Les Fractions': {
-        title: 'Les Fractions',
-        subject: 'Mathématiques',
-        duration: 15,
-        difficulty: 'Facile',
-        description: 'Maîtrisez les opérations avec les fractions',
-        tips: ['Trouvez un dénominateur commun', 'Simplifiez toujours le résultat', 'Visualisez avec des diagrammes'],
-        questions: [
-          {
-            id: 1,
-            question: 'Combien fait 1/2 + 1/4 ?',
-            options: ['1/6', '2/6', '3/4', '1/8'],
-            correct: 2,
-            explanation: '1/2 = 2/4, donc 2/4 + 1/4 = 3/4. Pour additionner des fractions, il faut d\'abord les mettre au même dénominateur.',
-            hint: 'Convertissez 1/2 en quarts pour avoir le même dénominateur.',
-            timeLimit: 45,
-            points: 10
-          },
-          {
-            id: 2,
-            question: 'Quelle fraction est équivalente à 50% ?',
-            options: ['1/4', '1/2', '3/4', '2/3'],
-            correct: 1,
-            explanation: '50% = 50/100 = 1/2. Pour convertir un pourcentage en fraction, divisez par 100 et simplifiez.',
-            hint: '50% signifie 50 sur 100, quelle fraction cela donne-t-il ?',
-            timeLimit: 30,
-            points: 10
-          },
-          {
-            id: 3,
-            question: 'Simplifiez 4/8',
-            options: ['1/2', '2/4', '1/4', '8/4'],
-            correct: 0,
-            explanation: '4/8 = 1/2 car 4 et 8 ont un diviseur commun de 4. 4÷4 = 1 et 8÷4 = 2.',
-            hint: 'Cherchez le plus grand diviseur commun de 4 et 8.',
-            timeLimit: 30,
-            points: 10
-          },
-          {
-            id: 4,
-            question: 'Calculez 2/3 × 3/4',
-            options: ['6/12', '5/7', '1/2', '6/7'],
-            correct: 0,
-            explanation: '2/3 × 3/4 = (2×3)/(3×4) = 6/12 = 1/2. Pour multiplier des fractions, multipliez les numérateurs ensemble et les dénominateurs ensemble.',
-            hint: 'Multipliez numérateur avec numérateur, dénominateur avec dénominateur.',
-            timeLimit: 60,
-            points: 15
-          },
-          {
-            id: 5,
-            question: 'Quelle est la fraction la plus grande ?',
-            options: ['2/5', '3/7', '4/9', '5/11'],
-            correct: 1,
-            explanation: '3/7 ≈ 0.429, 2/5 = 0.4, 4/9 ≈ 0.444, 5/11 ≈ 0.455. Donc 5/11 est la plus grande.',
-            hint: 'Convertissez en décimales ou trouvez un dénominateur commun.',
-            timeLimit: 90,
-            points: 20
-          }
-        ]
-      },
-      'États de la matière': {
-        title: 'États de la matière',
-        subject: 'Physique-Chimie',
-        duration: 12,
-        difficulty: 'Facile',
-        description: 'Découvrez les différents états de la matière et leurs propriétés',
-        tips: ['Pensez aux exemples du quotidien', 'Considérez les changements d\'état', 'Rappelez-vous des propriétés de chaque état'],
-        questions: [
-          {
-            id: 1,
-            question: 'Quels sont les trois états principaux de la matière ?',
-            options: ['Solide, Liquide, Gaz', 'Chaud, Froid, Tiède', 'Dur, Mou, Flexible', 'Grand, Moyen, Petit'],
-            correct: 0,
-            explanation: 'Les trois états principaux de la matière sont : solide (forme et volume définis), liquide (volume défini, forme variable) et gazeux (forme et volume variables).',
-            hint: 'Pensez à l\'eau sous ses différentes formes.',
-            timeLimit: 30,
-            points: 10
-          },
-          {
-            id: 2,
-            question: 'Que se passe-t-il quand on chauffe un solide ?',
-            options: ['Il devient plus dur', 'Il peut fondre', 'Il devient plus froid', 'Rien ne se passe'],
-            correct: 1,
-            explanation: 'Quand on chauffe un solide, ses particules bougent plus vite. À la température de fusion, il devient liquide.',
-            hint: 'Que se passe-t-il avec un glaçon au soleil ?',
-            timeLimit: 30,
-            points: 10
-          },
-          {
-            id: 3,
-            question: 'À quelle température l\'eau bout-elle ?',
-            options: ['0°C', '50°C', '100°C', '200°C'],
-            correct: 2,
-            explanation: 'L\'eau bout à 100°C au niveau de la mer. C\'est le point d\'ébullition où elle passe de l\'état liquide à l\'état gazeux.',
-            hint: 'C\'est la température de l\'eau bouillante dans une casserole.',
-            timeLimit: 20,
-            points: 10
-          }
-        ]
-      }
-    };
-
-    return quizMap[quizTitle] || {
-      title: quizTitle,
-      subject: 'Quiz',
-      duration: 10,
-      difficulty: 'Moyen',
-      description: 'Quiz de révision',
-      tips: ['Lisez attentivement', 'Prenez votre temps', 'Réfléchissez avant de répondre'],
-      questions: [
-        {
-          id: 1,
-          question: 'Question d\'exemple',
-          options: ['Option A', 'Option B', 'Option C', 'Option D'],
-          correct: 0,
-          explanation: 'Ceci est une question d\'exemple.',
-          hint: 'Choisissez la première option.',
-          timeLimit: 30,
-          points: 10
-        }
-      ]
-    };
-  };
-
-  const quizData = getQuizData();
+  // Load quiz data
+  useEffect(() => {
+    loadQuiz();
+  }, [quizId]);
 
   // Timer effect
   useEffect(() => {
@@ -187,73 +65,58 @@ export default function EnhancedQuizTakingScreen() {
     }
   }, [quizStarted, timeRemaining, quizCompleted]);
 
-  // Progress animation effect
+  // Progress animation
   useEffect(() => {
-    if (quizStarted) {
-      const progress = (currentQuestion + 1) / quizData.questions.length;
+    if (quizStarted && quiz) {
+      const progress = (currentQuestion + 1) / quiz.questions.length;
       Animated.timing(progressAnimation, {
         toValue: progress,
         duration: 500,
         useNativeDriver: false,
       }).start();
     }
-  }, [currentQuestion, quizStarted]);
+  }, [currentQuestion, quizStarted, quiz]);
 
-  // Question transition animation
-  const animateQuestionTransition = () => {
-    Animated.sequence([
-      Animated.timing(questionAnimation, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(questionAnimation, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      })
-    ]).start();
-  };
+  const loadQuiz = async () => {
+    try {
+      setLoading(true);
+      const loadedQuiz = quizManager.prepareQuiz(quizId, { shuffle: true });
+      
+      if (!loadedQuiz) {
+        Alert.alert('Erreur', 'Quiz introuvable', [
+          { text: 'OK', onPress: () => router.back() }
+        ]);
+        return;
+      }
 
-  // Pulse animation for timer
-  useEffect(() => {
-    if (timeRemaining <= 30 && timeRemaining > 0) {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnimation, {
-            toValue: 1.1,
-            duration: 500,
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnimation, {
-            toValue: 1,
-            duration: 500,
-            useNativeDriver: true,
-          })
-        ])
-      ).start();
+      setQuiz(loadedQuiz);
+    } catch (error) {
+      console.error('Error loading quiz:', error);
+      Alert.alert('Erreur', 'Impossible de charger le quiz', [
+        { text: 'OK', onPress: () => router.back() }
+      ]);
+    } finally {
+      setLoading(false);
     }
-  }, [timeRemaining]);
+  };
 
   const startQuiz = () => {
     setQuizStarted(true);
-    setTimeRemaining(quizData.duration * 60);
+    setTimeRemaining(quiz.duration * 60);
     setQuestionStartTime(Date.now());
+    setQuizStartTime(Date.now());
   };
 
   const handleAnswerSelect = (questionId, answerIndex) => {
-    if (selectedAnswers[questionId] !== undefined) return; // Already answered
+    if (answers[questionId] !== undefined) return; // Already answered
 
-    const timeSpent = questionStartTime ? Date.now() - questionStartTime : 0;
-    setQuestionTimes(prev => [...prev, timeSpent]);
-
-    setSelectedAnswers(prev => ({
+    setAnswers(prev => ({
       ...prev,
       [questionId]: answerIndex
     }));
 
-    const currentQ = quizData.questions[currentQuestion];
-    const isCorrect = answerIndex === currentQ.correct;
+    const currentQ = quiz.questions[currentQuestion];
+    const isCorrect = answerIndex === currentQ.correctIndex;
 
     // Haptic feedback
     if (isCorrect) {
@@ -270,7 +133,9 @@ export default function EnhancedQuizTakingScreen() {
 
   const nextQuestion = () => {
     setShowExplanation(false);
-    if (currentQuestion < quizData.questions.length - 1) {
+    setShowHints(false);
+    
+    if (currentQuestion < quiz.questions.length - 1) {
       animateQuestionTransition();
       setTimeout(() => {
         setCurrentQuestion(prev => prev + 1);
@@ -284,6 +149,7 @@ export default function EnhancedQuizTakingScreen() {
   const previousQuestion = () => {
     if (currentQuestion > 0) {
       setShowExplanation(false);
+      setShowHints(false);
       animateQuestionTransition();
       setTimeout(() => {
         setCurrentQuestion(prev => prev - 1);
@@ -292,31 +158,48 @@ export default function EnhancedQuizTakingScreen() {
     }
   };
 
-  const handleFinishQuiz = () => {
+  const animateQuestionTransition = () => {
+    Animated.sequence([
+      Animated.timing(questionAnimation, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(questionAnimation, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      })
+    ]).start();
+  };
+
+  const handleFinishQuiz = async () => {
+    if (quizCompleted) return;
+    
     setQuizCompleted(true);
+    const endTime = Date.now();
+    const quizResults = quizManager.calculateResults(quiz, answers, quizStartTime, endTime);
+    
+    if (quizResults) {
+      // Save progress
+      await quizManager.updateQuizResult(quizId, quizResults);
+      setResults(quizResults);
+    }
+    
     setShowResults(true);
   };
 
-  const calculateScore = () => {
-    let correct = 0;
-    let totalPoints = 0;
-    let earnedPoints = 0;
-
-    quizData.questions.forEach(question => {
-      totalPoints += question.points || 10;
-      if (selectedAnswers[question.id] === question.correct) {
-        correct++;
-        earnedPoints += question.points || 10;
-      }
-    });
-
-    return {
-      percentage: Math.round((correct / quizData.questions.length) * 100),
-      correct,
-      total: quizData.questions.length,
-      points: earnedPoints,
-      maxPoints: totalPoints
-    };
+  const restartQuiz = () => {
+    setCurrentQuestion(0);
+    setAnswers({});
+    setQuizCompleted(false);
+    setShowResults(false);
+    setShowExplanation(false);
+    setShowHints(false);
+    setResults(null);
+    
+    // Reload quiz with new shuffle
+    loadQuiz();
   };
 
   const formatTime = (seconds) => {
@@ -340,21 +223,48 @@ export default function EnhancedQuizTakingScreen() {
     }
   };
 
-  // Enhanced Quiz Start Screen
+  // Loading state
+  if (loading) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.primary} />
+          <Text style={[styles.loadingText, { color: theme.text }]}>
+            Chargement du quiz...
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!quiz) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+        <View style={styles.errorContainer}>
+          <Ionicons name="alert-circle" size={48} color={theme.error} />
+          <Text style={[styles.errorText, { color: theme.text }]}>Quiz introuvable</Text>
+          <TouchableOpacity
+            style={[styles.backButton, { backgroundColor: theme.primary }]}
+            onPress={() => router.back()}
+          >
+            <Text style={styles.backButtonText}>Retour</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Quiz Start Screen
   if (!quizStarted) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-        <Stack.Screen
-          options={{
-            headerShown: false,
-          }}
-        />
+        <Stack.Screen options={{ headerShown: false }} />
         
         <ScrollView contentContainerStyle={styles.startContainer}>
           {/* Header */}
           <View style={[styles.startHeader, { backgroundColor: theme.primary }]}>
             <TouchableOpacity 
-              style={styles.backButton}
+              style={styles.headerBackButton}
               onPress={() => router.back()}
             >
               <Ionicons name="arrow-back" size={24} color="#fff" />
@@ -370,13 +280,13 @@ export default function EnhancedQuizTakingScreen() {
             </View>
             
             <Text style={[styles.quizTitle, { color: theme.text }]}>
-              {quizData.title}
+              {quiz.title}
             </Text>
             <Text style={[styles.quizSubject, { color: theme.textSecondary }]}>
-              {quizData.subject}
+              {quiz.subject}
             </Text>
             <Text style={[styles.quizDescription, { color: theme.textSecondary }]}>
-              {quizData.description}
+              {quiz.description}
             </Text>
             
             {/* Stats */}
@@ -384,33 +294,21 @@ export default function EnhancedQuizTakingScreen() {
               <View style={styles.statItem}>
                 <Ionicons name="help-circle-outline" size={20} color={theme.primary} />
                 <Text style={[styles.statText, { color: theme.text }]}>
-                  {quizData.questions.length} questions
+                  {quiz.questions.length} questions
                 </Text>
               </View>
               <View style={styles.statItem}>
                 <Ionicons name="time-outline" size={20} color={theme.primary} />
                 <Text style={[styles.statText, { color: theme.text }]}>
-                  {quizData.duration} minutes
+                  {quiz.duration} minutes
                 </Text>
               </View>
               <View style={styles.statItem}>
-                <Ionicons name="trending-up" size={20} color={getDifficultyColor(quizData.difficulty)} />
+                <Ionicons name="trending-up" size={20} color={getDifficultyColor(quiz.difficulty)} />
                 <Text style={[styles.statText, { color: theme.text }]}>
-                  {quizData.difficulty}
+                  {quiz.difficulty}
                 </Text>
               </View>
-            </View>
-            
-            {/* Tips */}
-            <View style={styles.tipsSection}>
-              <Text style={[styles.tipsTitle, { color: theme.text }]}>
-                💡 Conseils :
-              </Text>
-              {quizData.tips.map((tip, index) => (
-                <Text key={index} style={[styles.tipText, { color: theme.textSecondary }]}>
-                  • {tip}
-                </Text>
-              ))}
             </View>
             
             <TouchableOpacity
@@ -426,20 +324,15 @@ export default function EnhancedQuizTakingScreen() {
     );
   }
 
-  const currentQ = quizData.questions[currentQuestion];
-  const progress = ((currentQuestion + 1) / quizData.questions.length);
-  const isAnswered = selectedAnswers[currentQ.id] !== undefined;
-  const isCorrect = isAnswered && selectedAnswers[currentQ.id] === currentQ.correct;
+  const currentQ = quiz.questions[currentQuestion];
+  const isAnswered = answers[currentQ.id] !== undefined;
+  const isCorrect = isAnswered && answers[currentQ.id] === currentQ.correctIndex;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <Stack.Screen
-        options={{
-          headerShown: false,
-        }}
-      />
+      <Stack.Screen options={{ headerShown: false }} />
 
-      {/* Enhanced Header */}
+      {/* Quiz Header */}
       <View style={[styles.quizHeader, { backgroundColor: theme.surface }]}>
         <View style={styles.headerTop}>
           <TouchableOpacity
@@ -460,19 +353,26 @@ export default function EnhancedQuizTakingScreen() {
 
           <View style={styles.questionCounter}>
             <Text style={[styles.questionCounterText, { color: theme.text }]}>
-              {currentQuestion + 1} / {quizData.questions.length}
+              {currentQuestion + 1} / {quiz.questions.length}
             </Text>
           </View>
 
           <TouchableOpacity
             onPress={() => setShowHints(!showHints)}
-            style={[styles.headerButton, { backgroundColor: showHints ? theme.primary + '20' : theme.neutralLight }]}
+            style={[
+              styles.headerButton, 
+              { backgroundColor: showHints ? theme.primary + '20' : theme.neutralLight }
+            ]}
           >
-            <Ionicons name="bulb" size={20} color={showHints ? theme.primary : theme.textSecondary} />
+            <Ionicons 
+              name="bulb" 
+              size={20} 
+              color={showHints ? theme.primary : theme.textSecondary} 
+            />
           </TouchableOpacity>
         </View>
 
-        {/* Enhanced Progress Bar */}
+        {/* Progress Bar */}
         <View style={styles.progressSection}>
           <View style={[styles.progressBarContainer, { backgroundColor: theme.neutralLight }]}>
             <Animated.View 
@@ -489,12 +389,9 @@ export default function EnhancedQuizTakingScreen() {
             />
           </View>
           
-          <Animated.View style={[
+          <View style={[
             styles.timerContainer,
-            { 
-              backgroundColor: timeRemaining <= 30 ? theme.error + '20' : theme.neutralLight,
-              transform: [{ scale: timeRemaining <= 30 ? pulseAnimation : 1 }]
-            }
+            { backgroundColor: timeRemaining <= 30 ? theme.error + '20' : theme.neutralLight }
           ]}>
             <Ionicons 
               name="time" 
@@ -507,12 +404,12 @@ export default function EnhancedQuizTakingScreen() {
             ]}>
               {formatTime(timeRemaining)}
             </Text>
-          </Animated.View>
+          </View>
         </View>
       </View>
 
       {/* Hint Panel */}
-      {showHints && (
+      {showHints && currentQ.hint && (
         <View style={[styles.hintPanel, { backgroundColor: theme.primary + '10' }]}>
           <Ionicons name="bulb" size={16} color={theme.primary} />
           <Text style={[styles.hintText, { color: theme.primary }]}>
@@ -555,7 +452,7 @@ export default function EnhancedQuizTakingScreen() {
               let iconColor = theme.textSecondary;
 
               if (isAnswered) {
-                if (index === currentQ.correct) {
+                if (index === currentQ.correctIndex) {
                   optionStyle.push({ 
                     backgroundColor: theme.success + '20',
                     borderColor: theme.success 
@@ -563,7 +460,7 @@ export default function EnhancedQuizTakingScreen() {
                   textStyle.push({ color: theme.success });
                   iconName = 'checkmark-circle';
                   iconColor = theme.success;
-                } else if (index === selectedAnswers[currentQ.id]) {
+                } else if (index === answers[currentQ.id]) {
                   optionStyle.push({ 
                     backgroundColor: theme.error + '20',
                     borderColor: theme.error 
@@ -572,12 +469,6 @@ export default function EnhancedQuizTakingScreen() {
                   iconName = 'close-circle';
                   iconColor = theme.error;
                 }
-              } else if (selectedAnswers[currentQ.id] === index) {
-                optionStyle.push({ 
-                  backgroundColor: theme.primary + '20',
-                  borderColor: theme.primary 
-                });
-                textStyle.push({ color: theme.primary });
               }
 
               return (
@@ -600,7 +491,7 @@ export default function EnhancedQuizTakingScreen() {
         </View>
 
         {/* Explanation */}
-        {showExplanation && isAnswered && (
+        {showExplanation && isAnswered && currentQ.explanation && (
           <View style={[styles.explanationCard, { backgroundColor: theme.surface }]}>
             <View style={styles.explanationHeader}>
               <Ionicons 
@@ -639,7 +530,7 @@ export default function EnhancedQuizTakingScreen() {
           <Text style={[styles.navButtonText, { color: theme.text }]}>Précédent</Text>
         </TouchableOpacity>
 
-        {currentQuestion === quizData.questions.length - 1 ? (
+        {currentQuestion === quiz.questions.length - 1 ? (
           <TouchableOpacity
             style={[styles.finishButton, { backgroundColor: theme.success }]}
             onPress={handleFinishQuiz}
@@ -674,7 +565,7 @@ export default function EnhancedQuizTakingScreen() {
         )}
       </View>
 
-      {/* Enhanced Results Modal */}
+      {/* Results Modal */}
       <Modal
         visible={showResults}
         animationType="slide"
@@ -694,67 +585,44 @@ export default function EnhancedQuizTakingScreen() {
             </View>
 
             {/* Score Card */}
-            <View style={[styles.scoreCard, { backgroundColor: theme.surface }]}>
-              <View style={[
-                styles.scoreCircle, 
-                { borderColor: getScoreColor(calculateScore().percentage) }
-              ]}>
-                <Text style={[
-                  styles.scoreText, 
-                  { color: getScoreColor(calculateScore().percentage) }
+            {results && (
+              <View style={[styles.scoreCard, { backgroundColor: theme.surface }]}>
+                <View style={[
+                  styles.scoreCircle, 
+                  { borderColor: getScoreColor(results.score) }
                 ]}>
-                  {calculateScore().percentage}%
+                  <Text style={[
+                    styles.scoreText, 
+                    { color: getScoreColor(results.score) }
+                  ]}>
+                    {results.score}%
+                  </Text>
+                </View>
+                
+                <Text style={[styles.scoreLabel, { color: theme.text }]}>
+                  {results.score >= 80 ? 'Excellent ! 🎉' : 
+                   results.score >= 60 ? 'Bien joué ! 👏' : 'Continuez vos efforts ! 💪'}
                 </Text>
-              </View>
-              
-              <Text style={[styles.scoreLabel, { color: theme.text }]}>
-                {calculateScore().percentage >= 80 ? 'Excellent ! 🎉' : 
-                 calculateScore().percentage >= 60 ? 'Bien joué ! 👏' : 'Continuez vos efforts ! 💪'}
-              </Text>
-              
-              <View style={styles.scoreDetails}>
-                <View style={styles.scoreDetailRow}>
-                  <Text style={[styles.scoreDetailLabel, { color: theme.textSecondary }]}>
-                    Bonnes réponses :
+                
+                <View style={styles.scoreDetails}>
+                  <Text style={[styles.scoreDetailText, { color: theme.textSecondary }]}>
+                    {results.correctAnswers} / {results.totalQuestions} bonnes réponses
                   </Text>
-                  <Text style={[styles.scoreDetailValue, { color: theme.text }]}>
-                    {calculateScore().correct} / {calculateScore().total}
+                  <Text style={[styles.scoreDetailText, { color: theme.textSecondary }]}>
+                    {results.earnedPoints} / {results.totalPoints} points
                   </Text>
-                </View>
-                <View style={styles.scoreDetailRow}>
-                  <Text style={[styles.scoreDetailLabel, { color: theme.textSecondary }]}>
-                    Points obtenus :
-                  </Text>
-                  <Text style={[styles.scoreDetailValue, { color: theme.text }]}>
-                    {calculateScore().points} / {calculateScore().maxPoints}
-                  </Text>
-                </View>
-                <View style={styles.scoreDetailRow}>
-                  <Text style={[styles.scoreDetailLabel, { color: theme.textSecondary }]}>
-                    Temps moyen par question :
-                  </Text>
-                  <Text style={[styles.scoreDetailValue, { color: theme.text }]}>
-                    {questionTimes.length > 0 
-                      ? Math.round(questionTimes.reduce((a, b) => a + b, 0) / questionTimes.length / 1000) 
-                      : 0}s
+                  <Text style={[styles.scoreDetailText, { color: theme.textSecondary }]}>
+                    Temps: {Math.round(results.timeSpent / 1000 / 60)} minutes
                   </Text>
                 </View>
               </View>
-            </View>
+            )}
 
             {/* Action Buttons */}
             <View style={styles.actionsContainer}>
               <TouchableOpacity
                 style={[styles.actionButton, { backgroundColor: theme.primary }]}
-                onPress={() => {
-                  // Restart quiz
-                  setQuizStarted(false);
-                  setCurrentQuestion(0);
-                  setSelectedAnswers({});
-                  setShowResults(false);
-                  setQuizCompleted(false);
-                  setQuestionTimes([]);
-                }}
+                onPress={restartQuiz}
               >
                 <Ionicons name="refresh" size={20} color="#fff" />
                 <Text style={styles.actionButtonText}>Refaire le Quiz</Text>
@@ -779,6 +647,38 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 18,
+    marginVertical: 16,
+    textAlign: 'center',
+  },
+  backButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  backButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
   
   // Start Screen
   startContainer: {
@@ -794,7 +694,7 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
   },
-  backButton: {
+  headerBackButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -862,20 +762,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
   },
-  tipsSection: {
-    width: '100%',
-    marginBottom: 32,
-  },
-  tipsTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 12,
-  },
-  tipText: {
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 4,
-  },
   startButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -890,7 +776,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 
-  // Quiz Taking Screen
+  // Quiz Header
   quizHeader: {
     paddingVertical: 16,
     paddingHorizontal: 20,
@@ -1149,20 +1035,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   scoreDetails: {
-    width: '100%',
+    alignItems: 'center',
     gap: 8,
   },
-  scoreDetailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  scoreDetailLabel: {
+  scoreDetailText: {
     fontSize: 14,
-  },
-  scoreDetailValue: {
-    fontSize: 14,
-    fontWeight: 'bold',
   },
   actionsContainer: {
     paddingHorizontal: 20,

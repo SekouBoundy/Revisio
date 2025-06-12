@@ -6,6 +6,7 @@ import { UserProvider } from '../constants/UserContext';
 
 export default function RootLayout() {
   return (
+    
     <SafeAreaProvider>
       <ThemeProvider>
         <AuthProvider>
