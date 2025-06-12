@@ -1,4 +1,4 @@
-// app/(tabs)/quizzes/[level]/index.js - CONNECTED TO QUIZ MANAGER
+// app/(tabs)/quizzes/[level]/index.js - FIXED IMPORTS
 import React, { useContext, useState, useRef, useEffect } from 'react';
 import {
   View,
@@ -16,7 +16,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { ThemeContext } from '../../../../constants/ThemeContext';
 import { useUser } from '../../../../constants/UserContext';
-import { QuizManager, UserProgressManager } from '../../../../utils/quizDataManager';
+import { QuizManager } from '../../../../utils/quizManager'; // ✅ Fixed import
 
 export default function LevelQuizzesScreen() {
   const { level } = useLocalSearchParams();
@@ -24,9 +24,8 @@ export default function LevelQuizzesScreen() {
   const { user } = useUser();
   const router = useRouter();
   
-  // Quiz manager instances
+  // Quiz manager instances - ✅ Updated class name
   const [quizManager] = useState(() => new QuizManager(level));
-  const [progressManager] = useState(() => new UserProgressManager());
   
   // State
   const [searchVisible, setSearchVisible] = useState(false);
@@ -45,8 +44,8 @@ export default function LevelQuizzesScreen() {
 
   const loadUserProgress = async () => {
     try {
-      const progress = await progressManager.getUserProgress();
-      const stats = quizManager.getQuizStats(progress);
+      const progress = await quizManager.getUserProgress();
+      const stats = await quizManager.getStats();
       setUserProgress(progress);
       setQuizStats(stats);
     } catch (error) {
@@ -89,39 +88,13 @@ export default function LevelQuizzesScreen() {
 
   // Get all quizzes for this level
   const getAllQuizzes = () => {
-    const allQuizzes = [];
-    const subjects = quizManager.getSubjects();
-    
-    subjects.forEach(subjectName => {
-      const subject = quizManager.getSubject(subjectName);
-      const quizzes = Object.values(subject.quizzes);
-      
-      quizzes.forEach(quiz => {
-        const progress = userProgress[quiz.id];
-        allQuizzes.push({
-          ...quiz,
-          icon: subject.icon,
-          color: subject.color,
-          score: progress?.bestScore,
-          attempts: progress?.attempts || 0,
-          lastAttempt: progress?.history?.[progress.history.length - 1]?.completedAt
-        });
-      });
-    });
-    
-    return allQuizzes;
+    return quizManager.getAllQuizzes();
   };
 
   // Filter quizzes based on search
   const filterQuizzes = (quizzes) => {
     if (!searchQuery.trim()) return quizzes;
-    const query = searchQuery.toLowerCase();
-    return quizzes.filter(quiz => 
-      quiz.title.toLowerCase().includes(query) ||
-      quiz.subject.toLowerCase().includes(query) ||
-      quiz.difficulty.toLowerCase().includes(query) ||
-      (quiz.tags && quiz.tags.some(tag => tag.toLowerCase().includes(query)))
-    );
+    return quizManager.searchQuizzes(searchQuery);
   };
 
   const allQuizzes = getAllQuizzes();
@@ -156,17 +129,17 @@ export default function LevelQuizzesScreen() {
       style={[styles.quizCard, { backgroundColor: theme.surface }]}
       onPress={() => handleQuizPress(quiz)}
     >
-      <View style={[styles.quizIcon, { backgroundColor: quiz.color + '20' }]}>
-        <Ionicons name={quiz.icon} size={24} color={quiz.color} />
+      <View style={[styles.quizIcon, { backgroundColor: quiz.subjectColor + '20' }]}>
+        <Ionicons name={quiz.subjectIcon} size={24} color={quiz.subjectColor} />
       </View>
       
       <View style={styles.quizContent}>
         <View style={styles.quizHeader}>
           <Text style={[styles.quizTitle, { color: theme.text }]}>{quiz.title}</Text>
-          {quiz.attempts > 0 && (
+          {userProgress[quiz.id]?.attempts > 0 && (
             <View style={[styles.attemptsBadge, { backgroundColor: theme.primary + '20' }]}>
               <Text style={[styles.attemptsText, { color: theme.primary }]}>
-                {quiz.attempts}x
+                {userProgress[quiz.id].attempts}x
               </Text>
             </View>
           )}
@@ -187,7 +160,7 @@ export default function LevelQuizzesScreen() {
             <View style={styles.quizMetaItem}>
               <Ionicons name="help-circle-outline" size={14} color={theme.textSecondary} />
               <Text style={[styles.quizMetaText, { color: theme.textSecondary }]}>
-                {quiz.questions?.length || 0} questions
+                {quiz.totalQuestions || 0} questions
               </Text>
             </View>
             <View style={styles.quizMetaItem}>
@@ -203,14 +176,14 @@ export default function LevelQuizzesScreen() {
             </View>
           </View>
           
-          {quiz.score !== undefined && (
+          {userProgress[quiz.id]?.bestScore !== undefined && (
             <View style={styles.scoreContainer}>
-              <Text style={[styles.scoreText, { color: getScoreColor(quiz.score) }]}>
-                {quiz.score}%
+              <Text style={[styles.scoreText, { color: getScoreColor(userProgress[quiz.id].bestScore) }]}>
+                {userProgress[quiz.id].bestScore}%
               </Text>
-              {quiz.lastAttempt && (
+              {userProgress[quiz.id].history?.length > 0 && (
                 <Text style={[styles.lastAttemptText, { color: theme.textSecondary }]}>
-                  {new Date(quiz.lastAttempt).toLocaleDateString('fr-FR')}
+                  {new Date(userProgress[quiz.id].history[userProgress[quiz.id].history.length - 1].date).toLocaleDateString('fr-FR')}
                 </Text>
               )}
             </View>
@@ -218,15 +191,15 @@ export default function LevelQuizzesScreen() {
         </View>
         
         {/* Progress indicator */}
-        {quiz.score !== undefined && (
+        {userProgress[quiz.id]?.bestScore !== undefined && (
           <View style={styles.progressContainer}>
             <View style={[styles.progressBarContainer, { backgroundColor: theme.neutralLight }]}>
               <View 
                 style={[
                   styles.progressBar, 
                   { 
-                    width: `${quiz.score}%`,
-                    backgroundColor: getScoreColor(quiz.score)
+                    width: `${userProgress[quiz.id].bestScore}%`,
+                    backgroundColor: getScoreColor(userProgress[quiz.id].bestScore)
                   }
                 ]} 
               />
@@ -468,9 +441,7 @@ export default function LevelQuizzesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   header: {
     paddingTop: 60,
     paddingBottom: 30,

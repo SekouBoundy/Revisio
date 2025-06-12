@@ -1,9 +1,9 @@
-// utils/unifiedQuizManager.js - SINGLE SOURCE OF TRUTH FOR QUIZ SYSTEM
+// utils/quizManager.js - SINGLE UNIFIED QUIZ SYSTEM
 import { shuffleArray } from './shuffleArray';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// STANDARDIZED QUIZ DATA STRUCTURE
-export const QUIZ_DATABASE = {
+// STANDARDIZED QUIZ DATA
+export const QUIZ_DATA = {
   DEF: {
     subjects: {
       'Mathématiques': {
@@ -19,7 +19,6 @@ export const QUIZ_DATABASE = {
             subject: 'Mathématiques',
             difficulty: 'Facile',
             duration: 15,
-            totalQuestions: 5,
             description: 'Maîtrisez les opérations avec les fractions',
             questions: [
               {
@@ -75,7 +74,6 @@ export const QUIZ_DATABASE = {
             subject: 'Mathématiques',
             difficulty: 'Moyen',
             duration: 20,
-            totalQuestions: 4,
             description: 'Découvrez les formes géométriques, périmètres et aires',
             questions: [
               {
@@ -131,7 +129,6 @@ export const QUIZ_DATABASE = {
             subject: 'Français',
             difficulty: 'Moyen',
             duration: 18,
-            totalQuestions: 4,
             description: 'Maîtrisez la conjugaison des verbes au présent',
             questions: [
               {
@@ -187,7 +184,6 @@ export const QUIZ_DATABASE = {
             subject: 'Physique-Chimie',
             difficulty: 'Facile',
             duration: 12,
-            totalQuestions: 4,
             description: 'Découvrez les trois états de la matière et leurs transformations',
             questions: [
               {
@@ -248,7 +244,6 @@ export const QUIZ_DATABASE = {
             subject: 'Mathématiques',
             difficulty: 'Difficile',
             duration: 35,
-            totalQuestions: 3,
             description: 'Maîtrisez le calcul différentiel et ses applications',
             questions: [
               {
@@ -287,11 +282,12 @@ export const QUIZ_DATABASE = {
 };
 
 // UNIFIED QUIZ MANAGER CLASS
-export class UnifiedQuizManager {
+export class QuizManager {
   constructor(level = 'DEF') {
     this.level = level;
-    this.data = QUIZ_DATABASE[level] || QUIZ_DATABASE.DEF;
+    this.data = QUIZ_DATA[level] || QUIZ_DATA.DEF;
     this.storageKey = `quiz_progress_${level}`;
+    this.settingsKey = `quiz_settings_${level}`;
   }
 
   // CORE DATA ACCESS
@@ -299,8 +295,10 @@ export class UnifiedQuizManager {
     return Object.values(this.data.subjects || {});
   }
 
-  getSubject(subjectId) {
-    return Object.values(this.data.subjects || {}).find(s => s.id === subjectId || s.name === subjectId);
+  getSubject(subjectName) {
+    return Object.values(this.data.subjects || {}).find(s => 
+      s.name === subjectName || s.id === subjectName
+    );
   }
 
   getAllQuizzes() {
@@ -311,7 +309,8 @@ export class UnifiedQuizManager {
           ...quiz,
           subjectName: subject.name,
           subjectColor: subject.color,
-          subjectIcon: subject.icon
+          subjectIcon: subject.icon,
+          totalQuestions: quiz.questions?.length || 0
         });
       }
     }
@@ -322,14 +321,26 @@ export class UnifiedQuizManager {
     // Support multiple ID formats
     for (const subject of Object.values(this.data.subjects || {})) {
       for (const quiz of Object.values(subject.quizzes || {})) {
-        if (quiz.id === quizId || quiz.title === quizId || quiz.title.replace(/\s+/g, '_') === quizId) {
-          return quiz;
+        if (
+          quiz.id === quizId || 
+          quiz.title === quizId || 
+          quiz.title.replace(/\s+/g, '_') === quizId ||
+          quiz.title.replace(/[_\s]/g, '_') === quizId
+        ) {
+          return {
+            ...quiz,
+            subjectName: subject.name,
+            subjectColor: subject.color,
+            subjectIcon: subject.icon,
+            totalQuestions: quiz.questions?.length || 0
+          };
         }
       }
     }
     return null;
   }
 
+  // SEARCH FUNCTIONALITY
   searchQuizzes(query, filters = {}) {
     const allQuizzes = this.getAllQuizzes();
     let results = allQuizzes;
@@ -348,7 +359,7 @@ export class UnifiedQuizManager {
       });
     }
 
-    // Filters
+    // Apply filters
     if (filters.difficulty) {
       results = results.filter(quiz => quiz.difficulty === filters.difficulty);
     }
@@ -387,15 +398,22 @@ export class UnifiedQuizManager {
       progress[quizId] = {
         attempts: 0,
         bestScore: 0,
+        averageScore: 0,
         history: [],
-        isCompleted: false
+        isCompleted: false,
+        totalTime: 0
       };
     }
 
     const quizProgress = progress[quizId];
     quizProgress.attempts++;
     quizProgress.bestScore = Math.max(quizProgress.bestScore, result.score);
+    quizProgress.totalTime += result.timeSpent || 0;
     quizProgress.isCompleted = result.score >= 70;
+
+    // Calculate average score
+    const scores = [...(quizProgress.history.map(h => h.score) || []), result.score];
+    quizProgress.averageScore = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
 
     // Add to history (keep last 5)
     quizProgress.history.push({
@@ -546,10 +564,60 @@ export class UnifiedQuizManager {
       .sort((a, b) => b.recommendationScore - a.recommendationScore)
       .slice(0, limit);
   }
+
+  // SETTINGS MANAGEMENT
+  async getSettings() {
+    try {
+      const stored = await AsyncStorage.getItem(this.settingsKey);
+      return stored ? JSON.parse(stored) : {
+        soundEnabled: true,
+        hintsEnabled: true,
+        explanationsEnabled: true,
+        autoNextQuestion: false,
+        timerVisible: true,
+        shuffleQuestions: true,
+        vibrationEnabled: true
+      };
+    } catch (error) {
+      console.error('Error loading settings:', error);
+      return {};
+    }
+  }
+
+  async saveSettings(settings) {
+    try {
+      await AsyncStorage.setItem(this.settingsKey, JSON.stringify(settings));
+      return true;
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      return false;
+    }
+  }
 }
 
-// Export default instance
-export const quizManager = new UnifiedQuizManager();
+// EXPORT DEFAULT INSTANCES
+export const quizManager = new QuizManager();
 
-// Helper function
-export const getQuizManager = (level) => new UnifiedQuizManager(level);
+// HELPER FUNCTIONS
+export const getQuizManager = (level) => new QuizManager(level);
+
+export const formatTime = (seconds) => {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+};
+
+export const getDifficultyColor = (difficulty) => {
+  switch (difficulty) {
+    case 'Facile': return '#4CAF50';
+    case 'Moyen': return '#FF9800';
+    case 'Difficile': return '#F44336';
+    default: return '#2196F3';
+  }
+};
+
+export const getScoreColor = (score) => {
+  if (score >= 80) return '#4CAF50';
+  if (score >= 60) return '#FF9800';
+  return '#F44336';
+};

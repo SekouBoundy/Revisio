@@ -1,4 +1,4 @@
-// app/(tabs)/quizzes/[level]/[quizId].js - UNIFIED QUIZ TAKING
+// app/(tabs)/quizzes/[level]/[quizId].js - FIXED IMPORTS
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import {
   View,
@@ -18,16 +18,16 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { ThemeContext } from '../../../../constants/ThemeContext';
 import { useUser } from '../../../../constants/UserContext';
-import { UnifiedQuizManager } from '../../../../utils/unifiedQuizManager';
+import { QuizManager } from '../../../../utils/quizManager'; // ✅ Fixed import
 
-export default function UnifiedQuizTakingScreen() {
+export default function QuizTakingScreen() {
   const { level, quizId } = useLocalSearchParams();
   const { theme } = useContext(ThemeContext);
   const { user } = useUser();
   const router = useRouter();
 
-  // Quiz manager
-  const [quizManager] = useState(() => new UnifiedQuizManager(level));
+  // Quiz manager - ✅ Updated class name
+  const [quizManager] = useState(() => new QuizManager(level));
   
   // Quiz state
   const [loading, setLoading] = useState(true);
@@ -644,9 +644,7 @@ export default function UnifiedQuizTakingScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -681,9 +679,7 @@ const styles = StyleSheet.create({
   },
   
   // Start Screen
-  startContainer: {
-    flexGrow: 1,
-  },
+  startContainer: { flexGrow: 1 },
   startHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -707,9 +703,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#fff',
   },
-  placeholder: {
-    width: 40,
-  },
+  placeholder: { width: 40 },
   quizInfoCard: {
     margin: 20,
     marginTop: -10,
@@ -977,9 +971,7 @@ const styles = StyleSheet.create({
   },
 
   // Results
-  resultsContainer: {
-    flexGrow: 1,
-  },
+  resultsContainer: { flexGrow: 1 },
   resultsHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',

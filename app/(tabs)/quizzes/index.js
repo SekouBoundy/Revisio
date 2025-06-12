@@ -1,4 +1,4 @@
-// app/(tabs)/quizzes/index.js - UNIFIED QUIZ SYSTEM
+// app/(tabs)/quizzes/index.js - CLEAN VERSION
 import React, { useContext, useState, useRef, useEffect } from 'react';
 import {
   View,
@@ -17,16 +17,16 @@ import { useRouter } from 'expo-router';
 
 import { ThemeContext } from '../../../constants/ThemeContext';
 import { useUser } from '../../../constants/UserContext';
-import { UnifiedQuizManager } from '../../../utils/unifiedQuizManager';
+import { QuizManager } from '../../../utils/quizManager';
 
-export default function UnifiedQuizzesIndex() {
+export default function QuizzesIndex() {
   const { theme } = useContext(ThemeContext);
   const { user } = useUser();
   const router = useRouter();
   const isDefLevel = user?.level === 'DEF';
   
   // Quiz manager instance
-  const [quizManager] = useState(() => new UnifiedQuizManager(isDefLevel ? 'DEF' : user?.level));
+  const [quizManager] = useState(() => new QuizManager(isDefLevel ? 'DEF' : user?.level));
   
   // State
   const [loading, setLoading] = useState(true);
@@ -71,7 +71,7 @@ export default function UnifiedQuizzesIndex() {
     }
   };
 
-  // Toggle search functionality
+  // Toggle search
   const toggleSearch = () => {
     if (searchVisible) {
       Keyboard.dismiss();
@@ -80,9 +80,7 @@ export default function UnifiedQuizzesIndex() {
         toValue: 0,
         duration: 300,
         useNativeDriver: false,
-      }).start(() => {
-        setSearchVisible(false);
-      });
+      }).start(() => setSearchVisible(false));
     } else {
       setSearchVisible(true);
       Animated.timing(searchAnimValue, {
@@ -90,9 +88,7 @@ export default function UnifiedQuizzesIndex() {
         duration: 300,
         useNativeDriver: false,
       }).start(() => {
-        setTimeout(() => {
-          searchInputRef.current?.focus();
-        }, 100);
+        setTimeout(() => searchInputRef.current?.focus(), 100);
       });
     }
   };
@@ -101,11 +97,6 @@ export default function UnifiedQuizzesIndex() {
     const userLevel = isDefLevel ? 'DEF' : user?.level || 'TSE';
     const quizTitle = quiz.title.replace(/\s+/g, '_');
     router.push(`/quizzes/${userLevel}/${quizTitle}`);
-  };
-
-  const navigateToSubject = (subject) => {
-    const userLevel = isDefLevel ? 'DEF' : user?.level || 'TSE';
-    router.push(`/quizzes/${userLevel}?subject=${subject.name}`);
   };
 
   // Get time-based greeting
@@ -119,6 +110,22 @@ export default function UnifiedQuizzesIndex() {
   // Search functionality
   const searchResults = searchQuery ? quizManager.searchQuizzes(searchQuery) : [];
   const hasSearchResults = searchQuery.trim().length > 0;
+
+  // Utility functions
+  const getDifficultyColor = (difficulty) => {
+    switch (difficulty) {
+      case 'Facile': return '#4CAF50';
+      case 'Moyen': return '#FF9800';
+      case 'Difficile': return '#F44336';
+      default: return theme.primary;
+    }
+  };
+
+  const getScoreColor = (score) => {
+    if (score >= 80) return '#4CAF50';
+    if (score >= 60) return '#FF9800';
+    return '#F44336';
+  };
 
   // Loading state
   if (loading) {
@@ -277,55 +284,6 @@ export default function UnifiedQuizzesIndex() {
     );
   };
 
-  // Subject Card Component
-  const SubjectCard = ({ subject }) => {
-    const subjectQuizzes = allQuizzes.filter(q => q.subjectName === subject.name);
-    const completedQuizzes = subjectQuizzes.filter(q => {
-      const progress = userProgress[q.id];
-      return progress && progress.attempts > 0;
-    }).length;
-    
-    return (
-      <TouchableOpacity 
-        style={[styles.subjectCard, { backgroundColor: theme.surface }]}
-        onPress={() => navigateToSubject(subject)}
-      >
-        <View style={styles.subjectHeader}>
-          <View style={[styles.subjectIcon, { backgroundColor: subject.color + '20' }]}>
-            <Ionicons name={subject.icon} size={20} color={subject.color} />
-          </View>
-          <Text style={[styles.subjectName, { color: theme.text }]}>{subject.name}</Text>
-        </View>
-        
-        <Text style={[styles.subjectDescription, { color: theme.textSecondary }]} numberOfLines={2}>
-          {subject.description}
-        </Text>
-        
-        <View style={styles.subjectStats}>
-          <Text style={[styles.subjectProgress, { color: theme.textSecondary }]}>
-            {completedQuizzes}/{subjectQuizzes.length} quiz terminés
-          </Text>
-        </View>
-      </TouchableOpacity>
-    );
-  };
-
-  // Utility functions
-  const getDifficultyColor = (difficulty) => {
-    switch (difficulty) {
-      case 'Facile': return '#4CAF50';
-      case 'Moyen': return '#FF9800';
-      case 'Difficile': return '#F44336';
-      default: return theme.primary;
-    }
-  };
-
-  const getScoreColor = (score) => {
-    if (score >= 80) return '#4CAF50';
-    if (score >= 60) return '#FF9800';
-    return '#F44336';
-  };
-
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <Header />
@@ -389,17 +347,6 @@ export default function UnifiedQuizzesIndex() {
               </View>
             )}
 
-            {/* Browse by Subject */}
-            <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: theme.text }]}>
-                Explorer par matière
-              </Text>
-              
-              {subjects.map((subject) => (
-                <SubjectCard key={subject.id} subject={subject} />
-              ))}
-            </View>
-
             {/* All Quizzes */}
             <View style={styles.section}>
               <Text style={[styles.sectionTitle, { color: theme.text }]}>
@@ -441,9 +388,7 @@ export default function UnifiedQuizzesIndex() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -651,46 +596,6 @@ const styles = StyleSheet.create({
   progressFill: {
     height: '100%',
     borderRadius: 2,
-  },
-
-  // Subject Card
-  subjectCard: {
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  subjectHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  subjectIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  subjectName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  subjectDescription: {
-    fontSize: 12,
-    lineHeight: 16,
-    marginBottom: 8,
-  },
-  subjectStats: {
-    marginTop: 4,
-  },
-  subjectProgress: {
-    fontSize: 12,
   },
 
   // Empty State
