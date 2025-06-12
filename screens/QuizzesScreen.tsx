@@ -1,84 +1,44 @@
-// path: screens/CourseQuizScreen.tsx
+// path: screens/QuizzesScreen.tsx
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { View, Text, FlatList, TouchableOpacity, StyleSheet } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { COURSE_CONTENT } from "../data/courseContentData";
 import { Colors, FontSizes, Spacing } from "../constants/ThemeContext";
-import { getQuizProgress } from "../utils/quizProgress";
 
-export default function CourseQuizScreen() {
+export default function QuizzesScreen() {
   const router = useRouter();
-  const { level, stream, courseId } = useLocalSearchParams<{
-    level: string;
-    stream: string;
-    courseId: string;
-  }>();
 
-  const levelData = COURSE_CONTENT[level as keyof typeof COURSE_CONTENT];
-  const courseData = levelData?.[courseId as keyof typeof levelData] as any;
+  const level = "DEF"; // For now → you can make this dynamic later (BAC, DEF)
+  const stream = ""; // For now → not needed for DEF
+  const levelData = COURSE_CONTENT[level];
 
-  const [progressMap, setProgressMap] = useState<{ [key: string]: boolean }>({});
+  const courses = Object.keys(levelData);
 
-  useEffect(() => {
-    const loadProgress = async () => {
-      const newProgressMap: { [key: string]: boolean } = {};
-
-      for (const note of courseData.notes) {
-        const key = `${courseId}_${note.id}`;
-        const completed = await getQuizProgress(key);
-        newProgressMap[key] = completed;
-      }
-
-      setProgressMap(newProgressMap);
-    };
-
-    if (courseData?.notes) {
-      loadProgress();
-    }
-  }, [courseData, courseId]);
-
-  const handleStartQuiz = (noteId: string) => {
+  const handleCoursePress = (courseId: string) => {
     router.push({
-      pathname: "/QuizScreen",
+      pathname: "/CourseQuizScreen",
       params: {
         level,
         stream,
-        courseId: noteId, // This is the noteId used in questions filename
-        quizKey: `${courseId}_${noteId}`, // For progress tracking
+        courseId,
       },
     });
   };
 
-  const renderItem = ({ item }: { item: any }) => {
-    const progressKey = `${courseId}_${item.id}`;
-    const completed = progressMap[progressKey] || false;
-
-    return (
-      <TouchableOpacity style={styles.quizItem} onPress={() => handleStartQuiz(item.id)}>
-        <Text style={styles.quizTitle}>{item.title}</Text>
-        <Text style={styles.quizSubtitle}>
-          {completed ? "1/1 quiz terminé" : "0/1 quiz terminé"}
-        </Text>
-      </TouchableOpacity>
-    );
-  };
-
-  if (!courseData || !courseData.notes) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.headerText}>Aucun quiz disponible pour ce cours.</Text>
-      </View>
-    );
-  }
+  const renderItem = ({ item }: { item: string }) => (
+    <TouchableOpacity style={styles.courseItem} onPress={() => handleCoursePress(item)}>
+      <Text style={styles.courseTitle}>{item}</Text>
+    </TouchableOpacity>
+  );
 
   return (
     <View style={styles.container}>
-      <Text style={styles.headerText}>Quiz - {courseId}</Text>
+      <Text style={styles.headerText}>Explorer par matière</Text>
       <FlatList
-        data={courseData.notes}
+        data={courses}
         renderItem={renderItem}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item) => item}
         contentContainerStyle={styles.listContainer}
       />
     </View>
@@ -101,20 +61,15 @@ const styles = StyleSheet.create({
   listContainer: {
     paddingBottom: Spacing.lg,
   },
-  quizItem: {
+  courseItem: {
     backgroundColor: Colors.cardBackground,
     padding: Spacing.lg,
     borderRadius: 10,
     marginBottom: Spacing.lg,
     elevation: 3,
   },
-  quizTitle: {
+  courseTitle: {
     fontSize: FontSizes.large,
     color: Colors.primary,
-    marginBottom: Spacing.sm,
-  },
-  quizSubtitle: {
-    fontSize: FontSizes.medium,
-    color: Colors.textSecondary,
   },
 });
