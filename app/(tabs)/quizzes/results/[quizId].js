@@ -1,4 +1,4 @@
-// app/(tabs)/quizzes/results/[quizId].js - QUIZ RESULTS
+// app/(tabs)/quizzes/results/[quizId].js - COMPLETE WORKING VERSION
 import React, { useContext, useState, useEffect } from 'react';
 import {
   View,
@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ThemeContext } from '../../../../constants/ThemeContext';
 import { useUser } from '../../../../constants/UserContext';
-import { UserProgressManager, QuizManager } from '../../../../utils/quizDataManager';
+import { QuizManager } from '../../../../utils/quizManager';
 
 const { width } = Dimensions.get('window');
 
@@ -24,7 +24,6 @@ export default function QuizResultsScreen() {
   const { user } = useUser();
   const router = useRouter();
   
-  // const [progressManager] = useState(() => new UserProgressManager());
   const [quizManager] = useState(() => new QuizManager(user?.level || 'DEF'));
   const [quizProgress, setQuizProgress] = useState(null);
   const [quiz, setQuiz] = useState(null);
@@ -40,7 +39,7 @@ export default function QuizResultsScreen() {
     try {
       const progress = await quizManager.getUserProgress();
       const quizData = quizManager.getQuizById(quizId);
-      setQuizProgress(progress);
+      setQuizProgress(progress[quizId]);
       setQuiz(quizData);
     } catch (error) {
       console.error('Error loading quiz data:', error);
@@ -55,22 +54,29 @@ export default function QuizResultsScreen() {
     }).start();
   };
 
-  if (!quizProgress || !quiz) {
+  if (!quiz) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
         <View style={styles.loadingContainer}>
           <Text style={[styles.loadingText, { color: theme.text }]}>
-            Chargement des résultats...
+            Quiz introuvable
           </Text>
+          <TouchableOpacity
+            style={[styles.backButton, { backgroundColor: theme.primary }]}
+            onPress={() => router.back()}
+          >
+            <Text style={styles.backButtonText}>Retour</Text>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
   }
 
-  const lastAttempt = quizProgress.history[quizProgress.history.length - 1];
-  const score = lastAttempt?.score || quizProgress.bestScore;
+  // Default values if no progress exists
+  const lastAttempt = quizProgress?.history?.[quizProgress.history.length - 1];
+  const score = lastAttempt?.score || quizProgress?.bestScore || 0;
   const timeSpent = lastAttempt?.timeSpent || 0;
-  const correctAnswers = lastAttempt?.questionsCorrect || 0;
+  const correctAnswers = lastAttempt?.correctAnswers || 0;
   const totalQuestions = quiz.questions?.length || 0;
 
   const getScoreColor = (score) => {
@@ -135,7 +141,7 @@ export default function QuizResultsScreen() {
         <View style={styles.statItem}>
           <Ionicons name="time" size={24} color={theme.primary} />
           <Text style={[styles.statValue, { color: theme.text }]}>
-            {Math.round(timeSpent / 1000 / 60)}min
+            {Math.round(timeSpent / 1000 / 60) || 0}min
           </Text>
           <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
             Temps total
@@ -145,40 +151,13 @@ export default function QuizResultsScreen() {
         <View style={styles.statItem}>
           <Ionicons name="trending-up" size={24} color={theme.warning} />
           <Text style={[styles.statValue, { color: theme.text }]}>
-            {quizProgress.attempts}
+            {quizProgress?.attempts || 1}
           </Text>
           <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
             Tentatives
           </Text>
         </View>
       </View>
-
-      {/* Progress Comparison */}
-      {quizProgress.attempts > 1 && (
-        <View style={[styles.progressCard, { backgroundColor: theme.surface }]}>
-          <Text style={[styles.cardTitle, { color: theme.text }]}>
-            Évolution
-          </Text>
-          <View style={styles.progressComparison}>
-            <View style={styles.progressItem}>
-              <Text style={[styles.progressLabel, { color: theme.textSecondary }]}>
-                Meilleur score
-              </Text>
-              <Text style={[styles.progressValue, { color: theme.success }]}>
-                {quizProgress.bestScore}%
-              </Text>
-            </View>
-            <View style={styles.progressItem}>
-              <Text style={[styles.progressLabel, { color: theme.textSecondary }]}>
-                Score moyen
-              </Text>
-              <Text style={[styles.progressValue, { color: theme.primary }]}>
-                {quizProgress.averageScore}%
-              </Text>
-            </View>
-          </View>
-        </View>
-      )}
 
       {/* Recommendations */}
       <View style={[styles.recommendationsCard, { backgroundColor: theme.surface }]}>
@@ -254,46 +233,7 @@ export default function QuizResultsScreen() {
             {new Date(lastAttempt?.date || Date.now()).toLocaleDateString('fr-FR')}
           </Text>
         </View>
-        
-        <View style={styles.detailItem}>
-          <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>
-            Temps moyen par question
-          </Text>
-          <Text style={[styles.detailValue, { color: theme.text }]}>
-            {Math.round(timeSpent / 1000 / totalQuestions)}s
-          </Text>
-        </View>
       </View>
-
-      {/* Performance History */}
-      {quizProgress.history.length > 1 && (
-        <View style={[styles.historyCard, { backgroundColor: theme.surface }]}>
-          <Text style={[styles.cardTitle, { color: theme.text }]}>
-            Historique des tentatives
-          </Text>
-          
-          {quizProgress.history.slice(-5).reverse().map((attempt, index) => (
-            <View key={index} style={styles.historyItem}>
-              <View style={styles.historyLeft}>
-                <Text style={[styles.historyDate, { color: theme.textSecondary }]}>
-                  {new Date(attempt.date).toLocaleDateString('fr-FR')}
-                </Text>
-                <Text style={[styles.historyTime, { color: theme.textSecondary }]}>
-                  {Math.round(attempt.timeSpent / 1000 / 60)}min
-                </Text>
-              </View>
-              <View style={styles.historyRight}>
-                <Text style={[styles.historyScore, { color: getScoreColor(attempt.score) }]}>
-                  {attempt.score}%
-                </Text>
-                <Text style={[styles.historyQuestions, { color: theme.textSecondary }]}>
-                  {attempt.questionsCorrect}/{attempt.totalQuestions}
-                </Text>
-              </View>
-            </View>
-          ))}
-        </View>
-      )}
     </View>
   );
 
@@ -386,8 +326,19 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 20,
   },
-  loadingText: { fontSize: 16 },
+  loadingText: { fontSize: 16, marginBottom: 20 },
+  backButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  backButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
   header: {
     paddingTop: 60,
     paddingBottom: 20,
@@ -399,14 +350,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   headerCenter: { flex: 1, alignItems: 'center' },
   headerTitle: { fontSize: 20, fontWeight: 'bold', color: '#fff' },
@@ -474,21 +417,6 @@ const styles = StyleSheet.create({
   statItem: { flex: 1, alignItems: 'center' },
   statValue: { fontSize: 20, fontWeight: 'bold', marginVertical: 8 },
   statLabel: { fontSize: 12, textAlign: 'center' },
-  progressCard: {
-    padding: 20,
-    borderRadius: 16,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  cardTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 16 },
-  progressComparison: { flexDirection: 'row', justifyContent: 'space-around' },
-  progressItem: { alignItems: 'center' },
-  progressLabel: { fontSize: 12, marginBottom: 4 },
-  progressValue: { fontSize: 18, fontWeight: 'bold' },
   recommendationsCard: {
     padding: 20,
     borderRadius: 16,
@@ -499,6 +427,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
   },
+  cardTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 16 },
   recommendation: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -524,29 +453,6 @@ const styles = StyleSheet.create({
   },
   detailLabel: { fontSize: 14 },
   detailValue: { fontSize: 14, fontWeight: '600' },
-  historyCard: {
-    padding: 20,
-    borderRadius: 16,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  historyItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.05)',
-  },
-  historyLeft: {},
-  historyDate: { fontSize: 14, fontWeight: '600' },
-  historyTime: { fontSize: 12 },
-  historyRight: { alignItems: 'flex-end' },
-  historyScore: { fontSize: 16, fontWeight: 'bold' },
-  historyQuestions: { fontSize: 12 },
   actionContainer: {
     flexDirection: 'row',
     paddingHorizontal: 20,

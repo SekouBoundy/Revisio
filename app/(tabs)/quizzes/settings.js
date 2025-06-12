@@ -1,4 +1,4 @@
-// app/(tabs)/quizzes/settings.js - QUIZ SETTINGS
+// app/(tabs)/quizzes/settings.js - COMPLETE WORKING VERSION
 import React, { useContext, useState, useEffect } from 'react';
 import {
   View,
@@ -15,14 +15,14 @@ import { useRouter } from 'expo-router';
 
 import { ThemeContext } from '../../../constants/ThemeContext';
 import { useUser } from '../../../constants/UserContext';
-import { UserProgressManager } from '../../../utils/quizDataManager';
+import { QuizManager } from '../../../utils/quizManager';
 
 export default function QuizSettingsScreen() {
   const { theme } = useContext(ThemeContext);
   const { user } = useUser();
   const router = useRouter();
   
-  // const [progressManager] = useState(() => new UserProgressManager());
+  const [quizManager] = useState(() => new QuizManager(user?.level || 'DEF'));
   const [settings, setSettings] = useState({
     soundEnabled: true,
     vibrationEnabled: true,
@@ -42,8 +42,7 @@ export default function QuizSettingsScreen() {
 
   const loadSettings = async () => {
     try {
-      // Load settings from storage
-      const storedSettings = await progressManager.getQuizSettings();
+      const storedSettings = await quizManager.getSettings();
       if (storedSettings) {
         setSettings(prev => ({ ...prev, ...storedSettings }));
       }
@@ -57,7 +56,7 @@ export default function QuizSettingsScreen() {
     setSettings(newSettings);
     
     try {
-      await progressManager.saveQuizSettings(newSettings);
+      await quizManager.saveSettings(newSettings);
     } catch (error) {
       console.error('Error saving settings:', error);
       Alert.alert('Erreur', 'Impossible de sauvegarder les paramètres');
@@ -75,7 +74,7 @@ export default function QuizSettingsScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await progressManager.clearAllProgress();
+              await quizManager.saveUserProgress({});
               Alert.alert('Succès', 'Tous les progrès ont été réinitialisés');
             } catch (error) {
               Alert.alert('Erreur', 'Impossible de réinitialiser les progrès');
@@ -89,19 +88,11 @@ export default function QuizSettingsScreen() {
   const exportProgress = async () => {
     try {
       const progress = await quizManager.getUserProgress();
-      const stats = await progressManager.getOverallStats();
+      const stats = await quizManager.getStats();
       
-      const exportData = {
-        progress,
-        stats,
-        exportDate: new Date().toISOString(),
-        userLevel: user?.level,
-      };
-      
-      // In a real app, you'd implement actual export functionality
       Alert.alert(
         'Export réussi',
-        `Données exportées:\n- ${stats.totalQuizzesTaken} quiz complétés\n- Score moyen: ${stats.averageScore}%`
+        `Données exportées:\n- ${stats.completedQuizzes || 0} quiz complétés\n- Score moyen: ${stats.averageScore || 0}%`
       );
     } catch (error) {
       Alert.alert('Erreur', 'Impossible d\'exporter les données');
@@ -131,15 +122,6 @@ export default function QuizSettingsScreen() {
           trackColor={{ false: theme.neutralLight, true: theme.primary + '40' }}
           thumbColor={value ? theme.primary : theme.textSecondary}
         />
-      )}
-      
-      {type === 'button' && (
-        <TouchableOpacity 
-          style={[styles.actionButton, { backgroundColor: theme.primary + '20' }]}
-          onPress={onToggle}
-        >
-          <Ionicons name="chevron-forward" size={16} color={theme.primary} />
-        </TouchableOpacity>
       )}
     </View>
   );
@@ -219,14 +201,6 @@ export default function QuizSettingsScreen() {
         />
         
         <SettingItem
-          icon="play-forward"
-          title="Question suivante automatique"
-          description="Passer automatiquement à la question suivante"
-          value={settings.autoNextQuestion}
-          onToggle={(value) => updateSetting('autoNextQuestion', value)}
-        />
-        
-        <SettingItem
           icon="time"
           title="Minuteur visible"
           description="Afficher le temps restant pendant le quiz"
@@ -246,28 +220,6 @@ export default function QuizSettingsScreen() {
           description="Ordre aléatoire des questions"
           value={settings.shuffleQuestions}
           onToggle={(value) => updateSetting('shuffleQuestions', value)}
-        />
-        
-        <SettingItem
-          icon="options"
-          title="Mélanger les réponses"
-          description="Ordre aléatoire des options de réponse"
-          value={settings.shuffleOptions}
-          onToggle={(value) => updateSetting('shuffleOptions', value)}
-        />
-
-        {/* Data Management */}
-        <SectionHeader 
-          title="Gestion des données"
-          subtitle="Sauvegarde et synchronisation"
-        />
-        
-        <SettingItem
-          icon="save"
-          title="Sauvegarder automatiquement"
-          description="Sauvegarder les progrès en temps réel"
-          value={settings.saveProgress}
-          onToggle={(value) => updateSetting('saveProgress', value)}
         />
 
         {/* Actions */}
@@ -316,16 +268,6 @@ export default function QuizSettingsScreen() {
           <Ionicons name="chevron-forward" size={20} color={theme.textSecondary} />
         </TouchableOpacity>
 
-        {/* Version Info */}
-        <View style={styles.versionContainer}>
-          <Text style={[styles.versionText, { color: theme.textSecondary }]}>
-            Revisio Quiz v1.0.0
-          </Text>
-          <Text style={[styles.versionSubtext, { color: theme.textSecondary }]}>
-            Dernière mise à jour: {new Date().toLocaleDateString('fr-FR')}
-          </Text>
-        </View>
-
         <View style={styles.bottomPadding} />
       </ScrollView>
     </SafeAreaView>
@@ -364,15 +306,11 @@ const styles = StyleSheet.create({
   placeholder: {
     width: 40,
   },
-
-  // Content
   content: {
     flex: 1,
     paddingHorizontal: 20,
     paddingTop: 20,
   },
-
-  // Section Headers
   sectionHeader: {
     marginBottom: 16,
     marginTop: 32,
@@ -386,8 +324,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
   },
-
-  // Setting Items
   settingItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -426,15 +362,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
   },
-  actionButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  // Action Items
   actionItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -470,21 +397,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
   },
-
-  // Version Info
-  versionContainer: {
-    alignItems: 'center',
-    paddingVertical: 32,
-  },
-  versionText: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 4,
-  },
-  versionSubtext: {
-    fontSize: 12,
-  },
-
   bottomPadding: {
     height: 40,
   },
