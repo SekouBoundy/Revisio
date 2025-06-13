@@ -1,4 +1,4 @@
-// app/(tabs)/schedule.js - ENHANCED VERSION WITH ALL IMPROVEMENTS
+// app/(tabs)/schedule.js - COMPLETE WORKING VERSION
 import React, { useContext, useState, useCallback, useEffect, useRef } from 'react';
 import { 
   SafeAreaView, 
@@ -24,6 +24,31 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { ThemeContext } from '../../constants/ThemeContext';
 import { useUser } from '../../constants/UserContext';
+
+// Helper function defined first
+function getCurrentWeekDates() {
+  const today = new Date();
+  const currentDay = today.getDay();
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - (currentDay === 0 ? 6 : currentDay - 1));
+  
+  const weekDates = [];
+  const dayNames = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+  
+  for (let i = 0; i < 6; i++) {
+    const date = new Date(monday);
+    date.setDate(monday.getDate() + i);
+    weekDates.push({
+      day: dayNames[i],
+      date: date.getDate(),
+      month: date.getMonth(),
+      fullDate: new Date(date),
+      isToday: date.toDateString() === today.toDateString(),
+      dayIndex: i + 1
+    });
+  }
+  return weekDates;
+}
 
 export default function EnhancedScheduleScreen() {
   const { theme } = useContext(ThemeContext);
@@ -71,65 +96,37 @@ export default function EnhancedScheduleScreen() {
   const dragAnimation = useRef(new Animated.ValueXY()).current;
   const scaleAnimation = useRef(new Animated.Value(1)).current;
 
-  // Enhanced schedule data with persistence
-  const [scheduleData, setScheduleData] = useState(() => getScheduleForWeek(0));
+  // Enhanced time slots
+  const timeSlots = [
+    '07:00', '08:00', '09:00', '10:00', '10:15', '11:15', '12:15', 
+    '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'
+  ];
 
-  // Load schedule from storage
-  useEffect(() => {
-    loadScheduleData();
-  }, []);
+  // Hours array for time selection
+  const hours = Array.from({ length: 12 }, (_, i) => {
+    const hour = 8 + i;
+    return `${hour.toString().padStart(2, '0')}:00`;
+  });
 
-  // Save schedule to storage
-  useEffect(() => {
-    saveScheduleData();
-  }, [scheduleData]);
+  const commonSubjects = isDefLevel ? [
+    { name: 'Mathématiques', color: '#2196F3', icon: 'calculator' },
+    { name: 'Français', color: '#FF9800', icon: 'book' },
+    { name: 'Anglais', color: '#607D8B', icon: 'globe' },
+    { name: 'Histoire-Géographie', color: '#9C27B0', icon: 'map' },
+    { name: 'Physique-Chimie', color: '#E91E63', icon: 'flask' },
+    { name: 'Sciences de la Vie et de la Terre', color: '#4CAF50', icon: 'leaf' },
+    { name: 'Informatique', color: '#607D8B', icon: 'laptop' }
+  ] : [
+    { name: 'Mathématiques', color: '#2196F3', icon: 'calculator' },
+    { name: 'Physique', color: '#E91E63', icon: 'nuclear' },
+    { name: 'Chimie', color: '#9C27B0', icon: 'flask' },
+    { name: 'Informatique', color: '#607D8B', icon: 'laptop' },
+    { name: 'Français', color: '#FF9800', icon: 'book' },
+    { name: 'Philosophie', color: '#795548', icon: 'bulb' },
+    { name: 'Anglais', color: '#607D8B', icon: 'globe' }
+  ];
 
-  const loadScheduleData = async () => {
-    try {
-      setLoading(true);
-      const stored = await AsyncStorage.getItem('userSchedule');
-      if (stored) {
-        setScheduleData(JSON.parse(stored));
-      }
-    } catch (error) {
-      console.error('Error loading schedule:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const saveScheduleData = async () => {
-    try {
-      await AsyncStorage.setItem('userSchedule', JSON.stringify(scheduleData));
-    } catch (error) {
-      console.error('Error saving schedule:', error);
-    }
-  };
-
-  function getCurrentWeekDates() {
-    const today = new Date();
-    const currentDay = today.getDay();
-    const monday = new Date(today);
-    monday.setDate(today.getDate() - (currentDay === 0 ? 6 : currentDay - 1));
-    
-    const weekDates = [];
-    const dayNames = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
-    
-    for (let i = 0; i < 6; i++) {
-      const date = new Date(monday);
-      date.setDate(monday.getDate() + i);
-      weekDates.push({
-        day: dayNames[i],
-        date: date.getDate(),
-        month: date.getMonth(),
-        fullDate: new Date(date),
-        isToday: date.toDateString() === today.toDateString(),
-        dayIndex: i + 1
-      });
-    }
-    return weekDates;
-  }
-
+  // Define getScheduleForWeek function before using it
   const getScheduleForWeek = useCallback((weekOffset) => {
     const baseSchedule = {
       1: [
@@ -180,35 +177,101 @@ export default function EnhancedScheduleScreen() {
     return baseSchedule;
   }, []);
 
-  // Enhanced time slots
-  const timeSlots = [
-    '07:00', '08:00', '09:00', '10:00', '10:15', '11:15', '12:15', 
-    '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'
-  ];
+  // Enhanced schedule data with persistence - initialize with empty object first
+  const [scheduleData, setScheduleData] = useState({});
 
-  const commonSubjects = isDefLevel ? [
-    { name: 'Mathématiques', color: '#2196F3', icon: 'calculator' },
-    { name: 'Français', color: '#FF9800', icon: 'book' },
-    { name: 'Anglais', color: '#607D8B', icon: 'globe' },
-    { name: 'Histoire-Géographie', color: '#9C27B0', icon: 'map' },
-    { name: 'Physique-Chimie', color: '#E91E63', icon: 'flask' },
-    { name: 'Sciences de la Vie et de la Terre', color: '#4CAF50', icon: 'leaf' },
-    { name: 'Informatique', color: '#607D8B', icon: 'laptop' }
-  ] : [
-    { name: 'Mathématiques', color: '#2196F3', icon: 'calculator' },
-    { name: 'Physique', color: '#E91E63', icon: 'nuclear' },
-    { name: 'Chimie', color: '#9C27B0', icon: 'flask' },
-    { name: 'Informatique', color: '#607D8B', icon: 'laptop' },
-    { name: 'Français', color: '#FF9800', icon: 'book' },
-    { name: 'Philosophie', color: '#795548', icon: 'bulb' },
-    { name: 'Anglais', color: '#607D8B', icon: 'globe' }
-  ];
+  // Initialize schedule data
+  useEffect(() => {
+    if (Object.keys(scheduleData).length === 0) {
+      setScheduleData(getScheduleForWeek(0));
+    }
+  }, [getScheduleForWeek, scheduleData]);
 
-  // COURSE NAVIGATION FUNCTION
-  const navigateToCourse = (classItem) => {
-    const courseName = classItem.subject.replace(/\s+/g, '_').replace(/\//g, '_');
-    const userLevel = isDefLevel ? 'DEF' : user?.level || 'TSE';
-    router.push(`/courses/${userLevel}/${courseName}`);
+  // Load schedule from storage
+  useEffect(() => {
+    loadScheduleData();
+  }, []);
+
+  // Save schedule to storage
+  useEffect(() => {
+    if (Object.keys(scheduleData).length > 0) {
+      saveScheduleData();
+    }
+  }, [scheduleData]);
+
+  const loadScheduleData = async () => {
+    try {
+      setLoading(true);
+      const stored = await AsyncStorage.getItem('userSchedule');
+      if (stored) {
+        setScheduleData(JSON.parse(stored));
+      } else {
+        // Initialize with default schedule if no stored data
+        setScheduleData(getScheduleForWeek(0));
+      }
+    } catch (error) {
+      console.error('Error loading schedule:', error);
+      // Fallback to default schedule
+      setScheduleData(getScheduleForWeek(0));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveScheduleData = async () => {
+    try {
+      // Only save if scheduleData is not empty
+      if (Object.keys(scheduleData).length > 0) {
+        await AsyncStorage.setItem('userSchedule', JSON.stringify(scheduleData));
+      }
+    } catch (error) {
+      console.error('Error saving schedule:', error);
+    }
+  };
+
+  const getWeekDateRange = () => {
+    if (!weekDates || weekDates.length === 0) return 'Chargement...';
+    
+    const startDate = weekDates[0];
+    const endDate = weekDates[5];
+    
+    const months = [
+      'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+      'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
+    ];
+    
+    const startMonth = months[startDate.month];
+    const endMonth = months[endDate.month];
+    const year = startDate.fullDate.getFullYear();
+    
+    if (startDate.month === endDate.month) {
+      return `${startDate.date} - ${endDate.date} ${startMonth} ${year}`;
+    } else {
+      return `${startDate.date} ${startMonth} - ${endDate.date} ${endMonth} ${year}`;
+    }
+  };
+
+  // HELPER FUNCTIONS
+  const parseTime = (timeStr) => {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return hours * 60 + minutes;
+  };
+
+  const getNextTimeSlot = (currentTime) => {
+    const currentIndex = timeSlots.indexOf(currentTime);
+    if (currentIndex === -1 || currentIndex === timeSlots.length - 1) {
+      const [hours, minutes] = currentTime.split(':').map(Number);
+      const nextHour = hours + 1;
+      return `${nextHour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    }
+    return timeSlots[currentIndex + 1];
+  };
+
+  const updateEndTime = (startTime) => {
+    const [hour] = startTime.split(':');
+    const nextHour = parseInt(hour) + 1;
+    const endHour = nextHour > 19 ? 19 : nextHour;
+    return `${endHour.toString().padStart(2, '0')}:00`;
   };
 
   // CONFLICT DETECTION
@@ -224,11 +287,6 @@ export default function EnhancedScheduleScreen() {
       
       return (newStart < existingEnd && newEnd > existingStart);
     });
-  };
-
-  const parseTime = (timeStr) => {
-    const [hours, minutes] = timeStr.split(':').map(Number);
-    return hours * 60 + minutes;
   };
 
   // SMART SCHEDULING SUGGESTIONS
@@ -280,73 +338,9 @@ export default function EnhancedScheduleScreen() {
     return 'Créneau disponible';
   };
 
-  const getNextTimeSlot = (currentTime) => {
-    const currentIndex = timeSlots.indexOf(currentTime);
-    if (currentIndex === -1 || currentIndex === timeSlots.length - 1) {
-      const [hours, minutes] = currentTime.split(':').map(Number);
-      const nextHour = hours + 1;
-      return `${nextHour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-    }
-    return timeSlots[currentIndex + 1];
-  };
-
-  // NAVIGATION
-  const navigateWeek = (direction) => {
-    const newWeek = currentWeek + direction;
-    setCurrentWeek(newWeek);
-    
-    const newScheduleData = getScheduleForWeek(newWeek);
-    setScheduleData(newScheduleData);
-    
-    const baseDate = new Date();
-    baseDate.setDate(baseDate.getDate() + (newWeek * 7));
-    
-    const newWeekDates = [];
-    const currentDay = baseDate.getDay();
-    const monday = new Date(baseDate);
-    monday.setDate(baseDate.getDate() - (currentDay === 0 ? 6 : currentDay - 1));
-    
-    const dayNames = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
-    
-    for (let i = 0; i < 6; i++) {
-      const date = new Date(monday);
-      date.setDate(monday.getDate() + i);
-      newWeekDates.push({
-        day: dayNames[i],
-        date: date.getDate(),
-        month: date.getMonth(),
-        fullDate: new Date(date),
-        isToday: date.toDateString() === new Date().toDateString(),
-        dayIndex: i + 1
-      });
-    }
-    
-    setWeekDates(newWeekDates);
-  };
-
-  const getWeekDateRange = () => {
-    const startDate = weekDates[0];
-    const endDate = weekDates[5];
-    
-    const months = [
-      'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
-      'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
-    ];
-    
-    const startMonth = months[startDate.month];
-    const endMonth = months[endDate.month];
-    const year = startDate.fullDate.getFullYear();
-    
-    if (startDate.month === endDate.month) {
-      return `${startDate.date} - ${endDate.date} ${startMonth} ${year}`;
-    } else {
-      return `${startDate.date} ${startMonth} - ${endDate.date} ${endMonth} ${year}`;
-    }
-  };
-
   // QUICK ADD FUNCTIONS
   const openQuickAdd = (dayIndex = selectedDayIndex, timeSlot = '08:00') => {
-    const dayClasses = scheduleData[dayIndex + 1] || [];
+    const dayClasses = (scheduleData && scheduleData[dayIndex + 1]) || [];
     const newSuggestions = getSchedulingSuggestions(dayClasses, quickForm);
     
     setQuickAddPosition({ day: dayIndex, time: timeSlot });
@@ -363,6 +357,12 @@ export default function EnhancedScheduleScreen() {
   const saveQuickClass = async () => {
     if (!quickForm.subject.trim()) {
       Alert.alert('Erreur', 'Veuillez choisir une matière');
+      return;
+    }
+
+    // Ensure scheduleData is initialized
+    if (!scheduleData || Object.keys(scheduleData).length === 0) {
+      Alert.alert('Erreur', 'Erreur de chargement. Veuillez réessayer.');
       return;
     }
 
@@ -445,6 +445,47 @@ export default function EnhancedScheduleScreen() {
     console.log(`Notification scheduled for ${classItem.subject} - ${minutes} minutes before`);
   };
 
+  // NAVIGATION
+  const navigateWeek = (direction) => {
+    const newWeek = currentWeek + direction;
+    setCurrentWeek(newWeek);
+    
+    const newScheduleData = getScheduleForWeek(newWeek);
+    setScheduleData(newScheduleData);
+    
+    const baseDate = new Date();
+    baseDate.setDate(baseDate.getDate() + (newWeek * 7));
+    
+    const newWeekDates = [];
+    const currentDay = baseDate.getDay();
+    const monday = new Date(baseDate);
+    monday.setDate(baseDate.getDate() - (currentDay === 0 ? 6 : currentDay - 1));
+    
+    const dayNames = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+    
+    for (let i = 0; i < 6; i++) {
+      const date = new Date(monday);
+      date.setDate(monday.getDate() + i);
+      newWeekDates.push({
+        day: dayNames[i],
+        date: date.getDate(),
+        month: date.getMonth(),
+        fullDate: new Date(date),
+        isToday: date.toDateString() === new Date().toDateString(),
+        dayIndex: i + 1
+      });
+    }
+    
+    setWeekDates(newWeekDates);
+  };
+
+  // COURSE NAVIGATION FUNCTION
+  const navigateToCourse = (classItem) => {
+    const courseName = classItem.subject.replace(/\s+/g, '_').replace(/\//g, '_');
+    const userLevel = isDefLevel ? 'DEF' : user?.level || 'TSE';
+    router.push(`/courses/${userLevel}/${courseName}`);
+  };
+
   // EXPORT FUNCTIONALITY
   const exportSchedule = async () => {
     try {
@@ -462,7 +503,7 @@ export default function EnhancedScheduleScreen() {
     let text = `📅 EMPLOI DU TEMPS - ${getWeekDateRange()}\n\n`;
     
     weekDates.forEach((dayInfo, index) => {
-      const dayClasses = scheduleData[index + 1] || [];
+      const dayClasses = (scheduleData && scheduleData[index + 1]) || [];
       text += `${dayInfo.day} ${dayInfo.date}\n`;
       
       if (dayClasses.length === 0) {
@@ -490,6 +531,11 @@ export default function EnhancedScheduleScreen() {
           text: 'Supprimer',
           style: 'destructive',
           onPress: () => {
+            if (!scheduleData || Object.keys(scheduleData).length === 0) {
+              Alert.alert('Erreur', 'Erreur de chargement. Veuillez réessayer.');
+              return;
+            }
+
             let dayKey = null;
             Object.keys(scheduleData).forEach(key => {
               if (scheduleData[key].some(c => c.id === classItem.id)) {
@@ -523,266 +569,124 @@ export default function EnhancedScheduleScreen() {
     return dayClasses.some(classItem => ['Contrôle', 'Test', 'Examen'].includes(classItem.type));
   };
 
+  // Get today's classes with safety check
+  const todaysClasses = scheduleData && Object.keys(scheduleData).length > 0 ? getCurrentDayClasses() : [];
+
   // ENHANCED HEADER COMPONENT
   const ScheduleHeader = () => (
     <View style={[styles.header, { backgroundColor: theme.primary }]}>
       <View style={styles.headerContent}>
         <View style={styles.headerLeft}>
           <Text style={[styles.headerSubtitle, { color: '#FFFFFF99' }]}>
-            {isDefLevel ? 'Mon Planning DEF' : `Planning ${user?.level}`}
+            {isDefLevel ? 'DEF - Emploi du temps' : `${user?.level || 'BAC'} - Emploi du temps`}
           </Text>
-          
-          <View style={styles.weekNavigationContainer}>
-            <TouchableOpacity 
-              style={styles.weekNavButton}
-              onPress={() => navigateWeek(-1)}
-            >
-              <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
-            </TouchableOpacity>
-            
-            <View style={styles.weekTitleContainer}>
-              <Text style={[styles.headerTitle, { color: '#FFFFFF' }]}>
-                {getWeekDateRange()}
-              </Text>
-              <View style={styles.weekIndicators}>
-                {[-2, -1, 0, 1, 2].map((offset) => (
-                  <View
-                    key={offset}
-                    style={[
-                      styles.weekIndicator,
-                      {
-                        backgroundColor: offset === currentWeek ? '#FFFFFF' : 'rgba(255, 255, 255, 0.3)',
-                        width: offset === currentWeek ? 24 : 6,
-                      }
-                    ]}
-                  />
-                ))}
-              </View>
-            </View>
-            
-            <TouchableOpacity 
-              style={styles.weekNavButton}
-              onPress={() => navigateWeek(1)}
-            >
-              <Ionicons name="chevron-forward" size={24} color="#FFFFFF" />
-            </TouchableOpacity>
-          </View>
-          
-          <View style={styles.weekStatus}>
-            <Text style={[styles.weekStatusText, { color: '#FFFFFF99' }]}>
-              {currentWeek === 0 ? 'Cette semaine' : 
-               currentWeek === -1 ? 'Semaine dernière' :
-               currentWeek === 1 ? 'Semaine prochaine' :
-               currentWeek < 0 ? `Il y a ${Math.abs(currentWeek)} semaines` :
-               `Dans ${currentWeek} semaines`}
-            </Text>
-            <View style={styles.weekStats}>
-              <View style={styles.weekStat}>
-                <Ionicons name="calendar" size={12} color="#FFFFFF99" />
-                <Text style={[styles.weekStatText, { color: '#FFFFFF99' }]}>
-                  {Object.values(scheduleData).flat().length} cours
-                </Text>
-              </View>
-              <View style={styles.weekStat}>
-                <Ionicons name="alert-circle" size={12} color="#FFFFFF99" />
-                <Text style={[styles.weekStatText, { color: '#FFFFFF99' }]}>
-                  {Object.values(scheduleData).flat().filter(c => ['Contrôle', 'Test', 'Examen'].includes(c.type)).length} examens
-                </Text>
-              </View>
-            </View>
-          </View>
+          <Text style={[styles.headerTitle, { color: '#FFFFFF' }]}>
+            {getWeekDateRange()}
+          </Text>
         </View>
-        
-        <View style={styles.headerActions}>
-          <TouchableOpacity 
-            style={[styles.actionButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}
-            onPress={() => setShowCalendar(true)}
+        <View style={styles.headerRight}>
+          <TouchableOpacity
+            style={[styles.headerButton, { backgroundColor: isEditMode ? '#FFFFFF20' : 'transparent' }]}
+            onPress={() => setIsEditMode(!isEditMode)}
           >
-            <Ionicons name="calendar-outline" size={20} color="#FFFFFF" />
+            <Ionicons name={isEditMode ? "checkmark" : "pencil"} size={20} color="#FFFFFF" />
           </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.actionButton, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}
+          <TouchableOpacity
+            style={styles.headerButton}
             onPress={exportSchedule}
           >
             <Ionicons name="share-outline" size={20} color="#FFFFFF" />
           </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[
-              styles.actionButton, 
-              { backgroundColor: selectedView === 'week' ? '#FFFFFF' : 'rgba(255, 255, 255, 0.15)' }
-            ]}
-            onPress={() => setSelectedView(selectedView === 'day' ? 'week' : 'day')}
-          >
-            <Ionicons 
-              name={selectedView === 'day' ? "grid" : "list"} 
-              size={20} 
-              color={selectedView === 'week' ? theme.primary : "#FFFFFF"} 
-            />
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[
-              styles.actionButton, 
-              { backgroundColor: isEditMode ? '#FFFFFF' : 'rgba(255, 255, 255, 0.15)' }
-            ]}
-            onPress={() => setIsEditMode(!isEditMode)}
-          >
-            <Ionicons 
-              name={isEditMode ? "checkmark" : "pencil"} 
-              size={20} 
-              color={isEditMode ? theme.primary : '#FFFFFF'} 
-            />
-          </TouchableOpacity>
         </View>
+      </View>
+      
+      <View style={styles.weekNavigation}>
+        <TouchableOpacity
+          style={styles.weekNavButton}
+          onPress={() => navigateWeek(-1)}
+        >
+          <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+        </TouchableOpacity>
+        <Text style={[styles.weekIndicator, { color: '#FFFFFF' }]}>
+          Semaine {currentWeek === 0 ? 'actuelle' : currentWeek > 0 ? `+${currentWeek}` : currentWeek}
+        </Text>
+        <TouchableOpacity
+          style={styles.weekNavButton}
+          onPress={() => navigateWeek(1)}
+        >
+          <Ionicons name="chevron-forward" size={24} color="#FFFFFF" />
+        </TouchableOpacity>
       </View>
     </View>
   );
 
-  // Day Selector Component
+  // DAY SELECTOR COMPONENT
   const DaySelector = () => (
-    <View style={[styles.daySelector, { backgroundColor: theme.surface }]}>
+    <View style={styles.daySelector}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        {weekDates.map((dayInfo, index) => (
-          <TouchableOpacity
-            key={index}
-            style={[
-              styles.dayButton,
-              selectedDayIndex === index && { backgroundColor: theme.primary },
-              dayInfo.isToday && selectedDayIndex !== index && { 
-                borderWidth: 2, 
-                borderColor: theme.primary 
-              }
-            ]}
-            onPress={() => setSelectedDayIndex(index)}
-          >
-            <Text style={[
-              styles.dayText,
-              { color: selectedDayIndex === index ? '#FFFFFF' : theme.textSecondary }
-            ]}>
-              {dayInfo.day}
-            </Text>
-            <Text style={[
-              styles.dateText,
-              { color: selectedDayIndex === index ? '#FFFFFF' : theme.text }
-            ]}>
-              {dayInfo.date}
-            </Text>
-            {dayInfo.isToday && (
-              <View style={[styles.todayIndicator, { 
-                backgroundColor: selectedDayIndex === index ? '#FFFFFF' : theme.primary 
-              }]} />
-            )}
-            {dayHasExam(index) && (
-              <View style={[styles.examIndicator, { backgroundColor: theme.error }]} />
-            )}
-          </TouchableOpacity>
-        ))}
+        <View style={styles.daysContainer}>
+          {weekDates.map((dayInfo, index) => (
+            <TouchableOpacity
+              key={index}
+              style={[
+                styles.dayCard,
+                {
+                  backgroundColor: selectedDayIndex === index ? theme.primary : theme.surface,
+                  borderColor: dayInfo.isToday ? theme.primary : theme.neutralLight,
+                  borderWidth: dayInfo.isToday && selectedDayIndex !== index ? 2 : 0,
+                }
+              ]}
+              onPress={() => setSelectedDayIndex(index)}
+            >
+              <Text style={[
+                styles.dayName,
+                { color: selectedDayIndex === index ? '#FFFFFF' : theme.text }
+              ]}>
+                {dayInfo.day}
+              </Text>
+              <Text style={[
+                styles.dayDate,
+                { color: selectedDayIndex === index ? '#FFFFFF' : theme.text }
+              ]}>
+                {dayInfo.date}
+              </Text>
+              {dayHasExam(index) && Object.keys(scheduleData).length > 0 && (
+                <View style={[styles.examIndicator, { backgroundColor: theme.warning }]}>
+                  <Ionicons name="alert-circle" size={12} color="#FFFFFF" />
+                </View>
+              )}
+            </TouchableOpacity>
+          ))}
+        </View>
       </ScrollView>
-      
-      {isEditMode && (
-        <TouchableOpacity
-          style={[styles.addButton, { backgroundColor: theme.primary }]}
-          onPress={() => openQuickAdd()}
-        >
-          <Ionicons name="add" size={20} color="#FFFFFF" />
-        </TouchableOpacity>
-      )}
     </View>
   );
 
-  // Enhanced Class Card Component
-  const ClassCard = ({ classItem, index }) => {
-    const isUpcoming = () => {
-      const now = new Date();
-      const [hour, minute] = classItem.time.split('-')[0].split(':').map(Number);
-      const classTime = new Date();
-      classTime.setHours(hour, minute, 0, 0);
-      return classTime > now && weekDates[selectedDayIndex].isToday;
-    };
-
-    const [isTracking, setIsTracking] = useState(false);
-    const [studyTime, setStudyTime] = useState(classItem.studyTime || 0);
-
-    useEffect(() => {
-      let interval = null;
-      if (isTracking) {
-        interval = setInterval(() => {
-          setStudyTime(time => time + 1);
-        }, 1000);
-      } else if (studyTime !== classItem.studyTime) {
-        // Update the class with new study time
-        const dayKey = selectedDayIndex + 1;
-        const updatedSchedule = { ...scheduleData };
-        const classIndex = updatedSchedule[dayKey].findIndex(c => c.id === classItem.id);
-        if (classIndex !== -1) {
-          updatedSchedule[dayKey][classIndex].studyTime = studyTime;
-          setScheduleData(updatedSchedule);
-        }
-      }
-      return () => clearInterval(interval);
-    }, [isTracking, studyTime]);
-
-    const formatTime = (seconds) => {
-      const hrs = Math.floor(seconds / 3600);
-      const mins = Math.floor((seconds % 3600) / 60);
-      const secs = seconds % 60;
-      return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    };
-
+  // CLASS CARD COMPONENT
+  const ClassCard = ({ classItem, onPress, isTracking = false }) => {
     return (
-      <TouchableOpacity 
+      <TouchableOpacity
         style={[
-          styles.classCard, 
+          styles.classCard,
           { 
             backgroundColor: theme.surface,
-            borderLeftWidth: isUpcoming() ? 4 : 0,
-            borderLeftColor: theme.success
+            borderLeftColor: classItem.color,
+            opacity: isEditMode ? 0.8 : 1
           }
         ]}
-        onPress={() => {
-          if (!isEditMode) {
-            navigateToCourse(classItem);
-          }
-        }}
+        onPress={onPress}
+        activeOpacity={0.7}
       >
-        <View style={[styles.classColorBar, { backgroundColor: classItem.color }]} />
-        
         <View style={styles.classContent}>
           <View style={styles.classHeader}>
-            <View style={styles.classMainInfo}>
-              <Text style={[styles.classSubject, { color: theme.text }]}>
-                {classItem.subject}
-              </Text>
-              <View style={[styles.classType, { 
-                backgroundColor: ['Contrôle', 'Test', 'Examen'].includes(classItem.type) ? theme.error + '20' : classItem.color + '20'
-              }]}>
-                <Text style={[styles.classTypeText, { 
-                  color: ['Contrôle', 'Test', 'Examen'].includes(classItem.type) ? theme.error : classItem.color,
-                  fontWeight: ['Contrôle', 'Test', 'Examen'].includes(classItem.type) ? 'bold' : '600'
-                }]}>
-                  {classItem.type}
-                </Text>
-                {['Contrôle', 'Test', 'Examen'].includes(classItem.type) && (
-                  <Ionicons name="alert-circle" size={12} color={theme.error} />
-                )}
-              </View>
-            </View>
-            
-            <View style={styles.classTime}>
-              <Text style={[styles.classTimeText, { color: theme.textSecondary }]}>
-                {classItem.time}
-              </Text>
-              {isUpcoming() && (
-                <View style={[styles.upcomingBadge, { backgroundColor: theme.success }]}>
-                  <Text style={styles.upcomingText}>Suivant</Text>
-                </View>
-              )}
-            </View>
+            <Text style={[styles.classSubject, { color: theme.text }]}>
+              {classItem.subject}
+            </Text>
+            <Text style={[styles.classTime, { color: theme.textSecondary }]}>
+              {classItem.time}
+            </Text>
           </View>
-
-          {/* Enhanced class details */}
+          
           <View style={styles.classDetails}>
             {classItem.teacher && (
               <Text style={[styles.classTeacher, { color: theme.textSecondary }]}>
@@ -794,26 +698,16 @@ export default function EnhancedScheduleScreen() {
                 📍 {classItem.room}
               </Text>
             )}
-            {classItem.notes && (
-              <Text style={[styles.classNotes, { color: theme.textSecondary }]}>
-                📝 {classItem.notes}
-              </Text>
-            )}
           </View>
-
-          {/* Study time tracker */}
-          <View style={styles.studyTracker}>
-            <View style={styles.studyTrackerLeft}>
-              <Text style={[styles.studyTrackerLabel, { color: theme.textSecondary }]}>
-                Temps d'étude:
-              </Text>
-              <Text style={[styles.studyTrackerTime, { color: theme.text }]}>
-                {formatTime(studyTime)}
-              </Text>
+          
+          <View style={styles.classFooter}>
+            <View style={[styles.typeBadge, { backgroundColor: classItem.color }]}>
+              <Text style={styles.typeBadgeText}>{classItem.type}</Text>
             </View>
+            
             <TouchableOpacity
               style={[
-                styles.studyTrackerButton,
+                styles.studyTimer,
                 { backgroundColor: isTracking ? theme.error : theme.primary }
               ]}
               onPress={() => setIsTracking(!isTracking)}
@@ -839,365 +733,6 @@ export default function EnhancedScheduleScreen() {
           </TouchableOpacity>
         )}
       </TouchableOpacity>
-    );
-  };
-
-  // ENHANCED Quick Add Modal
-  const QuickAddModal = () => {
-    const hours = Array.from({ length: 12 }, (_, i) => {
-      const hour = 8 + i;
-      return `${hour.toString().padStart(2, '0')}:00`;
-    });
-
-    const updateEndTime = (startTime) => {
-      const [hour] = startTime.split(':');
-      const nextHour = parseInt(hour) + 1;
-      const endHour = nextHour > 19 ? 19 : nextHour;
-      return `${endHour.toString().padStart(2, '0')}:00`;
-    };
-
-    return (
-      <Modal
-        visible={showQuickAdd}
-        animationType="slide"
-        presentationStyle="formSheet"
-      >
-        <SafeAreaView style={[styles.modalContainer, { backgroundColor: theme.background }]}>
-          <View style={[styles.modalHeader, { borderBottomColor: theme.neutralLight }]}>
-            <Text style={[styles.modalTitle, { color: theme.text }]}>Ajouter un cours</Text>
-            <TouchableOpacity onPress={() => setShowQuickAdd(false)}>
-              <Ionicons name="close" size={24} color={theme.textSecondary} />
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
-            {/* Smart Suggestions */}
-            {suggestions.length > 0 && (
-              <View style={styles.suggestionsContainer}>
-                <Text style={[styles.suggestionsTitle, { color: theme.text }]}>
-                  💡 Créneaux recommandés
-                </Text>
-                {suggestions.map((suggestion, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={[styles.suggestionItem, { backgroundColor: theme.surface }]}
-                    onPress={() => {
-                      setQuickForm(prev => ({
-                        ...prev,
-                        startTime: suggestion.time,
-                        endTime: updateEndTime(suggestion.time)
-                      }));
-                    }}
-                  >
-                    <View style={styles.suggestionContent}>
-                      <Text style={[styles.suggestionTime, { color: theme.text }]}>
-                        {suggestion.time}
-                      </Text>
-                      <Text style={[styles.suggestionReason, { color: theme.textSecondary }]}>
-                        {suggestion.reason}
-                      </Text>
-                    </View>
-                    <View style={styles.suggestionScore}>
-                      {[...Array(5)].map((_, i) => (
-                        <Ionicons
-                          key={i}
-                          name="star"
-                          size={12}
-                          color={i < suggestion.score / 20 ? theme.warning : theme.neutralLight}
-                        />
-                      ))}
-                    </View>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
-
-            {/* Subject Selection */}
-            <View style={styles.formGroup}>
-              <Text style={[styles.formLabel, { color: theme.text }]}>Matière</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <View style={styles.horizontalScroll}>
-                  {commonSubjects.map(subject => (
-                    <TouchableOpacity
-                      key={subject.name}
-                      style={[
-                        styles.courseChip,
-                        { 
-                          backgroundColor: quickForm.subject === subject.name ? subject.color : theme.surface,
-                          borderColor: quickForm.subject === subject.name ? subject.color : theme.neutralLight
-                        }
-                      ]}
-                      onPress={() => {
-                        setQuickForm(prev => ({...prev, subject: subject.name, color: subject.color}));
-                      }}
-                    >
-                      <Ionicons 
-                        name={subject.icon} 
-                        size={16} 
-                        color={quickForm.subject === subject.name ? '#fff' : subject.color}
-                        style={{ marginRight: 6 }}
-                      />
-                      <Text style={[
-                        styles.courseChipText,
-                        { color: quickForm.subject === subject.name ? '#fff' : theme.text }
-                      ]}>
-                        {subject.name}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </ScrollView>
-            </View>
-
-            {/* Enhanced Time Selection */}
-            <View style={styles.formGroup}>
-              <Text style={[styles.formLabel, { color: theme.text }]}>Heure</Text>
-              
-              <View style={[styles.timeDisplayRow, { backgroundColor: theme.surface }]}>
-                <Text style={[styles.timeDisplayText, { color: theme.text }]}>
-                  {quickForm.startTime} → {quickForm.endTime}
-                </Text>
-              </View>
-
-              <View style={styles.timeGrid}>
-                {hours.map(hour => {
-                  const dayClasses = scheduleData[quickAddPosition.day + 1] || [];
-                  const testClass = { startTime: hour, endTime: updateEndTime(hour) };
-                  const hasConflict = detectTimeConflicts(testClass, dayClasses).length > 0;
-                  
-                  return (
-                    <TouchableOpacity
-                      key={hour}
-                      style={[
-                        styles.timeGridItem,
-                        { 
-                          backgroundColor: quickForm.startTime === hour ? theme.primary : 
-                                          hasConflict ? theme.error + '20' : theme.surface,
-                          borderColor: quickForm.startTime === hour ? theme.primary : 
-                                      hasConflict ? theme.error : theme.neutralLight
-                        }
-                      ]}
-                      onPress={() => {
-                        if (!hasConflict) {
-                          const endTime = updateEndTime(hour);
-                          setQuickForm(prev => ({
-                            ...prev, 
-                            startTime: hour,
-                            endTime: endTime
-                          }));
-                        }
-                      }}
-                      disabled={hasConflict}
-                    >
-                      <Text style={[
-                        styles.timeGridText,
-                        { 
-                          color: quickForm.startTime === hour ? '#fff' : 
-                                 hasConflict ? theme.error : theme.text,
-                          fontWeight: quickForm.startTime === hour ? 'bold' : 'normal'
-                        }
-                      ]}>
-                        {hour}
-                      </Text>
-                      {hasConflict && (
-                        <Ionicons name="warning" size={12} color={theme.error} />
-                      )}
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </View>
-
-            {/* Type Selection */}
-            <View style={styles.formGroup}>
-              <Text style={[styles.formLabel, { color: theme.text }]}>Type</Text>
-              <View style={styles.typeGrid}>
-                {[
-                  { type: 'Cours', icon: 'book-outline', color: theme.primary },
-                  { type: 'TP', icon: 'flask-outline', color: theme.accent },
-                  { type: 'TD', icon: 'create-outline', color: theme.info },
-                  { type: 'Contrôle', icon: 'alert-circle-outline', color: theme.warning },
-                  { type: 'Test', icon: 'checkmark-circle-outline', color: theme.success },
-                  { type: 'Examen', icon: 'school-outline', color: theme.error }
-                ].map(({ type, icon, color }) => (
-                  <TouchableOpacity
-                    key={type}
-                    style={[
-                      styles.typeChip,
-                      { 
-                        backgroundColor: quickForm.type === type ? color : theme.surface,
-                        borderColor: quickForm.type === type ? color : theme.neutralLight
-                      }
-                    ]}
-                    onPress={() => {
-                      setQuickForm(prev => ({...prev, type}));
-                    }}
-                  >
-                    <Ionicons 
-                      name={icon} 
-                      size={16} 
-                      color={quickForm.type === type ? '#fff' : color} 
-                      style={{ marginBottom: 4 }} 
-                    />
-                    <Text style={[
-                      styles.typeChipText,
-                      { color: quickForm.type === type ? '#fff' : theme.text }
-                    ]}>
-                      {type}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            {/* Additional Details */}
-            <View style={styles.formGroup}>
-              <Text style={[styles.formLabel, { color: theme.text }]}>Détails</Text>
-              
-              <TextInput
-                style={[styles.detailInput, { backgroundColor: theme.surface, color: theme.text }]}
-                placeholder="Professeur"
-                placeholderTextColor={theme.textSecondary}
-                value={quickForm.teacher}
-                onChangeText={(text) => setQuickForm(prev => ({...prev, teacher: text}))}
-              />
-              
-              <TextInput
-                style={[styles.detailInput, { backgroundColor: theme.surface, color: theme.text }]}
-                placeholder="Salle"
-                placeholderTextColor={theme.textSecondary}
-                value={quickForm.room}
-                onChangeText={(text) => setQuickForm(prev => ({...prev, room: text}))}
-              />
-              
-              <TextInput
-                style={[styles.detailInputMulti, { backgroundColor: theme.surface, color: theme.text }]}
-                placeholder="Notes (matériel à apporter, etc.)"
-                placeholderTextColor={theme.textSecondary}
-                value={quickForm.notes}
-                onChangeText={(text) => setQuickForm(prev => ({...prev, notes: text}))}
-                multiline
-                numberOfLines={3}
-              />
-            </View>
-
-            {/* Recurring Options */}
-            <View style={styles.formGroup}>
-              <View style={styles.recurringToggle}>
-                <Text style={[styles.formLabel, { color: theme.text }]}>Cours récurrent</Text>
-                <Switch
-                  value={quickForm.isRecurring}
-                  onValueChange={(value) => setQuickForm(prev => ({...prev, isRecurring: value}))}
-                  trackColor={{ false: theme.neutralLight, true: theme.primary + '40' }}
-                  thumbColor={quickForm.isRecurring ? theme.primary : theme.textSecondary}
-                />
-              </View>
-              
-              {quickForm.isRecurring && (
-                <TouchableOpacity
-                  style={[styles.recurringButton, { backgroundColor: theme.surface }]}
-                  onPress={() => setShowRecurringModal(true)}
-                >
-                  <Text style={[styles.recurringButtonText, { color: theme.text }]}>
-                    Configurer la récurrence
-                  </Text>
-                  <Ionicons name="chevron-forward" size={16} color={theme.textSecondary} />
-                </TouchableOpacity>
-              )}
-            </View>
-
-            {/* Notification Settings */}
-            <View style={styles.formGroup}>
-              <Text style={[styles.formLabel, { color: theme.text }]}>Rappel</Text>
-              <View style={styles.reminderGrid}>
-                {[0, 5, 15, 30].map(minutes => (
-                  <TouchableOpacity
-                    key={minutes}
-                    style={[
-                      styles.reminderChip,
-                      { 
-                        backgroundColor: quickForm.reminderMinutes === minutes ? theme.primary : theme.surface,
-                        borderColor: quickForm.reminderMinutes === minutes ? theme.primary : theme.neutralLight
-                      }
-                    ]}
-                    onPress={() => setQuickForm(prev => ({...prev, reminderMinutes: minutes}))}
-                  >
-                    <Text style={[
-                      styles.reminderChipText,
-                      { color: quickForm.reminderMinutes === minutes ? '#fff' : theme.text }
-                    ]}>
-                      {minutes === 0 ? 'Aucun' : `${minutes} min`}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            {/* Preview */}
-            {quickForm.subject && (
-              <View style={[styles.previewCard, { backgroundColor: quickForm.color + '10' }]}>
-                <View style={styles.previewHeader}>
-                  <Ionicons name="eye-outline" size={20} color={quickForm.color} />
-                  <Text style={[styles.previewTitle, { color: quickForm.color }]}>Aperçu</Text>
-                </View>
-                <View style={styles.previewContent}>
-                  <Text style={[styles.previewSubject, { color: theme.text }]}>
-                    {quickForm.subject}
-                  </Text>
-                  <View style={styles.previewMeta}>
-                    <View style={[styles.previewTypeBadge, { backgroundColor: quickForm.color + '20' }]}>
-                      <Text style={[styles.previewTypeText, { color: quickForm.color }]}>
-                        {quickForm.type}
-                      </Text>
-                    </View>
-                    <Text style={[styles.previewTime, { color: theme.textSecondary }]}>
-                      {quickForm.startTime} - {quickForm.endTime}
-                    </Text>
-                  </View>
-                  {quickForm.teacher && (
-                    <Text style={[styles.previewDetail, { color: theme.textSecondary }]}>
-                      👨‍🏫 {quickForm.teacher}
-                    </Text>
-                  )}
-                  {quickForm.room && (
-                    <Text style={[styles.previewDetail, { color: theme.textSecondary }]}>
-                      📍 {quickForm.room}
-                    </Text>
-                  )}
-                </View>
-              </View>
-            )}
-          </ScrollView>
-
-          <View style={[styles.modalFooter, { backgroundColor: theme.background, borderTopColor: theme.neutralLight }]}>
-            <TouchableOpacity
-              style={[styles.cancelButton, { backgroundColor: theme.neutralLight }]}
-              onPress={() => setShowQuickAdd(false)}
-            >
-              <Text style={[styles.cancelButtonText, { color: theme.textSecondary }]}>Annuler</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.saveButton, 
-                { 
-                  backgroundColor: quickForm.subject ? quickForm.color : theme.neutralLight,
-                  opacity: quickForm.subject ? 1 : 0.5
-                }
-              ]}
-              onPress={saveQuickClass}
-              disabled={!quickForm.subject}
-            >
-              <Ionicons name="add" size={20} color={quickForm.subject ? '#fff' : theme.textSecondary} />
-              <Text style={[
-                styles.saveButtonText,
-                { color: quickForm.subject ? '#fff' : theme.textSecondary }
-              ]}>
-                Ajouter
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </SafeAreaView>
-      </Modal>
     );
   };
 
@@ -1233,8 +768,6 @@ export default function EnhancedScheduleScreen() {
     </View>
   );
 
-  const todaysClasses = getCurrentDayClasses();
-
   if (loading) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
@@ -1255,27 +788,49 @@ export default function EnhancedScheduleScreen() {
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <Text style={[styles.sectionTitle, { color: theme.text }]}>
-                  {weekDates[selectedDayIndex].isToday ? "Aujourd'hui" : `${weekDates[selectedDayIndex].day} ${weekDates[selectedDayIndex].date}`}
+                  {weekDates[selectedDayIndex]?.isToday ? 'Aujourd\'hui' : weekDates[selectedDayIndex]?.day}
                 </Text>
-                <Text style={[styles.sectionCount, { color: theme.textSecondary }]}>
-                  {todaysClasses.length} cours
-                </Text>
+                
+                {isEditMode && (
+                  <TouchableOpacity
+                    style={[styles.addButton, { backgroundColor: theme.primary }]}
+                    onPress={() => openQuickAdd()}
+                  >
+                    <Ionicons name="add" size={20} color="#fff" />
+                  </TouchableOpacity>
+                )}
               </View>
               
               {todaysClasses.length > 0 ? (
-                todaysClasses.map((classItem, index) => (
-                  <ClassCard key={classItem.id} classItem={classItem} index={index} />
-                ))
+                <View style={styles.classesContainer}>
+                  {todaysClasses.map((classItem, index) => (
+                    <ClassCard
+                      key={classItem.id}
+                      classItem={classItem}
+                      onPress={() => navigateToCourse(classItem)}
+                      isTracking={studyTimers[classItem.id]}
+                    />
+                  ))}
+                </View>
               ) : (
                 <EmptyState />
               )}
             </View>
+            
             <View style={styles.bottomPadding} />
           </ScrollView>
         </>
       )}
-
-      <QuickAddModal />
+      
+      {/* Floating Action Button for non-edit mode */}
+      {!isEditMode && (
+        <TouchableOpacity
+          style={[styles.fab, { backgroundColor: theme.primary }]}
+          onPress={() => openQuickAdd()}
+        >
+          <Ionicons name="add" size={24} color="#fff" />
+        </TouchableOpacity>
+      )}
     </SafeAreaView>
   );
 }
@@ -1284,166 +839,89 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  loadingContainer: {
-    padding: 20,
-  },
-  skeletonCard: {
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  skeletonLine: {
-    height: 12,
-    borderRadius: 4,
-    marginBottom: 8,
-  },
   header: {
-    paddingTop: 60,
-    paddingBottom: 35,
+    paddingTop: 20,
+    paddingBottom: 16,
     paddingHorizontal: 20,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
   },
   headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
+    marginBottom: 16,
   },
   headerLeft: {
     flex: 1,
-    marginRight: 16,
   },
   headerSubtitle: {
     fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 12,
-  },
-  weekNavigationContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-    gap: 12,
-  },
-  weekNavButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  weekTitleContainer: {
-    flex: 1,
-    alignItems: 'center',
+    marginBottom: 4,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 8,
   },
-  weekIndicators: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  weekIndicator: {
-    height: 4,
-    borderRadius: 2,
-  },
-  weekStatus: {
-    alignItems: 'flex-start',
-  },
-  weekStatusText: {
-    fontSize: 12,
-    fontWeight: '500',
-    marginBottom: 6,
-  },
-  weekStats: {
-    flexDirection: 'row',
-    gap: 16,
-  },
-  weekStat: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  weekStatText: {
-    fontSize: 11,
-    fontWeight: '500',
-  },
-  headerActions: {
+  headerRight: {
     flexDirection: 'row',
     gap: 8,
-    alignItems: 'flex-start',
-    marginTop: 4,
   },
-  actionButton: {
+  headerButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  daySelector: {
-    marginTop: -20,
-    marginHorizontal: 20,
-    borderRadius: 20,
-    paddingVertical: 16,
-    paddingHorizontal: 16,
+  weekNavigation: {
     flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 8,
+    justifyContent: 'space-between',
   },
-  dayButton: {
+  weekNavButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
-    paddingVertical: 12,
+    justifyContent: 'center',
+  },
+  weekIndicator: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  daySelector: {
+    paddingVertical: 16,
+  },
+  daysContainer: {
+    flexDirection: 'row',
     paddingHorizontal: 16,
-    marginHorizontal: 4,
-    borderRadius: 14,
-    minWidth: 64,
+    gap: 12,
+  },
+  dayCard: {
+    width: 70,
+    height: 80,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
     position: 'relative',
   },
-  dayText: {
+  dayName: {
     fontSize: 12,
     fontWeight: '600',
-    marginBottom: 6,
+    marginBottom: 4,
   },
-  dateText: {
+  dayDate: {
     fontSize: 18,
     fontWeight: 'bold',
-  },
-  todayIndicator: {
-    position: 'absolute',
-    bottom: 6,
-    width: 6,
-    height: 6,
-    borderRadius: 3,
   },
   examIndicator: {
     position: 'absolute',
     top: 6,
     right: 6,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  addButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     alignItems: 'center',
-    marginLeft: 12,
+    justifyContent: 'center',
   },
   section: {
     paddingHorizontal: 20,
@@ -1454,33 +932,33 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16,
-    marginTop: 20,
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
   },
-  sectionCount: {
-    fontSize: 14,
-    fontWeight: '500',
+  addButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  classesContainer: {
+    gap: 12,
   },
   classCard: {
-    flexDirection: 'row',
     borderRadius: 16,
-    marginBottom: 12,
-    overflow: 'hidden',
+    padding: 16,
+    borderLeftWidth: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 3,
   },
-  classColorBar: {
-    width: 4,
-  },
   classContent: {
     flex: 1,
-    padding: 16,
   },
   classHeader: {
     flexDirection: 'row',
@@ -1488,373 +966,106 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: 8,
   },
-  classMainInfo: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
   classSubject: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  classType: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    gap: 4,
-  },
-  classTypeText: {
-    fontSize: 10,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: 'bold',
+    flex: 1,
   },
   classTime: {
-    alignItems: 'flex-end',
-  },
-  classTimeText: {
     fontSize: 14,
-    fontWeight: '500',
-  },
-  upcomingBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-    marginTop: 4,
-  },
-  upcomingText: {
-    color: '#fff',
-    fontSize: 9,
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
   classDetails: {
-    marginBottom: 8,
+    marginBottom: 12,
+    gap: 4,
   },
   classTeacher: {
-    fontSize: 12,
-    marginBottom: 2,
+    fontSize: 14,
   },
   classRoom: {
-    fontSize: 12,
-    marginBottom: 2,
+    fontSize: 14,
   },
-  classNotes: {
-    fontSize: 12,
-    fontStyle: 'italic',
-  },
-  studyTracker: {
+  classFooter: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: 'rgba(0,0,0,0.02)',
-    borderRadius: 8,
-    padding: 8,
+    alignItems: 'center',
   },
-  studyTrackerLeft: {
-    flex: 1,
+  typeBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
   },
-  studyTrackerLabel: {
-    fontSize: 10,
-    marginBottom: 2,
-  },
-  studyTrackerTime: {
+  typeBadgeText: {
+    color: '#fff',
     fontSize: 12,
     fontWeight: 'bold',
-    fontFamily: 'monospace',
   },
-  studyTrackerButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    justifyContent: 'center',
+  studyTimer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   deleteClassButton: {
-    width: 36,
-    height: 36,
-    justifyContent: 'center',
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
-    borderRadius: 18,
-    alignSelf: 'center',
-    marginRight: 12,
+    justifyContent: 'center',
   },
   emptyState: {
-    alignItems: 'center',
     padding: 40,
+    alignItems: 'center',
     borderRadius: 16,
   },
   emptyStateText: {
     fontSize: 16,
-    marginTop: 12,
     textAlign: 'center',
-    fontWeight: '500',
-    marginBottom: 16,
+    marginTop: 16,
+    marginBottom: 24,
   },
   addClassButton: {
     flexDirection: 'row',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 24,
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
   },
   addClassButtonText: {
     color: '#fff',
-    fontSize: 14,
     fontWeight: '600',
   },
-  
-  // Modal Styles
-  modalContainer: {
-    flex: 1,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  modalContent: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
-  
-  // Smart Suggestions
-  suggestionsContainer: {
-    backgroundColor: 'rgba(0,0,0,0.02)',
-    borderRadius: 12,
-    padding: 16,
-    marginVertical: 16,
-  },
-  suggestionsTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 12,
-  },
-  suggestionItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  suggestionContent: {
-    flex: 1,
-  },
-  suggestionTime: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginBottom: 2,
-  },
-  suggestionReason: {
-    fontSize: 12,
-  },
-  suggestionScore: {
-    flexDirection: 'row',
-    gap: 2,
-  },
-  
-  formGroup: {
-    marginBottom: 28,
-  },
-  formLabel: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 12,
-  },
-  horizontalScroll: {
-    flexDirection: 'row',
-    gap: 10,
-    paddingHorizontal: 4,
-    paddingVertical: 8,
-  },
-  courseChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 20,
-    borderWidth: 2,
-    minWidth: 120,
-  },
-  courseChipText: {
-    fontSize: 14,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  timeDisplayRow: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  timeDisplayText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  timeGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    justifyContent: 'space-between',
-  },
-  timeGridItem: {
-    width: '23%',
-    paddingVertical: 12,
-    borderRadius: 10,
-    borderWidth: 2,
-    alignItems: 'center',
-  },
-  timeGridText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  typeGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    justifyContent: 'space-between',
-  },
-  typeChip: {
-    width: '48%',
-    paddingVertical: 16,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    borderWidth: 2,
-    alignItems: 'center',
-  },
-  typeChipText: {
-    fontSize: 12,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  detailInput: {
-    height: 48,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    marginBottom: 12,
-    fontSize: 16,
-  },
-  detailInputMulti: {
-    minHeight: 80,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    textAlignVertical: 'top',
-  },
-  recurringToggle: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  recurringButton: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
-  },
-  recurringButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  reminderGrid: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  reminderChip: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 10,
-    borderWidth: 2,
-    alignItems: 'center',
-  },
-  reminderChipText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  previewCard: {
-    padding: 16,
-    borderRadius: 12,
-    marginTop: 8,
-  },
-  previewHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-    gap: 8,
-  },
-  previewTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  previewContent: {
-    gap: 8,
-  },
-  previewSubject: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  previewMeta: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  previewTypeBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  previewTypeText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  previewTime: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  previewDetail: {
-    fontSize: 12,
-  },
-  modalFooter: {
-    flexDirection: 'row',
-    gap: 12,
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderTopWidth: 1,
-  },
-  cancelButton: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  saveButton: {
-    flex: 1,
-    flexDirection: 'row',
-    paddingVertical: 14,
-    borderRadius: 12,
+  fab: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  loadingContainer: {
+    padding: 20,
+    gap: 16,
+  },
+  skeletonCard: {
+    padding: 16,
+    borderRadius: 16,
     gap: 8,
   },
-  saveButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
+  skeletonLine: {
+    height: 16,
+    borderRadius: 8,
   },
   bottomPadding: {
     height: 40,
