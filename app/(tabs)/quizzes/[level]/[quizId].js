@@ -935,6 +935,7 @@ const styles = StyleSheet.create({
     padding: 20,
     borderTopWidth: 1,
     borderTopColor: '#f0f0f0',
+    marginBottom:40,
   },
   navButton: {
     flexDirection: 'row',
@@ -963,11 +964,13 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 25,
     gap: 8,
+    // marginBottom:30,
   },
   finishButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+  
   },
 
   // Results

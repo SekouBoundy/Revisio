@@ -1,4 +1,6 @@
-import React, { useContext, useState, useEffect, useRef, useMemo, useCallback } from 'react';
+// app/(tabs)/schedule.js
+
+import React, { useContext, useState, useMemo, useEffect, useCallback } from 'react';
 import {
   SafeAreaView,
   ScrollView,
@@ -7,585 +9,589 @@ import {
   Text,
   TouchableOpacity,
   Modal,
-  Alert,
+  TextInput,
+  Dimensions,
   KeyboardAvoidingView,
   Platform,
   Vibration,
   ToastAndroid,
   ActivityIndicator,
+  Alert,
+  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { ThemeContext } from '../../constants/ThemeContext';
 import { useUser } from '../../constants/UserContext';
 
-// Constants
-const STORAGE_KEY = 'userSchedule';
-const TIME_SLOT_INTERVAL = 30; // minutes
-const START_HOUR = 7;
-const END_HOUR = 19;
+// --- Constants ---
+const HOURS = Array.from({ length: 13 }, (_, i) => {
+  const hour = 7 + i;
+  return `${hour.toString().padStart(2, '0')}:00`;
+});
+
+const DAYS = ['LUN', 'MAR', 'MER', 'JEU', 'VEN', 'SAM', 'DIM'];
 const MONTHS = [
   'JANVIER', 'FÉVRIER', 'MARS', 'AVRIL', 'MAI', 'JUIN',
   'JUILLET', 'AOÛT', 'SEPTEMBRE', 'OCTOBRE', 'NOVEMBRE', 'DÉCEMBRE'
 ];
-const WEEKDAYS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
-const CLASS_TYPES = ['Cours', 'Examen', 'Devoirs'];
 
-// Subject configurations
-const SUBJECT_CONFIGS = {
-  DEF: [
-    { name: 'Mathématiques', color: '#2196F3', icon: 'calculator' },
-    { name: 'Français', color: '#FF9800', icon: 'book' },
-    { name: 'Anglais', color: '#607D8B', icon: 'globe' },
-    { name: 'Histoire-Géographie', color: '#9C27B0', icon: 'map' },
-    { name: 'Physique-Chimie', color: '#E91E63', icon: 'flask' },
-    { name: 'Sciences de la Vie et de la Terre', color: '#4CAF50', icon: 'leaf' },
-    { name: 'Informatique', color: '#607D8B', icon: 'laptop' },
-  ],
-  default: [
-    { name: 'Mathématiques', color: '#2196F3', icon: 'calculator' },
-    { name: 'Physique', color: '#E91E63', icon: 'nuclear' },
-    { name: 'Chimie', color: '#9C27B0', icon: 'flask' },
-    { name: 'Informatique', color: '#607D8B', icon: 'laptop' },
-    { name: 'Français', color: '#FF9800', icon: 'book' },
-    { name: 'Philosophie', color: '#795548', icon: 'bulb' },
-    { name: 'Anglais', color: '#607D8B', icon: 'globe' },
-  ]
-};
+const CLASS_COLORS = [
+  '#42A5F5', '#66BB6A', '#FF7043', '#AB47BC', 
+  '#26A69A', '#FFCA28', '#EF5350', '#5C6BC0'
+];
 
-// Helper functions
-const generateTimeSlots = () => {
-  const slots = [];
-  for (let hour = START_HOUR; hour <= END_HOUR; hour++) {
-    for (let min = 0; min < 60; min += TIME_SLOT_INTERVAL) {
-      const time = `${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`;
-      slots.push(time);
-    }
-  }
-  return slots;
-};
+const CLASS_TYPES = ['Cours', 'TD', 'TP', 'Examen', 'Contrôle', 'Conférence'];
 
-const getDateKey = (date) => `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+// --- Helper Functions ---
+function getMonday(date) {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - ((day === 0 ? 6 : day - 1));
+  return new Date(d.setDate(diff));
+}
 
-const formatDateHeader = (date) => 
-  date.toLocaleDateString('fr-FR', { 
-    weekday: 'long', 
-    day: 'numeric', 
-    month: 'long' 
-  }).toUpperCase();
+function getWeekDates(date) {
+  const monday = getMonday(date);
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    return d;
+  });
+}
 
-const getMonthCalendar = (year, month) => {
-  const firstDay = new Date(year, month, 1);
-  const today = new Date();
-  const startDate = new Date(firstDay);
-  
-  // Adjust to start from Monday
-  const dayOfWeek = firstDay.getDay();
-  const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-  startDate.setDate(firstDay.getDate() - mondayOffset);
+function getDateKey(date) {
+  return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
+}
 
-  const calendar = [];
-  for (let week = 0; week < 6; week++) {
-    const weekDays = [];
-    for (let day = 0; day < 7; day++) {
-      const currentDate = new Date(startDate);
-      currentDate.setDate(startDate.getDate() + (week * 7) + day);
+function validateTimeFormat(time) {
+  const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+  return timeRegex.test(time);
+}
 
-      weekDays.push({
-        date: currentDate.getDate(),
-        month: currentDate.getMonth(),
-        year: currentDate.getFullYear(),
-        fullDate: new Date(currentDate),
-        isCurrentMonth: currentDate.getMonth() === month,
-        isToday: currentDate.toDateString() === today.toDateString(),
-      });
-    }
-    calendar.push(weekDays);
-  }
-  return calendar;
-};
+function isValidTimeRange(start, end) {
+  if (!validateTimeFormat(start) || !validateTimeFormat(end)) return false;
+  const [startHour, startMin] = start.split(':').map(Number);
+  const [endHour, endMin] = end.split(':').map(Number);
+  const startMinutes = startHour * 60 + startMin;
+  const endMinutes = endHour * 60 + endMin;
+  return endMinutes > startMinutes;
+}
 
-// Custom hooks
-const useScheduleData = () => {
-  const [scheduleData, setScheduleData] = useState({});
-  const [loading, setLoading] = useState(false);
-
-  const loadScheduleData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const stored = await AsyncStorage.getItem(STORAGE_KEY);
-      setScheduleData(stored ? JSON.parse(stored) : {});
-    } catch (error) {
-      console.error('Error loading schedule:', error);
-      setScheduleData({});
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const saveScheduleData = useCallback(async (data) => {
-    try {
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-      setScheduleData(data);
-    } catch (error) {
-      console.error('Error saving schedule:', error);
-    }
-  }, []);
-
-  const getScheduleForDate = useCallback((date) => {
-    const key = getDateKey(date);
-    return scheduleData[key] || [];
-  }, [scheduleData]);
-
-  useEffect(() => {
-    loadScheduleData();
-  }, [loadScheduleData]);
-
-  return {
-    scheduleData,
-    loading,
-    saveScheduleData,
-    getScheduleForDate,
-  };
-};
-
-// Components
+// --- Components ---
 const LoadingScreen = ({ theme }) => (
-  <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-    <View style={styles.loadingContainer}>
-      <ActivityIndicator size="large" color={theme.primary} />
-      <Text style={[styles.loadingText, { color: theme.text }]}>Chargement...</Text>
-    </View>
-  </SafeAreaView>
+  <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+    <ActivityIndicator size="large" color={theme.primary} />
+    <Text style={[styles.loadingText, { color: theme.text }]}>Chargement...</Text>
+  </View>
 );
 
-const CalendarDay = React.memo(({ dateInfo, selectedDate, onSelect, theme }) => {
-  const isSelected = selectedDate.toDateString() === dateInfo.fullDate.toDateString();
-  
-  return (
+const SearchBar = ({ value, onChangeText, theme }) => (
+  <View style={[styles.searchContainer, { backgroundColor: theme.surface }]}>
+    <Ionicons name="search" size={20} color={theme.textSecondary} />
+    <TextInput
+      style={[styles.searchInput, { color: theme.text }]}
+      placeholder="Rechercher un cours..."
+      placeholderTextColor={theme.textSecondary}
+      value={value}
+      onChangeText={onChangeText}
+    />
+    {value ? (
+      <TouchableOpacity onPress={() => onChangeText('')}>
+        <Ionicons name="close-circle" size={20} color={theme.textSecondary} />
+      </TouchableOpacity>
+    ) : null}
+  </View>
+);
+
+const ViewSwitcher = ({ view, setView, theme }) => (
+  <View style={styles.switcherRow}>
     <TouchableOpacity
-      style={[
-        styles.calendarDay,
-        {
-          backgroundColor: dateInfo.isToday
-            ? '#FFFFFF'
-            : isSelected
-            ? '#FFFFFF40'
-            : 'transparent'
-        }
-      ]}
-      onPress={() => onSelect(dateInfo)}
-      disabled={!dateInfo.isCurrentMonth}
-      accessibilityLabel={`${dateInfo.date} ${MONTHS[dateInfo.month]}`}
-      accessibilityRole="button"
+      style={[styles.switchButton, { backgroundColor: view === 'month' ? theme.primary : theme.surface }]}
+      onPress={() => setView('month')}
+      accessibilityLabel="Vue mensuelle"
     >
-      <Text style={[
-        styles.calendarDayText,
-        {
-          color: dateInfo.isToday
-            ? theme.primary
-            : !dateInfo.isCurrentMonth
-            ? '#FFFFFF40'
-            : isSelected
-            ? '#FFFFFF'
-            : '#FFFFFF',
-          fontWeight: dateInfo.isToday || isSelected ? 'bold' : 'normal'
-        }
-      ]}>
-        {dateInfo.date}
+      <Ionicons name="calendar-outline" size={16} color={view === 'month' ? '#fff' : theme.text} />
+      <Text style={{ color: view === 'month' ? '#fff' : theme.text, fontWeight: 'bold', marginLeft: 5 }}>
+        Mois
       </Text>
     </TouchableOpacity>
-  );
-});
-
-const ClassCard = React.memo(({ classItem, isEditMode, onEdit, onDelete, onPress, theme }) => (
-  <View style={[
-    styles.classCard,
-    { 
-      backgroundColor: theme.surface, 
-      borderLeftColor: classItem.color, 
-      opacity: isEditMode ? 0.85 : 1 
-    },
-  ]}>
     <TouchableOpacity
-      style={{ flex: 1 }}
-      activeOpacity={0.8}
-      onPress={onPress}
-      accessibilityLabel={`${classItem.subject} de ${classItem.time}`}
-      accessibilityRole="button"
+      style={[styles.switchButton, { backgroundColor: view === 'week' ? theme.primary : theme.surface }]}
+      onPress={() => setView('week')}
+      accessibilityLabel="Vue hebdomadaire"
     >
-      <View style={styles.classContent}>
-        <View style={styles.classHeader}>
-          <Text style={[styles.classSubject, { color: theme.text }]} numberOfLines={2}>
-            {classItem.subject}
-          </Text>
-          <Text style={[styles.classTime, { color: theme.textSecondary }]}>
-            {classItem.time}
-          </Text>
-        </View>
-        <View style={styles.classFooter}>
-          <View style={[styles.typeBadge, { backgroundColor: classItem.color }]}>
-            <Text style={styles.typeBadgeText}>{classItem.type}</Text>
-          </View>
-          {isEditMode && (
-            <View style={styles.classActions}>
-              <TouchableOpacity
-                style={[styles.actionButton, { backgroundColor: theme.primary }]}
-                onPress={() => onEdit(classItem)}
-                accessibilityLabel="Modifier"
-                accessibilityRole="button"
-              >
-                <Ionicons name="create-outline" size={16} color="#fff" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.actionButton, { backgroundColor: theme.error }]}
-                onPress={() => onDelete(classItem)}
-                accessibilityLabel="Supprimer"
-                accessibilityRole="button"
-              >
-                <Ionicons name="trash" size={16} color="#fff" />
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
-      </View>
+      <Ionicons name="calendar" size={16} color={view === 'week' ? '#fff' : theme.text} />
+      <Text style={{ color: view === 'week' ? '#fff' : theme.text, fontWeight: 'bold', marginLeft: 5 }}>
+        Semaine
+      </Text>
     </TouchableOpacity>
   </View>
-));
+);
 
-const HourScrollPicker = ({ selected, onSelect, label, timeSlots }) => {
-  const scrollRef = useRef(null);
-  
-  useEffect(() => {
-    if (scrollRef.current) {
-      const idx = timeSlots.indexOf(selected);
-      if (idx >= 0) {
-        setTimeout(() => {
-          scrollRef.current?.scrollTo({ y: idx * 50, animated: true });
-        }, 150);
-      }
-    }
-  }, [selected, timeSlots]);
+const WeekNavigation = ({ weekDates, onPrevious, onNext, onToday, theme }) => (
+  <View style={styles.weekNavigation}>
+    <TouchableOpacity onPress={onPrevious} style={styles.navButton}>
+      <Ionicons name="chevron-back" size={24} color={theme.primary} />
+    </TouchableOpacity>
+    
+    <View style={styles.weekInfo}>
+      <Text style={[styles.weekRange, { color: theme.text }]}>
+        {weekDates[0].getDate()} - {weekDates[6].getDate()} {MONTHS[weekDates[0].getMonth()]}
+      </Text>
+      <TouchableOpacity onPress={onToday} style={[styles.todayButton, { borderColor: theme.primary }]}>
+        <Text style={[styles.todayText, { color: theme.primary }]}>Aujourd'hui</Text>
+      </TouchableOpacity>
+    </View>
+    
+    <TouchableOpacity onPress={onNext} style={styles.navButton}>
+      <Ionicons name="chevron-forward" size={24} color={theme.primary} />
+    </TouchableOpacity>
+  </View>
+);
+
+const MonthCalendar = ({ theme, selectedDate, setSelectedDate, scheduleData }) => {
+  const now = selectedDate;
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+
+  const firstDayOfWeek = firstDay.getDay() || 7;
+  const totalCells = firstDayOfWeek - 1 + lastDay.getDate();
+  const weeks = Math.ceil(totalCells / 7);
+
+  let dayNum = 1 - (firstDayOfWeek - 1);
+
+  const hasEvents = (date) => {
+    const key = getDateKey(date);
+    return scheduleData[key] && scheduleData[key].length > 0;
+  };
 
   return (
-    <View style={styles.hourPickerContainer}>
-      <Text style={styles.formLabel}>{label}</Text>
-      <View style={styles.hourPickerWrapper}>
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.hourPickerContent}
-          ref={scrollRef}
-          style={styles.hourScrollView}
-        >
-          {timeSlots.map((time) => (
-            <TouchableOpacity
-              key={time}
-              onPress={() => onSelect(time)}
-              style={[
-                styles.hourChip,
-                { backgroundColor: selected === time ? '#4E8CEE' : '#F0F2FA' }
-              ]}
-              accessibilityLabel={time}
-              accessibilityRole="button"
-            >
-              <Text style={[
-                styles.hourChipText,
-                { color: selected === time ? '#fff' : '#4E8CEE' }
-              ]}>
-                {time}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+    <View style={[styles.monthCalendar, { backgroundColor: theme.primary }]}>
+      <View style={styles.monthHeader}>
+        <TouchableOpacity onPress={() => {
+          const prev = new Date(year, month - 1, 1);
+          setSelectedDate(prev);
+        }}>
+          <Ionicons name="chevron-back" size={24} color="#fff" />
+        </TouchableOpacity>
+        
+        <Text style={styles.monthTitle}>{MONTHS[month]} {year}</Text>
+        
+        <TouchableOpacity onPress={() => {
+          const next = new Date(year, month + 1, 1);
+          setSelectedDate(next);
+        }}>
+          <Ionicons name="chevron-forward" size={24} color="#fff" />
+        </TouchableOpacity>
       </View>
+      
+      <View style={styles.daysOfWeekRow}>
+        {DAYS.map((d, i) => <Text key={i} style={styles.dayOfWeek}>{d}</Text>)}
+      </View>
+      
+      {Array.from({ length: weeks }).map((_, wi) => (
+        <View key={wi} style={styles.weekRow}>
+          {Array.from({ length: 7 }).map((_, di) => {
+            const thisDate = new Date(year, month, dayNum);
+            const isCurrentMonth = thisDate.getMonth() === month;
+            const isToday = thisDate.toDateString() === (new Date()).toDateString();
+            const isSelected = thisDate.toDateString() === selectedDate.toDateString();
+            const hasEventsToday = isCurrentMonth && hasEvents(thisDate);
+            const d = dayNum;
+            dayNum++;
+            
+            return (
+              <TouchableOpacity
+                key={di}
+                style={[
+                  styles.dayCell,
+                  isToday && { borderColor: '#fff', borderWidth: 2 },
+                  isSelected && { backgroundColor: '#fff' }
+                ]}
+                onPress={() => isCurrentMonth && setSelectedDate(new Date(thisDate))}
+                disabled={!isCurrentMonth}
+                accessibilityLabel={`${d} ${MONTHS[month]}`}
+              >
+                <Text style={{
+                  color: isCurrentMonth ? (isSelected ? theme.primary : '#fff') : '#FFFFFF44',
+                  fontWeight: isSelected ? 'bold' : '600'
+                }}>
+                  {d > 0 && d <= lastDay.getDate() ? d : ''}
+                </Text>
+                {hasEventsToday && (
+                  <View style={styles.eventDot} />
+                )}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      ))}
     </View>
   );
 };
 
-const SubjectPicker = ({ subjects, selected, onSelect, theme }) => (
-  <View style={styles.formSection}>
-    <Text style={[styles.formLabel, { color: theme.text }]}>Matière</Text>
-    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-      <View style={styles.subjectsContainer}>
-        {subjects.map((subject) => (
-          <TouchableOpacity
-            key={subject.name}
-            style={[
-              styles.subjectChip,
-              {
-                backgroundColor: selected === subject.name ? subject.color : theme.surface,
-                borderColor: subject.color,
-              },
-            ]}
-            onPress={() => onSelect(subject.name)}
-            activeOpacity={0.7}
-            accessibilityLabel={subject.name}
-            accessibilityRole="button"
-          >
-            <Ionicons 
-              name={subject.icon} 
-              size={16} 
-              color={selected === subject.name ? '#fff' : subject.color} 
-            />
-            <Text style={[
-              styles.subjectChipText,
-              { color: selected === subject.name ? '#fff' : subject.color }
-            ]}>
-              {subject.name}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    </ScrollView>
-  </View>
-);
+const TimeDropdown = ({ value, onSelect, theme }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  return (
+    <View style={styles.dropdownContainer}>
+      <TouchableOpacity 
+        style={[styles.dropdown, { borderColor: theme.textSecondary }]}
+        onPress={() => setIsOpen(!isOpen)}
+      >
+        <Text style={{ color: theme.text }}>{value}</Text>
+        <Ionicons name={isOpen ? "chevron-up" : "chevron-down"} size={16} color={theme.textSecondary} />
+      </TouchableOpacity>
+      
+      {isOpen && (
+        <View style={[styles.dropdownList, { backgroundColor: theme.surface }]}>
+          <ScrollView style={{ maxHeight: 150 }}>
+            {HOURS.map(hour => (
+              <TouchableOpacity
+                key={hour}
+                style={styles.dropdownItem}
+                onPress={() => {
+                  onSelect(hour);
+                  setIsOpen(false);
+                }}
+              >
+                <Text style={{ color: theme.text }}>{hour}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      )}
+    </View>
+  );
+};
 
-const TypePicker = ({ types, selected, onSelect, theme }) => (
-  <View style={styles.formSection}>
-    <Text style={[styles.formLabel, { color: theme.text }]}>Type</Text>
-    <View style={styles.typeContainer}>
-      {types.map((type) => (
+const ColorPicker = ({ selectedColor, onSelect, theme }) => (
+  <View style={styles.colorPicker}>
+    <Text style={[styles.colorPickerLabel, { color: theme.text }]}>Couleur :</Text>
+    <View style={styles.colorOptions}>
+      {CLASS_COLORS.map(color => (
         <TouchableOpacity
-          key={type}
+          key={color}
           style={[
-            styles.typeChip,
-            {
-              backgroundColor: selected === type ? theme.primary : theme.surface,
-              borderColor: theme.primary,
-            },
+            styles.colorOption,
+            { backgroundColor: color },
+            selectedColor === color && styles.selectedColor
           ]}
-          onPress={() => onSelect(type)}
-          activeOpacity={0.7}
-          accessibilityLabel={type}
-          accessibilityRole="button"
-        >
-          <Text style={[
-            styles.typeChipText,
-            { color: selected === type ? '#fff' : theme.primary }
-          ]}>
-            {type}
-          </Text>
-        </TouchableOpacity>
+          onPress={() => onSelect(color)}
+        />
       ))}
     </View>
   </View>
 );
 
-// Main component
-export default function EnhancedScheduleScreen() {
+const TypePicker = ({ selectedType, onSelect, theme }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  return (
+    <View style={styles.dropdownContainer}>
+      <TouchableOpacity 
+        style={[styles.dropdown, { borderColor: theme.textSecondary }]}
+        onPress={() => setIsOpen(!isOpen)}
+      >
+        <Text style={{ color: theme.text }}>{selectedType}</Text>
+        <Ionicons name={isOpen ? "chevron-up" : "chevron-down"} size={16} color={theme.textSecondary} />
+      </TouchableOpacity>
+      
+      {isOpen && (
+        <View style={[styles.dropdownList, { backgroundColor: theme.surface }]}>
+          {CLASS_TYPES.map(type => (
+            <TouchableOpacity
+              key={type}
+              style={styles.dropdownItem}
+              onPress={() => {
+                onSelect(type);
+                setIsOpen(false);
+              }}
+            >
+              <Text style={{ color: theme.text }}>{type}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+};
+
+const WeekGrid = ({ weekDates, scheduleData, theme, onEdit, searchQuery }) => {
+  const screenWidth = Dimensions.get('window').width;
+  const colWidth = (screenWidth - 60) / 7;
+
+  const getDayBlocks = useCallback((date) => {
+    const key = getDateKey(date);
+    const blocks = (scheduleData[key] || []).map((cl, idx) => ({
+      ...cl,
+      startIdx: HOURS.indexOf(cl.start),
+      endIdx: HOURS.indexOf(cl.end),
+      _key: `${cl.subject}-${cl.start}-${cl.end}-${idx}`
+    }));
+
+    if (searchQuery) {
+      return blocks.filter(block => 
+        block.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        block.type.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    
+    return blocks;
+  }, [scheduleData, searchQuery]);
+
+  return (
+    <ScrollView horizontal style={{ flex: 1 }}>
+      <View style={{ flexDirection: 'row' }}>
+        {/* Time labels */}
+        <View style={styles.timeCol}>
+          {HOURS.map((hour, i) => (
+            <View key={hour} style={styles.timeCell}>
+              <Text style={{ fontSize: 12, color: theme.textSecondary }}>{hour}</Text>
+            </View>
+          ))}
+        </View>
+        
+        {/* Days columns */}
+        {weekDates.map((date, dayIdx) => {
+          const blocks = getDayBlocks(date);
+          const isToday = date.toDateString() === (new Date()).toDateString();
+          
+          return (
+            <View key={dayIdx} style={[styles.dayCol, { width: colWidth }]}>
+              <View style={[styles.dayHeader, isToday && { backgroundColor: theme.primary + '20' }]}>
+                <Text style={{ 
+                  fontWeight: 'bold', 
+                  color: isToday ? theme.primary : theme.text 
+                }}>
+                  {DAYS[dayIdx]}
+                </Text>
+                <Text style={{ 
+                  fontSize: 13, 
+                  color: isToday ? theme.primary : theme.text 
+                }}>
+                  {date.getDate()}
+                </Text>
+              </View>
+              
+              <View style={{ flex: 1 }}>
+                {HOURS.map((hour, hIdx) => {
+                  const block = blocks.find(b => b.startIdx === hIdx);
+                  
+                  if (block) {
+                    const duration = Math.max(block.endIdx - block.startIdx, 1);
+                    const isHighlighted = searchQuery && (
+                      block.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      block.type.toLowerCase().includes(searchQuery.toLowerCase())
+                    );
+                    
+                    return (
+                      <TouchableOpacity
+                        key={block._key}
+                        style={[
+                          styles.classBlock,
+                          {
+                            backgroundColor: block.color,
+                            height: 38 * duration + (duration - 1),
+                            opacity: searchQuery && !isHighlighted ? 0.3 : 1,
+                          }
+                        ]}
+                        onLongPress={() => onEdit && onEdit(block, date)}
+                        delayLongPress={350}
+                        accessibilityLabel={`${block.subject} de ${block.start} à ${block.end}`}
+                      >
+                        <Text style={styles.classBlockSubject}>
+                          {block.subject}
+                        </Text>
+                        <Text style={styles.classBlockTime}>
+                          {block.start} - {block.end}
+                        </Text>
+                        <Text style={styles.classBlockType}>
+                          {block.type}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  }
+                  
+                  if (!blocks.some(b => hIdx > b.startIdx && hIdx < b.endIdx)) {
+                    return <View key={hour} style={styles.emptyCell} />;
+                  }
+                  return null;
+                })}
+              </View>
+            </View>
+          );
+        })}
+      </View>
+    </ScrollView>
+  );
+};
+
+const EmptyState = ({ theme, onAdd }) => (
+  <View style={styles.emptyState}>
+    <Ionicons name="calendar-outline" size={64} color={theme.textSecondary} />
+    <Text style={[styles.emptyStateTitle, { color: theme.text }]}>
+      Aucun cours planifié
+    </Text>
+    <Text style={[styles.emptyStateSubtitle, { color: theme.textSecondary }]}>
+      Ajoutez votre premier cours pour commencer
+    </Text>
+    <TouchableOpacity 
+      style={[styles.emptyStateButton, { backgroundColor: theme.primary }]}
+      onPress={onAdd}
+    >
+      <Text style={styles.emptyStateButtonText}>Ajouter un cours</Text>
+    </TouchableOpacity>
+  </View>
+);
+
+export default function ScheduleScreen() {
   const { theme } = useContext(ThemeContext);
   const { user } = useUser();
-  const router = useRouter();
-  const { scheduleData, loading, saveScheduleData, getScheduleForDate } = useScheduleData();
-
-  // Memoized values
-  const isDefLevel = useMemo(() => user?.level === 'DEF', [user?.level]);
-  const timeSlots = useMemo(() => generateTimeSlots(), []);
-  const subjects = useMemo(() => 
-    SUBJECT_CONFIGS[isDefLevel ? 'DEF' : 'default'], 
-    [isDefLevel]
-  );
 
   // State
-  const [currentDate, setCurrentDate] = useState(() => new Date());
+  const [scheduleData, setScheduleData] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [view, setView] = useState('month');
   const [selectedDate, setSelectedDate] = useState(() => new Date());
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [showQuickAdd, setShowQuickAdd] = useState(false);
-  const [editingClass, setEditingClass] = useState(null);
-  const [quickForm, setQuickForm] = useState({
+  const [searchQuery, setSearchQuery] = useState('');
+  const [modalVisible, setModalVisible] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+  const [editingDateKey, setEditingDateKey] = useState(null);
+
+  const weekDates = useMemo(() => getWeekDates(selectedDate), [selectedDate]);
+
+  // Form state
+  const [form, setForm] = useState({
     subject: '',
-    startTime: '07:00',
-    endTime: '08:00',
     type: 'Cours',
+    start: '07:00',
+    end: '08:00',
+    color: '#42A5F5',
   });
 
-  // Memoized calendar data
-  const calendarData = useMemo(() => 
-    getMonthCalendar(currentDate.getFullYear(), currentDate.getMonth()),
-    [currentDate]
-  );
-
-  const classesToday = useMemo(() => 
-    getScheduleForDate(selectedDate),
-    [selectedDate, getScheduleForDate]
-  );
-
-  // Handlers
-  const navigateMonth = useCallback((direction) => {
-    setCurrentDate(prev => {
-      const newDate = new Date(prev);
-      newDate.setMonth(prev.getMonth() + direction);
-      return newDate;
-    });
+  // Load data
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const stored = await AsyncStorage.getItem('userSchedule');
+        setScheduleData(stored ? JSON.parse(stored) : {});
+      } catch (error) {
+        console.error('Error loading schedule:', error);
+        ToastAndroid.show('Erreur de chargement', ToastAndroid.SHORT);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
   }, []);
 
-  const selectDate = useCallback((dateInfo) => {
-    setSelectedDate(dateInfo.fullDate);
-  }, []);
+  const saveScheduleData = async (data) => {
+    try {
+      setScheduleData(data);
+      await AsyncStorage.setItem('userSchedule', JSON.stringify(data));
+    } catch (error) {
+      console.error('Error saving schedule:', error);
+      ToastAndroid.show('Erreur de sauvegarde', ToastAndroid.SHORT);
+    }
+  };
 
-  const resetForm = useCallback(() => {
-    setQuickForm({
-      subject: subjects[0]?.name || '',
-      startTime: '07:00',
-      endTime: '08:00',
+  const openAddModal = () => {
+    setEditingItem(null);
+    setEditingDateKey(getDateKey(selectedDate));
+    setForm({
+      subject: '',
       type: 'Cours',
+      start: '07:00',
+      end: '08:00',
+      color: '#42A5F5',
     });
-  }, [subjects]);
+    setModalVisible(true);
+  };
 
-  const handleCloseQuickAdd = useCallback(() => {
-    setShowQuickAdd(false);
-    setEditingClass(null);
-    setTimeout(resetForm, 350);
-  }, [resetForm]);
+  const openEditModal = (item, date) => {
+    setEditingItem(item);
+    setEditingDateKey(getDateKey(date));
+    setForm({
+      subject: item.subject,
+      type: item.type,
+      start: item.start,
+      end: item.end,
+      color: item.color,
+    });
+    setModalVisible(true);
+  };
 
-  const handleOpenQuickAdd = useCallback(() => {
-    resetForm();
-    setShowQuickAdd(true);
-    setEditingClass(null);
-  }, [resetForm]);
-
-  const validateForm = useCallback(() => {
-    if (!quickForm.subject || !quickForm.type || !quickForm.startTime || !quickForm.endTime) {
-      Alert.alert('Erreur', 'Veuillez remplir tous les champs.');
+  const validateForm = () => {
+    if (!form.subject.trim()) {
+      Alert.alert('Erreur', 'Le nom de la matière est requis');
       return false;
     }
-
-    const startIdx = timeSlots.indexOf(quickForm.startTime);
-    const endIdx = timeSlots.indexOf(quickForm.endTime);
-
-    if (startIdx === -1 || endIdx === -1) {
-      Alert.alert('Erreur', 'Sélectionnez des heures valides.');
+    if (!isValidTimeRange(form.start, form.end)) {
+      Alert.alert('Erreur', 'L\'heure de fin doit être après l\'heure de début');
       return false;
     }
-
-    if (endIdx <= startIdx) {
-      Alert.alert('Erreur', "L'heure de fin doit être après l'heure de début.");
-      return false;
-    }
-
     return true;
-  }, [quickForm, timeSlots]);
+  };
 
-  const checkTimeConflict = useCallback((startTime, endTime, excludeId = null) => {
-    const dateKey = getDateKey(selectedDate);
-    const existingClasses = scheduleData[dateKey] || [];
-    
-    return existingClasses.some((c) => {
-      if (excludeId && c.id === excludeId) return false;
-      
-      const [startA, endA] = c.time.split('-').map((t) => timeSlots.indexOf(t));
-      const [startB, endB] = [timeSlots.indexOf(startTime), timeSlots.indexOf(endTime)];
-      
-      return (
-        (startB < endA && startB >= startA) ||
-        (endB > startA && endB <= endA) ||
-        (startB <= startA && endB >= endA)
-      );
-    });
-  }, [selectedDate, scheduleData, timeSlots]);
-
-  const saveQuickClass = useCallback(() => {
+  const saveClass = () => {
     if (!validateForm()) return;
-
-    const { subject, startTime, endTime, type } = quickForm;
-    const subjectInfo = subjects.find((s) => s.name === subject) || subjects[0];
-    const dateKey = getDateKey(selectedDate);
-    let updatedSchedule = { ...scheduleData };
-
-    if (editingClass) {
-      // Check conflict excluding current class
-      if (checkTimeConflict(startTime, endTime, editingClass.id)) {
-        Alert.alert('Conflit', "Ce créneau horaire chevauche une autre activité.");
-        return;
-      }
-
-      // Update existing class
-      updatedSchedule[dateKey] = (updatedSchedule[dateKey] || []).map((c) =>
-        c.id === editingClass.id
-          ? {
-              ...c,
-              time: `${startTime}-${endTime}`,
-              subject,
-              type,
-              color: subjectInfo.color,
-            }
-          : c
+    
+    let updated = { ...scheduleData };
+    
+    if (editingItem) {
+      updated[editingDateKey] = (updated[editingDateKey] || []).map(c =>
+        c === editingItem ? { ...form } : c
       );
-      ToastAndroid.show('Cours modifié avec succès', ToastAndroid.SHORT);
+      ToastAndroid.show('Cours modifié', ToastAndroid.SHORT);
     } else {
-      // Check conflict for new class
-      if (checkTimeConflict(startTime, endTime)) {
-        Alert.alert('Conflit', "Ce créneau horaire chevauche une autre activité.");
-        return;
-      }
-
-      // Add new class
-      const newClass = {
-        id: `${Date.now()}-${Math.random()}`,
-        time: `${startTime}-${endTime}`,
-        subject,
-        type,
-        color: subjectInfo.color,
-      };
-      
-      if (!updatedSchedule[dateKey]) updatedSchedule[dateKey] = [];
-      updatedSchedule[dateKey].push(newClass);
-      updatedSchedule[dateKey].sort((a, b) => a.time.localeCompare(b.time));
-      ToastAndroid.show('Cours ajouté avec succès', ToastAndroid.SHORT);
+      if (!updated[editingDateKey]) updated[editingDateKey] = [];
+      updated[editingDateKey].push({ ...form });
+      ToastAndroid.show('Cours ajouté', ToastAndroid.SHORT);
     }
-
-    saveScheduleData(updatedSchedule);
+    
+    saveScheduleData(updated);
+    setModalVisible(false);
     Vibration.vibrate(50);
-    handleCloseQuickAdd();
-  }, [quickForm, validateForm, subjects, selectedDate, scheduleData, editingClass, checkTimeConflict, saveScheduleData, handleCloseQuickAdd]);
+  };
 
-  const handleEditClass = useCallback((classItem) => {
-    setEditingClass(classItem);
-    setQuickForm({
-      subject: classItem.subject,
-      startTime: classItem.time.split('-')[0],
-      endTime: classItem.time.split('-')[1],
-      type: classItem.type,
-    });
-    setShowQuickAdd(true);
-  }, []);
-
-  const deleteClass = useCallback((classItem) => {
+  const deleteClass = () => {
     Alert.alert(
       'Supprimer le cours',
-      `Supprimer ${classItem.subject} ?`,
+      'Êtes-vous sûr de vouloir supprimer ce cours ?',
       [
         { text: 'Annuler', style: 'cancel' },
         {
           text: 'Supprimer',
           style: 'destructive',
           onPress: () => {
-            const dateKey = getDateKey(selectedDate);
             let updated = { ...scheduleData };
-            updated[dateKey] = (updated[dateKey] || []).filter((c) => c.id !== classItem.id);
+            updated[editingDateKey] = (updated[editingDateKey] || []).filter(c => c !== editingItem);
             saveScheduleData(updated);
-            ToastAndroid.show('Supprimé', ToastAndroid.SHORT);
-          },
-        },
+            setModalVisible(false);
+            ToastAndroid.show('Cours supprimé', ToastAndroid.SHORT);
+            Vibration.vibrate(40);
+          }
+        }
       ]
     );
-  }, [selectedDate, scheduleData, saveScheduleData]);
+  };
 
-  const handleClassPress = useCallback((classItem) => {
-    if (!isEditMode) {
-      const level = isDefLevel ? 'DEF' : user?.level;
-      const subjectPath = classItem.subject.replace(/\s+/g, '_');
-      router.push(`/courses/${level}/${subjectPath}`);
-    }
-  }, [isEditMode, isDefLevel, user?.level, router]);
+  const navigateWeek = (direction) => {
+    const newDate = new Date(selectedDate);
+    newDate.setDate(selectedDate.getDate() + (direction * 7));
+    setSelectedDate(newDate);
+  };
 
-  // Format functions
-  const getMonthYearText = useCallback(() => 
-    `${MONTHS[currentDate.getMonth()]} ${currentDate.getFullYear()}`,
-    [currentDate]
-  );
+  const goToToday = () => {
+    setSelectedDate(new Date());
+  };
+
+  const hasAnyClasses = Object.keys(scheduleData).some(key => scheduleData[key]?.length > 0);
 
   if (loading) {
     return <LoadingScreen theme={theme} />;
@@ -593,221 +599,165 @@ export default function EnhancedScheduleScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      {/* Month Calendar */}
-      <View style={[styles.calendarContainer, { backgroundColor: theme.primary }]}>
-        {/* Calendar Header */}
-        <View style={styles.calendarHeader}>
-          <TouchableOpacity 
-            style={styles.navButton} 
-            onPress={() => navigateMonth(-1)}
-            accessibilityLabel="Mois précédent"
-            accessibilityRole="button"
-          >
-            <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
-          </TouchableOpacity>
-          <Text style={styles.monthYearText}>
-            {getMonthYearText()}
-          </Text>
-          <TouchableOpacity 
-            style={styles.navButton} 
-            onPress={() => navigateMonth(1)}
-            accessibilityLabel="Mois suivant"
-            accessibilityRole="button"
-          >
-            <Ionicons name="chevron-forward" size={24} color="#FFFFFF" />
-          </TouchableOpacity>
-        </View>
+      <ViewSwitcher view={view} setView={setView} theme={theme} />
+      
+      {view === 'week' && (
+        <SearchBar 
+          value={searchQuery} 
+          onChangeText={setSearchQuery} 
+          theme={theme} 
+        />
+      )}
 
-        {/* Days of Week */}
-        <View style={styles.daysOfWeekHeader}>
-          {WEEKDAYS.map((day, index) => (
-            <Text key={index} style={styles.dayOfWeekText}>
-              {day}
-            </Text>
-          ))}
-        </View>
-
-        {/* Calendar Grid */}
-        <View style={styles.calendarGrid}>
-          {calendarData.map((week, weekIndex) => (
-            <View key={weekIndex} style={styles.calendarWeek}>
-              {week.map((dateInfo, dayIndex) => (
-                <CalendarDay
-                  key={dayIndex}
-                  dateInfo={dateInfo}
-                  selectedDate={selectedDate}
-                  onSelect={selectDate}
-                  theme={theme}
-                />
-              ))}
-            </View>
-          ))}
-        </View>
-      </View>
-
-      {/* Day Schedule */}
-      <View style={styles.dayScheduleContainer}>
-        {/* Header */}
-        <View style={styles.dayScheduleHeader}>
-          <View>
-            <Text style={[styles.todayLabel, { color: theme.textSecondary }]}>
-              {formatDateHeader(selectedDate)}
-            </Text>
-            <Text style={[styles.activitiesCount, { color: theme.text }]}>
-              {classesToday.length} Activité{classesToday.length !== 1 ? 's' : ''}
-            </Text>
-          </View>
-          <View style={styles.dayScheduleActions}>
-            <TouchableOpacity 
-              style={[
-                styles.editButton, 
-                { backgroundColor: isEditMode ? theme.primary : 'transparent' }
-              ]} 
-              onPress={() => setIsEditMode(v => !v)}
-              accessibilityLabel={isEditMode ? 'Terminer modification' : 'Modifier planning'}
-              accessibilityRole="button"
-            >
-              <Ionicons 
-                name={isEditMode ? 'checkmark' : 'pencil'} 
-                size={20} 
-                color={isEditMode ? '#fff' : theme.text} 
-              />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Classes List */}
-        <ScrollView 
-          style={styles.classesList}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.classesListContent}
-        >
-          {classesToday.length > 0 ? (
-            <View style={styles.classesContainer}>
-              {classesToday.map((classItem) => (
-                <ClassCard
-                  key={classItem.id}
-                  classItem={classItem}
-                  isEditMode={isEditMode}
-                  onEdit={handleEditClass}
-                  onDelete={deleteClass}
-                  onPress={() => handleClassPress(classItem)}
-                  theme={theme}
-                />
-              ))}
-            </View>
+      {view === 'month' ? (
+        <MonthCalendar
+          theme={theme}
+          selectedDate={selectedDate}
+          setSelectedDate={setSelectedDate}
+          scheduleData={scheduleData}
+        />
+      ) : (
+        <View style={{ flex: 1, backgroundColor: '#fff' }}>
+          <WeekNavigation
+            weekDates={weekDates}
+            onPrevious={() => navigateWeek(-1)}
+            onNext={() => navigateWeek(1)}
+            onToday={goToToday}
+            theme={theme}
+          />
+          
+          {hasAnyClasses ? (
+            <WeekGrid
+              weekDates={weekDates}
+              scheduleData={scheduleData}
+              theme={theme}
+              onEdit={openEditModal}
+              searchQuery={searchQuery}
+            />
           ) : (
-            <View style={[styles.emptyState, { backgroundColor: theme.surface }]}>
-              <Ionicons name="calendar-outline" size={48} color={theme.textSecondary} />
-              <Text style={[styles.emptyStateText, { color: theme.textSecondary }]}>
-                Aucune activité prévue
-              </Text>
-              <TouchableOpacity
-                style={[styles.addClassButton, { backgroundColor: theme.primary }]}
-                onPress={handleOpenQuickAdd}
-                accessibilityLabel="Ajouter une activité"
-                accessibilityRole="button"
-              >
-                <Ionicons name="add" size={20} color="#fff" style={{ marginRight: 8 }} />
-                <Text style={styles.addClassButtonText}>Ajouter une activité</Text>
-              </TouchableOpacity>
-            </View>
+            <EmptyState theme={theme} onAdd={openAddModal} />
           )}
-          <View style={styles.bottomPadding} />
-        </ScrollView>
-      </View>
+        </View>
+      )}
 
-      {/* Quick Add/Edit Modal */}
+      {/* FAB */}
+      <TouchableOpacity
+        style={[styles.fab, { backgroundColor: theme.primary }]}
+        onPress={openAddModal}
+        accessibilityLabel="Ajouter un cours"
+      >
+        <Ionicons name="add" size={28} color="#fff" />
+      </TouchableOpacity>
+
+      {/* Modal */}
       <Modal 
-        visible={showQuickAdd} 
+        visible={modalVisible} 
         animationType="slide" 
-        transparent={true} 
-        onRequestClose={handleCloseQuickAdd}
+        transparent 
+        onRequestClose={() => setModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContainer, { backgroundColor: theme.background }]}>
-            <KeyboardAvoidingView 
-              style={styles.modalKeyboardView} 
-              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            >
-              {/* Header */}
-              <View style={[styles.modalHeader, { borderBottomColor: theme.border }]}>
-                <TouchableOpacity onPress={handleCloseQuickAdd}>
-                  <Text style={[styles.modalCancel, { color: theme.text }]}>Annuler</Text>
-                </TouchableOpacity>
+          <KeyboardAvoidingView 
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={{ flex: 1, justifyContent: 'flex-end' }}
+          >
+            <View style={[styles.modalContent, { backgroundColor: theme.surface }]}>
+              <View style={styles.modalHeader}>
                 <Text style={[styles.modalTitle, { color: theme.text }]}>
-                  {editingClass ? 'Modifier' : 'Nouveau cours'}
+                  {editingItem ? "Modifier" : "Ajouter"} un cours
                 </Text>
-                <TouchableOpacity onPress={saveQuickClass}>
-                  <Text style={[styles.modalSave, { color: theme.primary }]}>Sauver</Text>
+                <TouchableOpacity onPress={() => setModalVisible(false)}>
+                  <Ionicons name="close" size={24} color={theme.textSecondary} />
                 </TouchableOpacity>
               </View>
 
-              <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
-                {/* Subject Selection */}
-                <SubjectPicker
-                  subjects={subjects}
-                  selected={quickForm.subject}
-                  onSelect={(subject) => setQuickForm(prev => ({ ...prev, subject }))}
-                  theme={theme}
-                />
+              <ScrollView style={styles.modalForm}>
+                <View style={styles.formGroup}>
+                  <Text style={[styles.formLabel, { color: theme.text }]}>Matière *</Text>
+                  <TextInput
+                    style={[styles.formInput, { 
+                      backgroundColor: theme.background, 
+                      color: theme.text,
+                      borderColor: theme.textSecondary + '40'
+                    }]}
+                    placeholder="Nom de la matière"
+                    placeholderTextColor={theme.textSecondary}
+                    value={form.subject}
+                    onChangeText={t => setForm(f => ({ ...f, subject: t }))}
+                  />
+                </View>
 
-                {/* Type Selection */}
-                <TypePicker
-                  types={CLASS_TYPES}
-                  selected={quickForm.type}
-                  onSelect={(type) => setQuickForm(prev => ({ ...prev, type }))}
-                  theme={theme}
-                />
+                <View style={styles.formGroup}>
+                  <Text style={[styles.formLabel, { color: theme.text }]}>Type</Text>
+                  <TypePicker
+                    selectedType={form.type}
+                    onSelect={type => setForm(f => ({ ...f, type }))}
+                    theme={theme}
+                  />
+                </View>
 
-                {/* Time Selection */}
-                <View style={styles.formRow}>
-                  <View style={{ flex: 1 }}>
-                    <HourScrollPicker
-                      selected={quickForm.startTime}
-                      onSelect={(startTime) => {
-                        const startIdx = timeSlots.indexOf(startTime);
-                        let endIdx = timeSlots.indexOf(quickForm.endTime);
-                        // If endTime is before or equal to new startTime, auto-advance to next slot
-                        if (endIdx <= startIdx) {
-                          endIdx = Math.min(startIdx + 1, timeSlots.length - 1);
-                        }
-                        setQuickForm(prev => ({
-                          ...prev,
-                          startTime,
-                          endTime: timeSlots[endIdx]
-                        }));
-                      }}
-                      label="Début"
-                      timeSlots={timeSlots}
+                <View style={styles.timeRow}>
+                  <View style={[styles.formGroup, { flex: 1, marginRight: 10 }]}>
+                    <Text style={[styles.formLabel, { color: theme.text }]}>Début</Text>
+                    <TimeDropdown
+                      value={form.start}
+                      onSelect={start => setForm(f => ({ ...f, start }))}
+                      theme={theme}
                     />
                   </View>
-                  <View style={{ flex: 1 }}>
-                    <HourScrollPicker
-                      selected={quickForm.endTime}
-                      onSelect={(endTime) => setQuickForm(prev => ({ ...prev, endTime }))}
-                      label="Fin"
-                      timeSlots={timeSlots}
+                  
+                  <View style={[styles.formGroup, { flex: 1, marginLeft: 10 }]}>
+                    <Text style={[styles.formLabel, { color: theme.text }]}>Fin</Text>
+                    <TimeDropdown
+                      value={form.end}
+                      onSelect={end => setForm(f => ({ ...f, end }))}
+                      theme={theme}
                     />
                   </View>
                 </View>
+
+                <ColorPicker
+                  selectedColor={form.color}
+                  onSelect={color => setForm(f => ({ ...f, color }))}
+                  theme={theme}
+                />
               </ScrollView>
-            </KeyboardAvoidingView>
-          </View>
+
+              <View style={styles.modalFooter}>
+                {editingItem && (
+                  <TouchableOpacity 
+                    onPress={deleteClass}
+                    style={styles.deleteButton}
+                  >
+                    <Ionicons name="trash" size={20} color="#EF5350" />
+                    <Text style={styles.deleteButtonText}>Supprimer</Text>
+                  </TouchableOpacity>
+                )}
+                
+                <View style={styles.modalActions}>
+                  <TouchableOpacity 
+                    onPress={() => setModalVisible(false)}
+                    style={styles.cancelButton}
+                  >
+                    <Text style={[styles.cancelButtonText, { color: theme.textSecondary }]}>
+                      Annuler
+                    </Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity 
+                    onPress={saveClass}
+                    style={[styles.saveButton, { backgroundColor: theme.primary }]}
+                  >
+                    <Text style={styles.saveButtonText}>
+                      {editingItem ? "Sauvegarder" : "Ajouter"}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
-
-      {/* FAB */}
-      {!isEditMode && (
-        <TouchableOpacity 
-          style={[styles.fab, { backgroundColor: theme.primary }]} 
-          onPress={handleOpenQuickAdd}
-          accessibilityLabel="Ajouter un cours"
-          accessibilityRole="button"
-        >
-          <Ionicons name="add" size={24} color="#fff" />
-        </TouchableOpacity>
-      )}
     </SafeAreaView>
   );
 }
@@ -815,250 +765,376 @@ export default function EnhancedScheduleScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   
-  // Calendar
-  calendarContainer: {
-    height: '45%',
-    paddingTop: 50,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
-  },
-  calendarHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  // Loading
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 20,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+  },
+
+  // Search
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    margin: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    elevation: 2,
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: 8,
+    fontSize: 16,
+  },
+
+  // Switcher
+  switcherRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    gap: 14,
+  },
+  switchButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 22,
+    paddingHorizontal: 20,
+    paddingVertical: 7,
+    elevation: 2,
+  },
+
+  // Week Navigation
+  weekNavigation: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#fff',
   },
   navButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    padding: 8,
+  },
+  weekInfo: {
     alignItems: 'center',
-    justifyContent: 'center',
   },
-  monthYearText: {
-    fontSize: 18,
+  weekRange: {
+    fontSize: 16,
     fontWeight: 'bold',
-    color: '#FFFFFF',
-    letterSpacing: 1,
+    marginBottom: 4,
   },
-  daysOfWeekHeader: {
-    flexDirection: 'row',
-    marginBottom: 10,
+  todayButton: {
+    borderWidth: 1,
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
   },
-  dayOfWeekText: {
-    flex: 1,
-    textAlign: 'center',
+  todayText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#FFFFFF80',
-    marginBottom: 8,
   },
-  calendarGrid: { gap: 4 },
-  calendarWeek: { flexDirection: 'row', gap: 4 },
-  calendarDay: {
-    flex: 1,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  calendarDayText: { fontSize: 16, fontWeight: '500' },
 
-  // Day Schedule
-  dayScheduleContainer: { flex: 1, paddingTop: 20 },
-  dayScheduleHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    paddingHorizontal: 20,
-    marginBottom: 20,
+  // Month calendar
+  monthCalendar: { 
+    borderRadius: 24, 
+    margin: 14, 
+    paddingBottom: 6, 
+    paddingTop: 4,
+    elevation: 4,
   },
-  todayLabel: { fontSize: 14, fontWeight: '500', marginBottom: 4 },
-  activitiesCount: { fontSize: 24, fontWeight: 'bold' },
-  dayScheduleActions: { flexDirection: 'row', gap: 8 },
-  editButton: {
-    width: 40, 
-    height: 40, 
-    borderRadius: 20,
+  monthHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+  },
+  monthTitle: { 
+    textAlign: 'center', 
+    fontWeight: 'bold', 
+    fontSize: 19, 
+    color: '#fff',
+  },
+  daysOfWeekRow: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-around', 
+    marginBottom: 6 
+  },
+  dayOfWeek: { 
+    color: '#fff', 
+    fontWeight: 'bold', 
+    fontSize: 12, 
+    width: 30, 
+    textAlign: 'center' 
+  },
+  weekRow: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-around' 
+  },
+  dayCell: {
+    width: 30, 
+    height: 32, 
     alignItems: 'center', 
     justifyContent: 'center',
-    borderWidth: 1, 
-    borderColor: '#00000020',
+    borderRadius: 8, 
+    margin: 2,
+    position: 'relative',
   },
-  
-  // Classes List
-  classesList: { flex: 1, paddingHorizontal: 20 },
-  classesListContent: { paddingBottom: 100 },
-  classesContainer: { gap: 12 },
-  classCard: {
-    borderRadius: 16, 
-    padding: 16, 
-    borderLeftWidth: 4,
-    shadowColor: '#000', 
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1, 
-    shadowRadius: 8, 
-    elevation: 3,
-    marginBottom: 12,
+  eventDot: {
+    position: 'absolute',
+    bottom: 2,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#fff',
   },
-  classContent: { flex: 1 },
-  classHeader: {
-    flexDirection: 'row', 
-    justifyContent: 'space-between',
-    alignItems: 'flex-start', 
+
+  // Week grid
+  timeCol: { 
+    width: 46, 
+    marginRight: 3, 
+    alignItems: 'flex-end', 
+    marginTop: 36 
+  },
+  timeCell: { 
+    height: 39, 
+    justifyContent: 'center', 
+    alignItems: 'flex-end', 
+    paddingRight: 6 
+  },
+  dayCol: { 
+    flex: 1, 
+    borderLeftWidth: 0.5, 
+    borderColor: '#E0E0E0', 
+    backgroundColor: '#FAFAFA' 
+  },
+  dayHeader: {
+    height: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderBottomWidth: 0.5,
+    borderColor: '#E0E0E0',
+    backgroundColor: '#f5f8ff',
+  },
+  emptyCell: {
+    height: 39,
+    borderBottomWidth: 0.5,
+    borderColor: '#E0E0E0',
+    backgroundColor: '#fff'
+  },
+  classBlock: {
+    marginTop: 1,
+    marginBottom: 1,
+    marginHorizontal: 2,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 0.5,
+    borderColor: '#ddd',
+    padding: 4,
+    elevation: 2,
+  },
+  classBlockSubject: {
+    color: '#333',
+    fontWeight: 'bold',
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  classBlockTime: {
+    fontSize: 10,
+    textAlign: 'center',
+    marginTop: 2,
+  },
+  classBlockType: {
+    fontSize: 9,
+    textAlign: 'center',
+    opacity: 0.8,
+  },
+
+  // Empty state
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  emptyStateTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginTop: 16,
     marginBottom: 8,
   },
-  classSubject: { fontSize: 18, fontWeight: 'bold', flex: 1, marginRight: 8 },
-  classTime: { fontSize: 14, fontWeight: '600' },
-  classFooter: {
-    flexDirection: 'row', 
-    justifyContent: 'space-between',
-    alignItems: 'center', 
-    marginTop: 8,
+  emptyStateSubtitle: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 24,
   },
-  typeBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
-  typeBadgeText: { color: '#fff', fontSize: 12, fontWeight: 'bold' },
-  classActions: { flexDirection: 'row', gap: 8 },
-  actionButton: {
-    width: 32, 
-    height: 32, 
-    borderRadius: 16,
-    alignItems: 'center', 
-    justifyContent: 'center',
-  },
-  
-  // Empty State
-  emptyState: {
-    padding: 40, 
-    alignItems: 'center', 
-    borderRadius: 16, 
-    marginVertical: 20,
-  },
-  emptyStateText: { 
-    fontSize: 16, 
-    textAlign: 'center', 
-    marginTop: 16, 
-    marginBottom: 24 
-  },
-  addClassButton: {
-    flexDirection: 'row', 
-    paddingHorizontal: 20, 
+  emptyStateButton: {
+    paddingHorizontal: 24,
     paddingVertical: 12,
-    borderRadius: 24, 
-    alignItems: 'center',
+    borderRadius: 24,
   },
-  addClassButtonText: { color: '#fff', fontWeight: '600' },
-  
+  emptyStateButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+
   // Modal
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
-  modalContainer: { 
-    height: '60%',
+  modalContent: {
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
+    maxHeight: '80%',
+    elevation: 10,
   },
-  modalKeyboardView: { flex: 1 },
   modalHeader: {
-    flexDirection: 'row', 
-    justifyContent: 'space-between',
-    alignItems: 'center', 
-    paddingHorizontal: 20, 
-    paddingVertical: 16, 
-    borderBottomWidth: 1,
-  },
-  modalCancel: { fontSize: 16 },
-  modalTitle: { fontSize: 18, fontWeight: 'bold' },
-  modalSave: { fontSize: 16, fontWeight: '600' },
-  modalContent: { flex: 1, padding: 20 },
-  
-  // Form
-  formSection: { marginBottom: 20 },
-  formLabel: { 
-    fontSize: 16, 
-    fontWeight: '600', 
-    marginBottom: 8,
-    color: '#333'
-  },
-  formRow: { flexDirection: 'row', gap: 16, marginBottom: 20 },
-  
-  // Subjects
-  subjectsContainer: { flexDirection: 'row', gap: 8 },
-  subjectChip: {
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    paddingHorizontal: 12, 
-    paddingVertical: 8,
-    borderRadius: 20, 
-    borderWidth: 1, 
-    gap: 6, 
-    marginRight: 8,
-  },
-  subjectChipText: { fontSize: 14, fontWeight: '500' },
-  
-  // Types
-  typeContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  typeChip: { 
-    paddingHorizontal: 16, 
-    paddingVertical: 8, 
-    borderRadius: 20, 
-    borderWidth: 1 
-  },
-  typeChipText: { fontSize: 14, fontWeight: '500' },
-  
-  // Hour Picker
-  hourPickerContainer: { marginBottom: 12 },
-  hourPickerWrapper: {
-    height: 120,
-    borderRadius: 12,
-    backgroundColor: '#F8F9FA',
-    padding: 4,
-  },
-  hourScrollView: {
-    flex: 1,
-  },
-  hourPickerContent: { 
-    paddingVertical: 4,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
   },
-  hourChip: {
-    borderRadius: 12, 
-    paddingHorizontal: 16, 
-    paddingVertical: 8, 
-    marginVertical: 2,
-    alignItems: 'center', 
-    justifyContent: 'center',
-    minWidth: 80,
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  modalForm: {
+    padding: 20,
+  },
+  formGroup: {
+    marginBottom: 20,
+  },
+  formLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  formInput: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+  },
+  timeRow: {
+    flexDirection: 'row',
+  },
+
+  // Dropdowns
+  dropdownContainer: {
+    position: 'relative',
+  },
+  dropdown: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  dropdownList: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 8,
+    elevation: 4,
+    zIndex: 1000,
+  },
+  dropdownItem: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+
+  // Color picker
+  colorPicker: {
+    marginBottom: 20,
+  },
+  colorPickerLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 12,
+  },
+  colorOptions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  colorOption: {
+    width: 40,
     height: 40,
+    borderRadius: 20,
+    borderWidth: 3,
+    borderColor: 'transparent',
   },
-  hourChipText: { fontWeight: 'bold', fontSize: 15 },
-  
+  selectedColor: {
+    borderColor: '#333',
+  },
+
+  // Modal footer
+  modalFooter: {
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
+  },
+  deleteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  deleteButtonText: {
+    color: '#EF5350',
+    fontWeight: 'bold',
+    marginLeft: 8,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 16,
+  },
+  cancelButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  saveButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+
   // FAB
   fab: {
-    position: 'absolute', 
-    bottom: 20, 
-    right: 20, 
-    width: 56, 
+    position: 'absolute',
+    bottom: 80,
+    right: 20,
+    width: 56,
     height: 56,
-    borderRadius: 28, 
-    alignItems: 'center', 
+    borderRadius: 28,
+    alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000', 
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3, 
-    shadowRadius: 8, 
-    elevation: 8,
+    elevation: 4,
   },
-  
-  // Loading
-  loadingContainer: { 
-    flex: 1, 
-    alignItems: 'center', 
-    justifyContent: 'center',
-    gap: 16
-  },
-  loadingText: { fontSize: 16 },
-  bottomPadding: { height: 40 },
 });
