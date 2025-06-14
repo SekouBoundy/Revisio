@@ -275,18 +275,27 @@ const WeekView = ({ weekDates, scheduleData, onClassPress, onClassLongPress, fil
   }, [weekDates, scheduleData, filterType]);
 
   return (
-    <ScrollView style={styles.weekViewContainer}>
-      {/* Time column header */}
-      <View style={styles.weekHeader}>
+    <ScrollView style={styles.weekViewContainer} showsVerticalScrollIndicator={false}>
+      {/* Improved Week Header */}
+      <View style={[styles.weekHeader, { backgroundColor: theme.surface }]}>
         <View style={styles.timeHeaderCell} />
         {weekDates.map((date, index) => {
           const isToday = date.toDateString() === new Date().toDateString();
           return (
-            <View key={index} style={[styles.dayHeaderCell, isToday && { backgroundColor: theme.primary + '20' }]}>
-              <Text style={[styles.dayHeaderText, { color: isToday ? theme.primary : theme.text }]}>
+            <View key={index} style={[
+              styles.dayHeaderCell, 
+              { backgroundColor: isToday ? theme.primary : 'transparent' }
+            ]}>
+              <Text style={[
+                styles.dayHeaderText, 
+                { color: isToday ? '#FFFFFF' : theme.text }
+              ]}>
                 {DAYS[index]}
               </Text>
-              <Text style={[styles.dayHeaderDate, { color: isToday ? theme.primary : theme.textSecondary }]}>
+              <Text style={[
+                styles.dayHeaderDate, 
+                { color: isToday ? '#FFFFFF' : theme.primary }
+              ]}>
                 {date.getDate()}
               </Text>
             </View>
@@ -298,7 +307,7 @@ const WeekView = ({ weekDates, scheduleData, onClassPress, onClassLongPress, fil
       <View style={styles.timeGrid}>
         {HOURS.map((hour, hourIndex) => (
           <View key={hour} style={styles.timeRow}>
-            <View style={styles.timeCell}>
+            <View style={[styles.timeCell, { backgroundColor: theme.background }]}>
               <Text style={[styles.timeText, { color: theme.textSecondary }]}>{hour}</Text>
             </View>
             {weekDates.map((date, dayIndex) => {
@@ -307,7 +316,13 @@ const WeekView = ({ weekDates, scheduleData, onClassPress, onClassLongPress, fil
               const hourClasses = classes.filter(c => c.start === hour);
               
               return (
-                <View key={dayIndex} style={[styles.dayCell, { borderColor: theme.border }]}>
+                <View key={dayIndex} style={[
+                  styles.dayCell, 
+                  { 
+                    borderColor: theme.border,
+                    backgroundColor: '#FAFBFC'
+                  }
+                ]}>
                   {hourClasses.map((classItem, classIndex) => (
                     <ClassBlock
                       key={classItem.id || classIndex}
@@ -390,7 +405,7 @@ const DayView = ({ selectedDate, scheduleData, onClassPress, onClassLongPress, f
   );
 };
 
-const MonthView = ({ selectedDate, scheduleData, theme }) => {
+const MonthView = ({ selectedDate, scheduleData, onDayPress, filterType, theme }) => {
   const monthStart = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
   const monthEnd = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0);
   const startDate = getMonday(monthStart);
@@ -424,15 +439,22 @@ const MonthView = ({ selectedDate, scheduleData, theme }) => {
           {week.map((date, dayIndex) => {
             const isCurrentMonth = date.getMonth() === selectedDate.getMonth();
             const isToday = date.toDateString() === new Date().toDateString();
-            const dayClasses = scheduleData[getDateKey(date)] || [];
+            const allDayClasses = scheduleData[getDateKey(date)] || [];
+            
+            // Apply filter
+            const dayClasses = filterType === 'all' 
+              ? allDayClasses 
+              : allDayClasses.filter(c => c.type === filterType);
             
             return (
-              <View 
+              <TouchableOpacity 
                 key={dayIndex} 
                 style={[
                   styles.monthDay,
                   { backgroundColor: isToday ? theme.primary + '20' : 'transparent' }
                 ]}
+                onPress={() => isCurrentMonth && onDayPress && onDayPress(date)}
+                disabled={!isCurrentMonth}
               >
                 <Text style={[
                   styles.monthDayText,
@@ -463,7 +485,7 @@ const MonthView = ({ selectedDate, scheduleData, theme }) => {
                     )}
                   </View>
                 )}
-              </View>
+              </TouchableOpacity>
             );
           })}
         </View>
@@ -587,60 +609,66 @@ const ClassModal = ({ visible, classData, onSave, onDelete, onClose, theme, user
           </View>
 
           {/* Time Selection */}
-          <View style={styles.timeRow}>
-            <View style={[styles.formGroup, { flex: 1, marginRight: 8 }]}>
-              <Text style={[styles.formLabel, { color: theme.text }]}>Début</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                {HOURS.map(hour => (
-                  <TouchableOpacity
-                    key={hour}
-                    style={[
-                      styles.timeChip,
-                      {
-                        backgroundColor: form.start === hour ? theme.primary : theme.cardBackground,
-                        borderColor: theme.primary,
-                      }
-                    ]}
-                    onPress={() => setForm({ ...form, start: hour })}
-                  >
-                    <Text style={[
-                      styles.timeChipText,
-                      { color: form.start === hour ? '#FFFFFF' : theme.primary }
-                    ]}>
-                      {hour}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
+          <View style={styles.formGroup}>
+            <Text style={[styles.formLabel, { color: theme.text }]}>Début</Text>
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              style={styles.timeScrollContainer}
+              contentContainerStyle={styles.timeScrollContent}
+            >
+              {HOURS.map(hour => (
+                <TouchableOpacity
+                  key={hour}
+                  style={[
+                    styles.timeChip,
+                    {
+                      backgroundColor: form.start === hour ? theme.primary : theme.cardBackground,
+                      borderColor: theme.primary,
+                    }
+                  ]}
+                  onPress={() => setForm({ ...form, start: hour })}
+                >
+                  <Text style={[
+                    styles.timeChipText,
+                    { color: form.start === hour ? '#FFFFFF' : theme.primary }
+                  ]}>
+                    {hour}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
           </View>
 
-          <View style={styles.timeRow}>
-            <View style={[styles.formGroup, { flex: 1, marginRight: 8 }]}>
-              <Text style={[styles.formLabel, { color: theme.text }]}>Fin</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                {HOURS.map(hour => (
-                  <TouchableOpacity
-                    key={hour}
-                    style={[
-                      styles.timeChip,
-                      {
-                        backgroundColor: form.end === hour ? theme.primary : theme.cardBackground,
-                        borderColor: theme.primary,
-                      }
-                    ]}
-                    onPress={() => setForm({ ...form, end: hour })}
-                  >
-                    <Text style={[
-                      styles.timeChipText,
-                      { color: form.end === hour ? '#FFFFFF' : theme.primary }
-                    ]}>
-                      {hour}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
+          <View style={styles.formGroup}>
+            <Text style={[styles.formLabel, { color: theme.text }]}>Fin</Text>
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              style={styles.timeScrollContainer}
+              contentContainerStyle={styles.timeScrollContent}
+            >
+              {HOURS.map(hour => (
+                <TouchableOpacity
+                  key={hour}
+                  style={[
+                    styles.timeChip,
+                    {
+                      backgroundColor: form.end === hour ? theme.primary : theme.cardBackground,
+                      borderColor: theme.primary,
+                    }
+                  ]}
+                  onPress={() => setForm({ ...form, end: hour })}
+                >
+                  <Text style={[
+                    styles.timeChipText,
+                    { color: form.end === hour ? '#FFFFFF' : theme.primary }
+                  ]}>
+                    {hour}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
           </View>
 
           {/* Color */}
@@ -908,6 +936,11 @@ export default function ScheduleScreen() {
                   <MonthView
                     selectedDate={selectedDate}
                     scheduleData={scheduleData}
+                    onDayPress={(date) => {
+                      setSelectedDate(date);
+                      setView('day');
+                    }}
+                    filterType={filterType}
                     theme={theme}
                   />
                 )}
@@ -959,9 +992,14 @@ const styles = StyleSheet.create({
   // Header
   header: {
     paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.1)',
+    paddingTop: 60,
+    paddingBottom: 30,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    elevation: 4,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   headerTitle: {
     fontSize: 24,
@@ -1320,12 +1358,20 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   timeRow: { marginBottom: 15 },
+  timeScrollContainer: {
+    maxHeight: 50,
+  },
+  timeScrollContent: {
+    paddingHorizontal: 4,
+  },
   timeChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     borderRadius: 16,
-    marginRight: 6,
+    marginRight: 8,
     borderWidth: 1,
+    minWidth: 60,
+    alignItems: 'center',
   },
   timeChipText: {
     fontSize: 12,
