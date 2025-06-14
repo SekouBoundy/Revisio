@@ -11,7 +11,8 @@
       "backgroundColor": "#ffffff"
     },
     "updates": {
-      "fallbackToCacheTimeout": 0
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/8027f6d2-6735-4f56-b5bf-0d70205d09fb"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -34,6 +35,10 @@
       "eas": {
         "projectId": "8027f6d2-6735-4f56-b5bf-0d70205d09fb"
       }
-    }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "owner": "sboundy"
   }
 }
