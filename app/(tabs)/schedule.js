@@ -137,9 +137,6 @@ const ViewSwitcher = ({ view, setView, theme }) => (
   </View>
 );
 
-// ------------------------------
-// --------- PILLS --------------
-// ------------------------------
 const FilterChips = ({ filterType, onFilterChange, theme }) => (
   <View style={styles.chipsRow}>
     {['all', ...CLASS_TYPES].map((type, i, arr) => (
@@ -227,9 +224,470 @@ const QuickActionMenu = ({ visible, classItem, onEdit, onDelete, onClose, theme 
   );
 };
 
-// ---- (For brevity, no changes needed to WeekView, DayView, MonthView, ClassModal from your original)
+const ClassBlock = ({ classItem, onPress, onLongPress, isHighlighted, theme }) => {
+  const startMinutes = timeToMinutes(classItem.start);
+  const endMinutes = timeToMinutes(classItem.end);
+  const duration = (endMinutes - startMinutes) / 60;
+  
+  return (
+    <TouchableOpacity
+      style={[
+        styles.classBlock,
+        {
+          backgroundColor: classItem.color,
+          height: Math.max(duration * 60, 40),
+          opacity: isHighlighted ? 1 : 0.9,
+          borderWidth: isHighlighted ? 2 : 1,
+          borderColor: isHighlighted ? theme.primary : 'rgba(255,255,255,0.3)',
+        }
+      ]}
+      onPress={() => onPress(classItem)}
+      onLongPress={() => onLongPress(classItem)}
+      activeOpacity={0.8}
+    >
+      <Text style={styles.classSubject} numberOfLines={2}>
+        {classItem.subject}
+      </Text>
+      <Text style={styles.classTime}>
+        {classItem.start} - {classItem.end}
+      </Text>
+      <Text style={styles.classType}>{classItem.type}</Text>
+    </TouchableOpacity>
+  );
+};
 
-//// ... Keep your WeekView, DayView, MonthView, ClassModal here unchanged ... ////
+const WeekView = ({ weekDates, scheduleData, onClassPress, onClassLongPress, filterType, theme }) => {
+  const filteredData = useMemo(() => {
+    const filtered = {};
+    
+    weekDates.forEach(date => {
+      const key = getDateKey(date);
+      let classes = scheduleData[key] || [];
+      
+      if (filterType !== 'all') {
+        classes = classes.filter(c => c.type === filterType);
+      }
+      
+      filtered[key] = classes;
+    });
+    
+    return filtered;
+  }, [weekDates, scheduleData, filterType]);
+
+  return (
+    <ScrollView style={styles.weekViewContainer}>
+      {/* Time column header */}
+      <View style={styles.weekHeader}>
+        <View style={styles.timeHeaderCell} />
+        {weekDates.map((date, index) => {
+          const isToday = date.toDateString() === new Date().toDateString();
+          return (
+            <View key={index} style={[styles.dayHeaderCell, isToday && { backgroundColor: theme.primary + '20' }]}>
+              <Text style={[styles.dayHeaderText, { color: isToday ? theme.primary : theme.text }]}>
+                {DAYS[index]}
+              </Text>
+              <Text style={[styles.dayHeaderDate, { color: isToday ? theme.primary : theme.textSecondary }]}>
+                {date.getDate()}
+              </Text>
+            </View>
+          );
+        })}
+      </View>
+
+      {/* Time grid */}
+      <View style={styles.timeGrid}>
+        {HOURS.map((hour, hourIndex) => (
+          <View key={hour} style={styles.timeRow}>
+            <View style={styles.timeCell}>
+              <Text style={[styles.timeText, { color: theme.textSecondary }]}>{hour}</Text>
+            </View>
+            {weekDates.map((date, dayIndex) => {
+              const key = getDateKey(date);
+              const classes = filteredData[key] || [];
+              const hourClasses = classes.filter(c => c.start === hour);
+              
+              return (
+                <View key={dayIndex} style={[styles.dayCell, { borderColor: theme.border }]}>
+                  {hourClasses.map((classItem, classIndex) => (
+                    <ClassBlock
+                      key={classItem.id || classIndex}
+                      classItem={classItem}
+                      onPress={onClassPress}
+                      onLongPress={onClassLongPress}
+                      theme={theme}
+                    />
+                  ))}
+                </View>
+              );
+            })}
+          </View>
+        ))}
+      </View>
+    </ScrollView>
+  );
+};
+
+const DayView = ({ selectedDate, scheduleData, onClassPress, onClassLongPress, filterType, theme }) => {
+  const dayClasses = useMemo(() => {
+    const key = getDateKey(selectedDate);
+    let classes = scheduleData[key] || [];
+    
+    if (filterType !== 'all') {
+      classes = classes.filter(c => c.type === filterType);
+    }
+    
+    return classes.sort((a, b) => timeToMinutes(a.start) - timeToMinutes(b.start));
+  }, [selectedDate, scheduleData, filterType]);
+
+  const isToday = selectedDate.toDateString() === new Date().toDateString();
+
+  return (
+    <ScrollView style={styles.dayViewContainer}>
+      <View style={[styles.dayHeader, { backgroundColor: theme.cardBackground }]}>
+        <Text style={[styles.dayTitle, { color: theme.text }]}>
+          {DAYS[selectedDate.getDay() === 0 ? 6 : selectedDate.getDay() - 1]} {selectedDate.getDate()}
+        </Text>
+        {isToday && (
+          <View style={[styles.todayBadge, { backgroundColor: theme.primary }]}>
+            <Text style={styles.todayBadgeText}>AUJOURD'HUI</Text>
+          </View>
+        )}
+      </View>
+
+      {dayClasses.length === 0 ? (
+        <View style={styles.emptyDayContainer}>
+          <Ionicons name="calendar-outline" size={64} color={theme.textSecondary} />
+          <Text style={[styles.emptyDayText, { color: theme.textSecondary }]}>
+            Aucun cours prévu
+          </Text>
+        </View>
+      ) : (
+        <View style={styles.dayClassesList}>
+          {dayClasses.map((classItem, index) => (
+            <TouchableOpacity
+              key={classItem.id || index}
+              style={[styles.dayClassItem, { backgroundColor: theme.cardBackground }]}
+              onPress={() => onClassPress(classItem)}
+              onLongPress={() => onClassLongPress(classItem)}
+            >
+              <View style={[styles.classColorBar, { backgroundColor: classItem.color }]} />
+              <View style={styles.dayClassContent}>
+                <Text style={[styles.dayClassSubject, { color: theme.text }]}>
+                  {classItem.subject}
+                </Text>
+                <Text style={[styles.dayClassType, { color: theme.textSecondary }]}>
+                  {classItem.type}
+                </Text>
+                <Text style={[styles.dayClassTime, { color: theme.primary }]}>
+                  {classItem.start} - {classItem.end}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+    </ScrollView>
+  );
+};
+
+const MonthView = ({ selectedDate, scheduleData, theme }) => {
+  const monthStart = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+  const monthEnd = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0);
+  const startDate = getMonday(monthStart);
+  const endDate = new Date(startDate);
+  endDate.setDate(startDate.getDate() + 41); // 6 weeks
+
+  const weeks = [];
+  const currentDate = new Date(startDate);
+  
+  while (currentDate <= endDate) {
+    const week = [];
+    for (let i = 0; i < 7; i++) {
+      week.push(new Date(currentDate));
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    weeks.push(week);
+  }
+
+  return (
+    <View style={styles.monthViewContainer}>
+      <View style={styles.monthHeader}>
+        {DAYS.map(day => (
+          <Text key={day} style={[styles.monthDayHeader, { color: theme.textSecondary }]}>
+            {day}
+          </Text>
+        ))}
+      </View>
+      
+      {weeks.map((week, weekIndex) => (
+        <View key={weekIndex} style={styles.monthWeek}>
+          {week.map((date, dayIndex) => {
+            const isCurrentMonth = date.getMonth() === selectedDate.getMonth();
+            const isToday = date.toDateString() === new Date().toDateString();
+            const dayClasses = scheduleData[getDateKey(date)] || [];
+            
+            return (
+              <View 
+                key={dayIndex} 
+                style={[
+                  styles.monthDay,
+                  { backgroundColor: isToday ? theme.primary + '20' : 'transparent' }
+                ]}
+              >
+                <Text style={[
+                  styles.monthDayText,
+                  { 
+                    color: isCurrentMonth ? 
+                      (isToday ? theme.primary : theme.text) : 
+                      theme.textSecondary,
+                    fontWeight: isToday ? 'bold' : 'normal'
+                  }
+                ]}>
+                  {date.getDate()}
+                </Text>
+                {dayClasses.length > 0 && (
+                  <View style={styles.monthDayDots}>
+                    {dayClasses.slice(0, 3).map((classItem, index) => (
+                      <View
+                        key={index}
+                        style={[
+                          styles.monthDayDot,
+                          { backgroundColor: classItem.color }
+                        ]}
+                      />
+                    ))}
+                    {dayClasses.length > 3 && (
+                      <Text style={[styles.monthDayMore, { color: theme.textSecondary }]}>
+                        +{dayClasses.length - 3}
+                      </Text>
+                    )}
+                  </View>
+                )}
+              </View>
+            );
+          })}
+        </View>
+      ))}
+    </View>
+  );
+};
+
+const ClassModal = ({ visible, classData, onSave, onDelete, onClose, theme, userLevel }) => {
+  const [form, setForm] = useState({
+    subject: '',
+    type: 'Cours',
+    start: '08:00',
+    end: '10:00',
+    color: CLASS_COLORS[0],
+  });
+
+  const availableSubjects = SUBJECTS_BY_LEVEL[userLevel] || SUBJECTS_BY_LEVEL.DEF;
+
+  useEffect(() => {
+    if (classData) {
+      setForm(classData);
+    } else {
+      setForm({
+        subject: '',
+        type: 'Cours',
+        start: '08:00',
+        end: '10:00',
+        color: CLASS_COLORS[0],
+      });
+    }
+  }, [classData, visible]);
+
+  const handleSave = () => {
+    if (!form.subject.trim()) {
+      Alert.alert('Erreur', 'Veuillez sélectionner une matière');
+      return;
+    }
+    
+    if (timeToMinutes(form.start) >= timeToMinutes(form.end)) {
+      Alert.alert('Erreur', 'L\'heure de fin doit être après l\'heure de début');
+      return;
+    }
+
+    onSave({
+      ...form,
+      id: classData?.id || generateId(),
+    });
+  };
+
+  return (
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
+      <SafeAreaView style={[styles.modalContainer, { backgroundColor: theme.background }]}>
+        <View style={[styles.modalHeader, { borderBottomColor: theme.border }]}>
+          <TouchableOpacity onPress={onClose}>
+            <Text style={[styles.modalHeaderButton, { color: theme.primary }]}>Annuler</Text>
+          </TouchableOpacity>
+          <Text style={[styles.modalTitle, { color: theme.text }]}>
+            {classData ? 'Modifier le cours' : 'Nouveau cours'}
+          </Text>
+          <TouchableOpacity onPress={handleSave}>
+            <Text style={[styles.modalHeaderButton, { color: theme.primary }]}>
+              {classData ? 'Modifier' : 'Ajouter'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
+          {/* Subject Selection */}
+          <View style={styles.formGroup}>
+            <Text style={[styles.formLabel, { color: theme.text }]}>Matière *</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {availableSubjects.map(subject => (
+                <TouchableOpacity
+                  key={subject}
+                  style={[
+                    styles.subjectChip,
+                    {
+                      backgroundColor: form.subject === subject ? theme.primary : theme.cardBackground,
+                      borderColor: theme.primary,
+                    }
+                  ]}
+                  onPress={() => setForm({ ...form, subject })}
+                >
+                  <Text style={[
+                    styles.subjectChipText,
+                    { color: form.subject === subject ? '#FFFFFF' : theme.primary }
+                  ]}>
+                    {subject}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+
+          {/* Type */}
+          <View style={styles.formGroup}>
+            <Text style={[styles.formLabel, { color: theme.text }]}>Type</Text>
+            <View style={styles.typeRow}>
+              {CLASS_TYPES.map(type => (
+                <TouchableOpacity
+                  key={type}
+                  style={[
+                    styles.typeChip,
+                    {
+                      backgroundColor: form.type === type ? theme.primary : theme.cardBackground,
+                      borderColor: theme.primary,
+                    }
+                  ]}
+                  onPress={() => setForm({ ...form, type })}
+                >
+                  <Text style={[
+                    styles.typeChipText,
+                    { color: form.type === type ? '#FFFFFF' : theme.primary }
+                  ]}>
+                    {type}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          {/* Time Selection */}
+          <View style={styles.timeRow}>
+            <View style={[styles.formGroup, { flex: 1, marginRight: 8 }]}>
+              <Text style={[styles.formLabel, { color: theme.text }]}>Début</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {HOURS.map(hour => (
+                  <TouchableOpacity
+                    key={hour}
+                    style={[
+                      styles.timeChip,
+                      {
+                        backgroundColor: form.start === hour ? theme.primary : theme.cardBackground,
+                        borderColor: theme.primary,
+                      }
+                    ]}
+                    onPress={() => setForm({ ...form, start: hour })}
+                  >
+                    <Text style={[
+                      styles.timeChipText,
+                      { color: form.start === hour ? '#FFFFFF' : theme.primary }
+                    ]}>
+                      {hour}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          </View>
+
+          <View style={styles.timeRow}>
+            <View style={[styles.formGroup, { flex: 1, marginRight: 8 }]}>
+              <Text style={[styles.formLabel, { color: theme.text }]}>Fin</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {HOURS.map(hour => (
+                  <TouchableOpacity
+                    key={hour}
+                    style={[
+                      styles.timeChip,
+                      {
+                        backgroundColor: form.end === hour ? theme.primary : theme.cardBackground,
+                        borderColor: theme.primary,
+                      }
+                    ]}
+                    onPress={() => setForm({ ...form, end: hour })}
+                  >
+                    <Text style={[
+                      styles.timeChipText,
+                      { color: form.end === hour ? '#FFFFFF' : theme.primary }
+                    ]}>
+                      {hour}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          </View>
+
+          {/* Color */}
+          <View style={styles.formGroup}>
+            <Text style={[styles.formLabel, { color: theme.text }]}>Couleur</Text>
+            <View style={styles.colorPicker}>
+              {CLASS_COLORS.map(color => (
+                <TouchableOpacity
+                  key={color}
+                  style={[
+                    styles.colorOption,
+                    { backgroundColor: color },
+                    form.color === color && styles.selectedColor
+                  ]}
+                  onPress={() => setForm({ ...form, color })}
+                >
+                  {form.color === color && (
+                    <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          {classData && (
+            <TouchableOpacity
+              style={[styles.deleteButton, { borderColor: '#EF4444' }]}
+              onPress={() => {
+                Alert.alert(
+                  'Supprimer le cours',
+                  'Êtes-vous sûr de vouloir supprimer ce cours ?',
+                  [
+                    { text: 'Annuler', style: 'cancel' },
+                    { text: 'Supprimer', style: 'destructive', onPress: () => onDelete(classData) }
+                  ]
+                );
+              }}
+            >
+              <Ionicons name="trash-outline" size={20} color="#EF4444" />
+              <Text style={styles.deleteButtonText}>Supprimer le cours</Text>
+            </TouchableOpacity>
+          )}
+        </ScrollView>
+      </SafeAreaView>
+    </Modal>
+  );
+};
 
 // --- Main Component ---
 export default function ScheduleScreen() {
@@ -382,7 +840,7 @@ export default function ScheduleScreen() {
             <ViewSwitcher view={view} setView={setView} theme={theme} />
           </View>
 
-          {/* Filter (now super thin pills) */}
+          {/* Filter */}
           <FilterChips
             filterType={filterType}
             onFilterChange={setFilterType}
@@ -426,7 +884,33 @@ export default function ScheduleScreen() {
               </View>
             ) : (
               <>
-                {/* Put your WeekView, DayView, MonthView here, unchanged */}
+                {view === 'week' && (
+                  <WeekView
+                    weekDates={weekDates}
+                    scheduleData={scheduleData}
+                    onClassPress={handleClassPress}
+                    onClassLongPress={handleClassLongPress}
+                    filterType={filterType}
+                    theme={theme}
+                  />
+                )}
+                {view === 'day' && (
+                  <DayView
+                    selectedDate={selectedDate}
+                    scheduleData={scheduleData}
+                    onClassPress={handleClassPress}
+                    onClassLongPress={handleClassLongPress}
+                    filterType={filterType}
+                    theme={theme}
+                  />
+                )}
+                {view === 'month' && (
+                  <MonthView
+                    selectedDate={selectedDate}
+                    scheduleData={scheduleData}
+                    theme={theme}
+                  />
+                )}
               </>
             )}
           </View>
@@ -450,7 +934,18 @@ export default function ScheduleScreen() {
           />
 
           {/* Modal */}
-          {/* ... Your ClassModal here as before ... */}
+          <ClassModal
+            visible={modalVisible}
+            classData={editingClass}
+            onSave={handleClassSave}
+            onDelete={handleClassDelete}
+            onClose={() => {
+              setModalVisible(false);
+              setEditingClass(null);
+            }}
+            theme={theme}
+            userLevel={user?.level || 'DEF'}
+          />
         </SafeAreaView>
       </GestureHandlerRootView>
     </ErrorBoundary>
@@ -474,7 +969,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
 
-  // View Switcher (Jour/Semaine/Mois)
+  // View Switcher
   switcherContainer: {
     flexDirection: 'row',
     backgroundColor: 'rgba(0,0,0,0.05)',
@@ -497,7 +992,7 @@ const styles = StyleSheet.create({
     marginLeft: 6,
   },
 
-  // Filter Chips (pills)
+  // Filter Chips (compact pills)
   chipsRow: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -520,7 +1015,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  // Week/Month Navigation Bar
+  // Navigation
   navigationContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -948,4 +1443,3 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
-
