@@ -1,6 +1,6 @@
 // app/(tabs)/schedule.js
 
-import React, { useContext, useState, useMemo, useEffect } from 'react';
+import React, { useContext, useState, useMemo, useEffect, useRef } from 'react';
 import {
   SafeAreaView,
   ScrollView,
@@ -14,6 +14,8 @@ import {
   ToastAndroid,
   ActivityIndicator,
   Dimensions,
+  Animated,
+  PanResponder,
 } from 'react-native';
 import { PanGestureHandler, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
@@ -224,6 +226,77 @@ const QuickActionMenu = ({ visible, classItem, onEdit, onDelete, onClose, theme 
   );
 };
 
+const SwipeableClassItem = ({ classItem, onEdit, onDelete, theme, children }) => {
+  const translateX = useRef(new Animated.Value(0)).current;
+  const swipeThreshold = 80;
+
+  const panResponder = PanResponder.create({
+    onMoveShouldSetPanResponder: (evt, gestureState) => {
+      return Math.abs(gestureState.dx) > 10 && Math.abs(gestureState.dy) < 30;
+    },
+    onPanResponderGrant: () => {
+      Vibration.vibrate(30);
+    },
+    onPanResponderMove: (evt, gestureState) => {
+      if (gestureState.dx < 0) {
+        translateX.setValue(Math.max(gestureState.dx, -150));
+      }
+    },
+    onPanResponderRelease: (evt, gestureState) => {
+      if (gestureState.dx < -swipeThreshold) {
+        Animated.spring(translateX, {
+          toValue: -150,
+          useNativeDriver: true,
+          tension: 100,
+          friction: 8,
+        }).start();
+      } else {
+        Animated.spring(translateX, {
+          toValue: 0,
+          useNativeDriver: true,
+          tension: 100,
+          friction: 8,
+        }).start();
+      }
+    },
+  });
+
+  const resetPosition = () => {
+    Animated.spring(translateX, {
+      toValue: 0,
+      useNativeDriver: true,
+      tension: 100,
+      friction: 8,
+    }).start();
+  };
+
+  return (
+    <View style={styles.swipeableContainer}>
+      <View style={styles.swipeActions}>
+        <TouchableOpacity 
+          style={[styles.swipeActionButton, { backgroundColor: theme.primary }]}
+          onPress={() => { onEdit(classItem); resetPosition(); }}
+        >
+          <Ionicons name="pencil" size={18} color="#FFFFFF" />
+          <Text style={styles.swipeActionText}>Modifier</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.swipeActionButton, { backgroundColor: '#EF4444' }]}
+          onPress={() => { onDelete(classItem); resetPosition(); }}
+        >
+          <Ionicons name="trash" size={18} color="#FFFFFF" />
+          <Text style={styles.swipeActionText}>Supprimer</Text>
+        </TouchableOpacity>
+      </View>
+      <Animated.View 
+        style={[styles.swipeableContent, { transform: [{ translateX }] }]}
+        {...panResponder.panHandlers}
+      >
+        {children}
+      </Animated.View>
+    </View>
+  );
+};
 const ClassBlock = ({ classItem, onPress, onLongPress, isHighlighted, theme }) => {
   const startMinutes = timeToMinutes(classItem.start);
   const endMinutes = timeToMinutes(classItem.end);
@@ -252,6 +325,11 @@ const ClassBlock = ({ classItem, onPress, onLongPress, isHighlighted, theme }) =
         {classItem.start} - {classItem.end}
       </Text>
       <Text style={styles.classType}>{classItem.type}</Text>
+      {classItem.isRecurring && classItem.type === 'Cours' && (
+        <View style={styles.recurringIndicator}>
+          <Ionicons name="repeat" size={10} color="rgba(255,255,255,0.8)" />
+        </View>
+      )}
     </TouchableOpacity>
   );
 };
@@ -275,26 +353,26 @@ const WeekView = ({ weekDates, scheduleData, onClassPress, onClassLongPress, fil
   }, [weekDates, scheduleData, filterType]);
 
   return (
-    <ScrollView style={styles.weekViewContainer} showsVerticalScrollIndicator={false}>
-      {/* Improved Week Header */}
-      <View style={[styles.weekHeader, { backgroundColor: theme.surface }]}>
+    <View style={styles.weekViewContainer}>
+      {/* Week Header */}
+      <View style={[styles.weekHeader, { backgroundColor: theme.primary }]}>
         <View style={styles.timeHeaderCell} />
         {weekDates.map((date, index) => {
           const isToday = date.toDateString() === new Date().toDateString();
           return (
-            <View key={index} style={[
-              styles.dayHeaderCell, 
-              { backgroundColor: isToday ? theme.primary : 'transparent' }
-            ]}>
+            <View key={index} style={styles.dayHeaderCell}>
               <Text style={[
                 styles.dayHeaderText, 
-                { color: isToday ? '#FFFFFF' : theme.text }
+                { color: '#FFFFFF', fontWeight: isToday ? 'bold' : '600' }
               ]}>
                 {DAYS[index]}
               </Text>
               <Text style={[
                 styles.dayHeaderDate, 
-                { color: isToday ? '#FFFFFF' : theme.primary }
+                { 
+                  color: isToday ? '#FFD700' : '#FFFFFF',
+                  fontWeight: isToday ? 'bold' : '500'
+                }
               ]}>
                 {date.getDate()}
               </Text>
@@ -303,46 +381,80 @@ const WeekView = ({ weekDates, scheduleData, onClassPress, onClassLongPress, fil
         })}
       </View>
 
-      {/* Time grid */}
-      <View style={styles.timeGrid}>
+      {/* Timetable Grid */}
+      <ScrollView style={styles.timetableScroll} showsVerticalScrollIndicator={false}>
         {HOURS.map((hour, hourIndex) => (
-          <View key={hour} style={styles.timeRow}>
-            <View style={[styles.timeCell, { backgroundColor: theme.background }]}>
-              <Text style={[styles.timeText, { color: theme.textSecondary }]}>{hour}</Text>
+          <View key={hour} style={styles.timetableRow}>
+            {/* Time Cell */}
+            <View style={[styles.timeCell, { backgroundColor: theme.cardBackground }]}>
+              <Text style={[styles.timeText, { color: theme.primary, fontWeight: '600' }]}>
+                {hour}
+              </Text>
             </View>
+            
+            {/* Day Cells */}
             {weekDates.map((date, dayIndex) => {
               const key = getDateKey(date);
               const classes = filteredData[key] || [];
               const hourClasses = classes.filter(c => c.start === hour);
+              const isToday = date.toDateString() === new Date().toDateString();
               
               return (
                 <View key={dayIndex} style={[
-                  styles.dayCell, 
+                  styles.timetableCell,
                   { 
                     borderColor: theme.border,
-                    backgroundColor: '#FAFBFC'
+                    backgroundColor: isToday ? theme.primary + '05' : '#FFFFFF'
                   }
                 ]}>
-                  {hourClasses.map((classItem, classIndex) => (
-                    <ClassBlock
-                      key={classItem.id || classIndex}
-                      classItem={classItem}
-                      onPress={onClassPress}
-                      onLongPress={onClassLongPress}
-                      theme={theme}
-                    />
-                  ))}
+                  {hourClasses.map((classItem, classIndex) => {
+                    const duration = Math.max(
+                      HOURS.indexOf(classItem.end) - HOURS.indexOf(classItem.start), 
+                      1
+                    );
+                    
+                    return (
+                      <TouchableOpacity
+                        key={classItem.id || classIndex}
+                        style={[
+                          styles.timetableClassBlock,
+                          {
+                            backgroundColor: classItem.color,
+                            height: (duration * 50) - 2,
+                          }
+                        ]}
+                        onPress={() => onClassPress(classItem)}
+                        onLongPress={() => onClassLongPress(classItem)}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={styles.timetableClassSubject} numberOfLines={1}>
+                          {classItem.subject}
+                        </Text>
+                        <Text style={styles.timetableClassType}>
+                          {classItem.type}
+                        </Text>
+                        {classItem.isRecurring && classItem.type === 'Cours' && (
+                          <Ionicons 
+                            name="repeat" 
+                            size={8} 
+                            color="rgba(255,255,255,0.8)" 
+                            style={styles.timetableRecurringIcon}
+                          />
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })}
                 </View>
               );
             })}
           </View>
         ))}
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 };
 
-const DayView = ({ selectedDate, scheduleData, onClassPress, onClassLongPress, filterType, theme }) => {
+const DayView = ({ selectedDate, scheduleData, onClassPress, onClassLongPress, onClassEdit, onClassDelete, filterType, theme }) => {
   const dayClasses = useMemo(() => {
     const key = getDateKey(selectedDate);
     let classes = scheduleData[key] || [];
@@ -379,25 +491,35 @@ const DayView = ({ selectedDate, scheduleData, onClassPress, onClassLongPress, f
       ) : (
         <View style={styles.dayClassesList}>
           {dayClasses.map((classItem, index) => (
-            <TouchableOpacity
+            <SwipeableClassItem
               key={classItem.id || index}
-              style={[styles.dayClassItem, { backgroundColor: theme.cardBackground }]}
-              onPress={() => onClassPress(classItem)}
-              onLongPress={() => onClassLongPress(classItem)}
+              classItem={classItem}
+              onEdit={onClassEdit}
+              onDelete={onClassDelete}
+              theme={theme}
             >
-              <View style={[styles.classColorBar, { backgroundColor: classItem.color }]} />
-              <View style={styles.dayClassContent}>
-                <Text style={[styles.dayClassSubject, { color: theme.text }]}>
-                  {classItem.subject}
-                </Text>
-                <Text style={[styles.dayClassType, { color: theme.textSecondary }]}>
-                  {classItem.type}
-                </Text>
-                <Text style={[styles.dayClassTime, { color: theme.primary }]}>
-                  {classItem.start} - {classItem.end}
-                </Text>
-              </View>
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.dayClassItem, { backgroundColor: theme.cardBackground }]}
+                onPress={() => onClassPress(classItem)}
+                onLongPress={() => onClassLongPress(classItem)}
+              >
+                <View style={[styles.classColorBar, { backgroundColor: classItem.color }]} />
+                <View style={styles.dayClassContent}>
+                  <Text style={[styles.dayClassSubject, { color: theme.text }]}>
+                    {classItem.subject}
+                  </Text>
+                  <Text style={[styles.dayClassType, { color: theme.textSecondary }]}>
+                    {classItem.type}
+                  </Text>
+                  <Text style={[styles.dayClassTime, { color: theme.primary }]}>
+                    {classItem.start} - {classItem.end}
+                  </Text>
+                </View>
+                {classItem.isRecurring && classItem.type === 'Cours' && (
+                  <Ionicons name="repeat" size={16} color={theme.textSecondary} style={styles.recurringIcon} />
+                )}
+              </TouchableOpacity>
+            </SwipeableClassItem>
           ))}
         </View>
       )}
@@ -763,16 +885,45 @@ export default function ScheduleScreen() {
   const handleClassSave = (classData) => {
     const dateKey = getDateKey(selectedDate);
     const updated = { ...scheduleData };
-    if (!updated[dateKey]) updated[dateKey] = [];
+    
     if (editingClass) {
+      // Update existing class
       updated[dateKey] = updated[dateKey].map(c =>
         c.id === editingClass.id ? classData : c
       );
       ToastAndroid.show('Cours modifié', ToastAndroid.SHORT);
     } else {
+      // Add new class
+      if (!updated[dateKey]) updated[dateKey] = [];
+      
+      // Add to selected date
       updated[dateKey].push(classData);
-      ToastAndroid.show('Cours ajouté', ToastAndroid.SHORT);
+      
+      // If it's a "Cours" type, make it recurring (add to same day of week for next 12 weeks)
+      if (classData.type === 'Cours') {
+        const recurringClass = { ...classData, isRecurring: true };
+        updated[dateKey] = updated[dateKey].map(c => 
+          c.id === classData.id ? recurringClass : c
+        );
+        
+        // Add to future weeks
+        for (let week = 1; week <= 12; week++) {
+          const futureDate = new Date(selectedDate);
+          futureDate.setDate(selectedDate.getDate() + (week * 7));
+          const futureKey = getDateKey(futureDate);
+          
+          if (!updated[futureKey]) updated[futureKey] = [];
+          updated[futureKey].push({
+            ...recurringClass,
+            id: generateId(),
+          });
+        }
+        ToastAndroid.show('Cours récurrent ajouté', ToastAndroid.SHORT);
+      } else {
+        ToastAndroid.show('Cours ajouté', ToastAndroid.SHORT);
+      }
     }
+    
     saveScheduleData(updated);
     setModalVisible(false);
     setEditingClass(null);
@@ -861,8 +1012,8 @@ export default function ScheduleScreen() {
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
           {/* Header */}
-          <View style={[styles.header, { backgroundColor: theme.cardBackground }]}>
-            <Text style={[styles.headerTitle, { color: theme.text }]}>
+          <View style={[styles.header, { backgroundColor: theme.primary }]}>
+            <Text style={[styles.headerTitle, { color: '#FFFFFF' }]}>
               Emploi du Temps
             </Text>
             <ViewSwitcher view={view} setView={setView} theme={theme} />
@@ -928,6 +1079,8 @@ export default function ScheduleScreen() {
                     scheduleData={scheduleData}
                     onClassPress={handleClassPress}
                     onClassLongPress={handleClassLongPress}
+                    onClassEdit={openEditModal}
+                    onClassDelete={handleQuickDelete}
                     filterType={filterType}
                     theme={theme}
                   />
@@ -1081,22 +1234,31 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // Week View
-  weekViewContainer: { flex: 1 },
+  // Week View (Timetable)
+  weekViewContainer: { 
+    flex: 1,
+    backgroundColor: '#F8F9FA',
+  },
   weekHeader: {
     flexDirection: 'row',
-    backgroundColor: '#F8F9FA',
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.1)',
+    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
-  timeHeaderCell: { width: 60, height: 50 },
+  timeHeaderCell: { 
+    width: 60, 
+    height: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   dayHeaderCell: {
     flex: 1,
-    height: 50,
+    height: 60,
     alignItems: 'center',
     justifyContent: 'center',
     borderLeftWidth: 1,
-    borderLeftColor: 'rgba(0,0,0,0.1)',
+    borderLeftColor: 'rgba(255,255,255,0.3)',
   },
   dayHeaderText: {
     fontSize: 12,
@@ -1107,30 +1269,65 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: 2,
   },
-  timeGrid: { flexDirection: 'column' },
-  timeRow: {
+  
+  // Timetable Grid
+  timetableScroll: {
+    flex: 1,
+  },
+  timetableRow: {
     flexDirection: 'row',
-    height: 60,
+    height: 50,
   },
   timeCell: {
     width: 60,
-    height: 60,
+    height: 50,
     alignItems: 'center',
     justifyContent: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.1)',
+    borderBottomColor: '#E5E7EB',
   },
   timeText: {
-    fontSize: 12,
-    fontWeight: '500',
+    fontSize: 11,
+    fontWeight: '600',
   },
-  dayCell: {
+  timetableCell: {
     flex: 1,
-    height: 60,
+    height: 50,
     borderLeftWidth: 1,
     borderBottomWidth: 1,
-    padding: 2,
     position: 'relative',
+    padding: 1,
+  },
+  timetableClassBlock: {
+    position: 'absolute',
+    left: 1,
+    right: 1,
+    top: 1,
+    borderRadius: 4,
+    padding: 3,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 1,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+  },
+  timetableClassSubject: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  timetableClassType: {
+    color: 'rgba(255,255,255,0.9)',
+    fontSize: 7,
+    textAlign: 'center',
+    marginTop: 1,
+  },
+  timetableRecurringIcon: {
+    position: 'absolute',
+    top: 1,
+    right: 1,
   },
   classBlock: {
     position: 'absolute',
