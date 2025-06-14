@@ -454,7 +454,7 @@ const WeekView = ({ weekDates, scheduleData, onClassPress, onClassLongPress, fil
   );
 };
 
-const DayView = ({ selectedDate, scheduleData, onClassPress, onClassLongPress, onClassEdit, onClassDelete, filterType, theme }) => {
+const DayView = ({ selectedDate, scheduleData, onClassPress, onClassLongPress, filterType, theme }) => {
   const dayClasses = useMemo(() => {
     const key = getDateKey(selectedDate);
     let classes = scheduleData[key] || [];
@@ -491,35 +491,28 @@ const DayView = ({ selectedDate, scheduleData, onClassPress, onClassLongPress, o
       ) : (
         <View style={styles.dayClassesList}>
           {dayClasses.map((classItem, index) => (
-            <SwipeableClassItem
+            <TouchableOpacity
               key={classItem.id || index}
-              classItem={classItem}
-              onEdit={onClassEdit}
-              onDelete={onClassDelete}
-              theme={theme}
+              style={[styles.dayClassItem, { backgroundColor: theme.cardBackground }]}
+              onPress={() => onClassPress(classItem)}
+              onLongPress={() => onClassLongPress(classItem)}
             >
-              <TouchableOpacity
-                style={[styles.dayClassItem, { backgroundColor: theme.cardBackground }]}
-                onPress={() => onClassPress(classItem)}
-                onLongPress={() => onClassLongPress(classItem)}
-              >
-                <View style={[styles.classColorBar, { backgroundColor: classItem.color }]} />
-                <View style={styles.dayClassContent}>
-                  <Text style={[styles.dayClassSubject, { color: theme.text }]}>
-                    {classItem.subject}
-                  </Text>
-                  <Text style={[styles.dayClassType, { color: theme.textSecondary }]}>
-                    {classItem.type}
-                  </Text>
-                  <Text style={[styles.dayClassTime, { color: theme.primary }]}>
-                    {classItem.start} - {classItem.end}
-                  </Text>
-                </View>
-                {classItem.isRecurring && classItem.type === 'Cours' && (
-                  <Ionicons name="repeat" size={16} color={theme.textSecondary} style={styles.recurringIcon} />
-                )}
-              </TouchableOpacity>
-            </SwipeableClassItem>
+              <View style={[styles.classColorBar, { backgroundColor: classItem.color }]} />
+              <View style={styles.dayClassContent}>
+                <Text style={[styles.dayClassSubject, { color: theme.text }]}>
+                  {classItem.subject}
+                </Text>
+                <Text style={[styles.dayClassType, { color: theme.textSecondary }]}>
+                  {classItem.type}
+                </Text>
+                <Text style={[styles.dayClassTime, { color: theme.primary }]}>
+                  {classItem.start} - {classItem.end}
+                </Text>
+              </View>
+              {classItem.isRecurring && classItem.type === 'Cours' && (
+                <Ionicons name="repeat" size={16} color={theme.textSecondary} style={styles.recurringIcon} />
+              )}
+            </TouchableOpacity>
           ))}
         </View>
       )}
