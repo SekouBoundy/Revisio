@@ -9,11 +9,11 @@ import {
   Text,
   TouchableOpacity,
   Modal,
-  Dimensions,
+  Alert,
   Vibration,
   ToastAndroid,
   ActivityIndicator,
-  Alert,
+  Dimensions,
 } from 'react-native';
 import { PanGestureHandler, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
