@@ -767,9 +767,13 @@ export default function EnhancedScheduleScreen() {
                       selected={quickForm.startTime}
                       onSelect={(startTime) => {
                         const startIdx = timeSlots.indexOf(startTime);
-                        const endIdx = Math.min(startIdx + 1, timeSlots.length - 1);
-                        setQuickForm(prev => ({ 
-                          ...prev, 
+                        let endIdx = timeSlots.indexOf(quickForm.endTime);
+                        // If endTime is before or equal to new startTime, auto-advance to next slot
+                        if (endIdx <= startIdx) {
+                          endIdx = Math.min(startIdx + 1, timeSlots.length - 1);
+                        }
+                        setQuickForm(prev => ({
+                          ...prev,
                           startTime,
                           endTime: timeSlots[endIdx]
                         }));
